@@ -1,0 +1,17 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<parameters>
+    <global>
+        <option name="options" value="SensitivityOptions.xml" type="string" desc="XML file of Sensitivity Study Options"/>
+        <option name="verbose" short="v" type="flag" desc="display details"/>
+        <option name="help" short="h" type="flag" desc="show help then exit" />
+    </global>
+
+    <Extract>
+        <option name="GramsG4Name" value="Source_{process}.root" type="string" desc="Format of the Output of GramsG4 created during batch process">
+            The ${process} will get filled in by queue from condor
+        </option>
+        <option name="GramsDetSimName" value="SourceDet_${process}.root" type="string" desc="Output of GramsDetSim created during batch process">
+            The ${process} will get filled in by queue from condor
+        </option>
+    </Extract>
+</parameters>
