@@ -34,5 +34,8 @@ find_package (XercesC REQUIRED)
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
+# Copy over SenseJob containing compiled GramsSim programs
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR})
+
 add_subdirectory(utils)
 add_subdirectory(GenerateCondor)

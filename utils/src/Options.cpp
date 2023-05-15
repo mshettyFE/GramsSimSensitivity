@@ -46,7 +46,7 @@ namespace util {
     bool success = true;
 
     // Default XML file name.
-    m_optionsFile = "options.xml";
+    m_optionsFile = "SensitivityOptions.xml";
 
     // Save the path of the running program.
     m_progPath = std::string( argv[0] );
