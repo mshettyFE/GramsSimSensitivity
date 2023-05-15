@@ -12,5 +12,5 @@ target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}Extract )
 
 set_target_properties( ${PROG} 
    PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
-   "${CMAKE_BINARY_DIR}/SenseJob" 
+   "${CMAKE_CURRENT_BINARY_DIR}/SenseJob" 
    )
