@@ -7,11 +7,11 @@
     </global>
 
     <Extract>
-        <option name="GramsG4Name" value="Source_{process}.root" type="string" desc="Format of the Output of GramsG4 created during batch process">
-            The ${process} will get filled in by queue from condor
+        <option name="GramsG4Name" value="Source.root" type="string" desc="Name of Input GramsG4 File">
         </option>
-        <option name="GramsDetSimName" value="SourceDet_${process}.root" type="string" desc="Output of GramsDetSim created during batch process">
-            The ${process} will get filled in by queue from condor
+        <option name="GramsDetSimName" value="SourceDet.root" type="string" desc="Name of input GramsDetSim file that was generated from GramsG4 file">
+        </option>
+        <option name="Output" short="o" value="ExtractedSource.root" type="string" desc="Output of ExtractComptons">
         </option>
     </Extract>
 </parameters>
