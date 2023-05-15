@@ -5,7 +5,7 @@ include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
 set (PROG "Extract${EXE}")
 add_executable (${PROG} Extract.cpp)
 # Specify location of linked libraries
-target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}Utilities )
+target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}Extract )
 
 # Put Extract file in SenseJob location

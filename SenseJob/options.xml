@@ -2,7 +2,7 @@
 
 <!-- Please see GramsSim/util/README.md for documentation. -->
 
-<parameters>
+<parameters xmlns:xi="http://www.w3.org/2001/XInclude">
   
   <global>
 
@@ -54,6 +54,15 @@
     <option name="comment" type="string" value="" desc="document purpose of run" />
 
   </global>
+
+    <Extract>
+        <option name="GramsG4Name" value="Source.root" type="string" desc="Name of Input GramsG4 File">
+        </option>
+        <option name="GramsDetSimName" value="SourceDet.root" type="string" desc="Name of input GramsDetSim file that was generated from GramsG4 file">
+        </option>
+        <option name="ExtractOutput" short="o" value="ExtractedSource.root" type="string" desc="Output of ExtractComptons">
+        </option>
+    </Extract>
 
   <gramssky>
 

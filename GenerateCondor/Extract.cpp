@@ -36,7 +36,7 @@ int main(int argc, char** argv){
     std::string outputFile;
     bool successG4 = options->GetOption("GramsG4Name",G4Name);
     bool successGDetSim = options->GetOption("GramsDetSimName",DetSimName);
-    bool successOutput = options->GetOption("Output",outputFile);
+    bool successOutput = options->GetOption("ExtractOutput",outputFile);
 
     if (!(successG4 && successGDetSim && successOutput)){
       std::cout << "Invalid Arguments" << std::endl;

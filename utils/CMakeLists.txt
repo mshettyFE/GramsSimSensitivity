@@ -1,11 +1,11 @@
-# The source code to compile  for options
+# The source code to compile for options
 file(GLOB UtilSrc src/Options.cpp
                     ${PROJECT_SOURCE_DIR}/util/src/Options.cpp
     )
 
-# The library's name will be lib(project)Utilities and will
+# The library's name will be lib(project)SenseUtilities and will
 # be located in /util within the build directory. .
-set(LibName ${CMAKE_PROJECT_NAME}Utilities)
+set(LibName ${CMAKE_PROJECT_NAME}SenseUtilities)
 add_library (${LibName} SHARED ${UtilSrc})
 
 # These utilities depend on ROOT and Xerces-C (for XML).
@@ -15,7 +15,7 @@ target_link_libraries(${LibName} ${XercesC_LIBRARIES} )
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to it.
-target_include_directories (${CMAKE_PROJECT_NAME}Utilities PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories (${CMAKE_PROJECT_NAME}SenseUtilities PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create Extraction Utilities
 # The source code to compile
