@@ -35,8 +35,8 @@ find_package (XercesC REQUIRED)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
 # Copy over SenseJob containing compiled GramsSim programs to EffArea and GenerateCondor
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/GenerateCondor)
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 
 add_subdirectory(utils)
-add_subdirectory(GenerateCondor)

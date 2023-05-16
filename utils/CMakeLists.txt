@@ -28,3 +28,29 @@ add_library (${ExtractLibName} SHARED ${ExtractSrc})
 
 target_link_libraries(${ExtractLibName} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}Extract PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Create Extract Executable to be used in Effective  Area Calculation and Condor Generation
+# Search for header files in utils
+include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
+
+# Set Program name to account for compilation on mac OS
+set (PROG "Extract${EXE}")
+add_executable(${PROG} Extract.cpp)
+# Specify location of linked libraries
+target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
+target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}Extract )
+
+# Put Extract file in SenseJob location at 3 locations
+
+set_target_properties( ${PROG} 
+   PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
+   "${CMAKE_BINARY_DIR}/BackgroundRecon/SenseJob" 
+   )
+set_target_properties( ${PROG} 
+   PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
+   "${CMAKE_BINARY_DIR}/SourceRecon/SenseJob" 
+   )
+set_target_properties( ${PROG} 
+   PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
+   "${CMAKE_BINARY_DIR}/EffArea/SenseJob" 
+   )
