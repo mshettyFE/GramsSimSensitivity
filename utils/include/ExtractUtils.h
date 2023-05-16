@@ -31,8 +31,19 @@ void SortEvents(std::vector<std::tuple<int,int,int,std::string,double,float,floa
 // Sort DetSim by time
 void SortDetEvents(std::vector<std::tuple<double,double,double,double,double>> &Events);
 
+// calculate L2 Norm squared between adjacent scatter points
+std::vector<double> L2NormSquaredAdjacentScatters(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series);
+
+// check if two adjacent series are in a unique cell
+bool UniqueCellsOnePair(std::tuple<int,int,int,std::string,double,float,float,float,double,int> first, std::tuple<int,int,int,std::string,double,float,float,float,double,int> second,
+std::vector<double> Dimensions, std::vector<int> Binnings);
+
 // Filter GramsG4 Series to see if it passes criterion. Return true if it does pass
-bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, bool verbose=false);
+bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string FilterType,
+std::vector<double> Dimensions = {70.0,70.0,80.0},
+std::vector<int> Binnings = {7,7,8},
+double seperation = 10,
+bool verbose=false);
 
 // Figure out if Series is an escape event or not
 void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string &outParam);
@@ -40,5 +51,9 @@ void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
 // Filter and Write to ROOT file
 void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > GramsG4Map,
   std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > GramsDetSimMap,
-  std::string outputRootFile,bool verbose=false);
+  std::string outputRootFile, std::string FilterType,
+  std::vector<double> Dimensions = {70.0,70.0,80.0},
+  std::vector<int> Binnings = {7,7,8},
+  double seperation = 10,
+  bool verbose=false);
 #endif

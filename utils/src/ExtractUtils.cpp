@@ -2,6 +2,8 @@
 #include <ROOT/RDataFrame.hxx>
 #include <TFile.h>
 #include <TTree.h>
+#include <TH3D.h>
+
 
 // The C++ includes.
 #include <vector>
@@ -181,12 +183,52 @@ void SortDetEvents(std::vector<std::tuple<double,double,double,double,double>> &
     });
 }
 
-bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, bool verbose){
-  // int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+std::vector<double> L2NormSquaredAdjacentScatters(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> Series){
+  // Function that calculates the L2NormSquared (ie. squared Euclidean distance) between adjacent scatters
+  //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier
+  std::vector<double> L2NormSquared;
+  // We are assuming that the first "scatter" is a gamma ray, hence we skip that interaction
+  for(int i=1; i<(Series.size()-1);++i){
+    double dx = std::get<5>(Series[i])-std::get<5>(Series[i+1]);
+    double dy = std::get<6>(Series[i])-std::get<6>(Series[i+1]);
+    double dz = std::get<7>(Series[i])-std::get<7>(Series[i+1]);
+    L2NormSquared.push_back(dx*dx+dy*dy+dz*dz);
+  }
+  return L2NormSquared;
+}
+
+bool UniqueCellsOnePair(std::tuple<int,int,int,std::string,double,float,float,float,double,int> first, std::tuple<int,int,int,std::string,double,float,float,float,double,int> second,
+std::vector<double> Dimensions, std::vector<int> Binnings){
+  //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+  // create a histogram that aligns with the coordinate system of TPc (ie. x and y origin at center of detector. z=0 at top of detector)
+    // x dimension ranges from -x_dim/2 to x_dim/2
+    // y dimension from -y_dim/2 to y_dim/2
+    // z dimension from -z_dim to 0
+  TH3D *classifier = new TH3D("class", "doesn't matter",
+   Binnings[0], -Dimensions[0]/2.0, Dimensions[0]/2.0,
+   Binnings[1], -Dimensions[1]/2.0, Dimensions[1]/2.0,
+   Binnings[2], -Dimensions[2], Dimensions[2]);
+  // Bin the first and second scatters and get the associated bin numbers
+  // (there might be a bug if you exceed the histogram limits, but that shouldn't happen... I hope)
+  int first_bin = classifier->Fill(std::get<5>(first),std::get<6>(first),std::get<7>(first));
+  int second_bin = classifier->Fill(std::get<5>(second),std::get<6>(second),std::get<7>(second));
+  // clean up pointer
+  delete classifier;
+  return first_bin==second_bin;
+}
+
+bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string FilterType,
+  std::vector<double> Dimensions ,  std::vector<int> Binnings,  double seperation , bool verbose){
+  // variables in series corresponds to the following:
+    //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
   // Function that sorts through events and selects easy to analyze Compton series
   // This means at least 1 non gamma ray event, wheather all events are inside detector, wheather all events are comptons and photoabsorbitons, and wheather all events came from primary (ie. no showers)
   // Assume that events are sorted in order of increasing time
   // Checks for at least 3 events (Primary, first event, second event). Need at least 2 events to perform reconstruction
+  // FilterType can add on additional filtering.
+    // Standard adds no additional filtering criterion
+    // UniqueCells stipulates that each scatter must occur in a unique cell (ie. each scatter happens in an optically isolated region)
+    // Sphere denotes that the distance between each scatter must be at least seperation cm apart
     if(verbose){
       for(int i =0; i<series.size(); ++i){
         auto &event = series[i];
@@ -219,7 +261,42 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
         return false;
       }
     }
-  return true;
+  if(FilterType=="Standard"){
+    // No additional filters
+    return true;
+  }
+
+  else if(FilterType=="Sphere"){
+    std::vector<double> L2NormSquaredDistances = L2NormSquaredAdjacentScatters(series);
+    for(int index=0; index <L2NormSquaredDistances.size(); ++index){
+    // check if distance b/w scatters is at least seperation
+    // Actually calculate distance squared so that we don't need to take square roots
+      if(L2NormSquaredDistances[index]<(seperation*seperation)){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  else if(FilterType=="UniqueCells"){
+    // check for unique, optically isolated cells
+    // Ignore the first hit since it is a gamma ray.
+    for(int index=1; index <series.size()-1; ++index){
+      std::tuple<int,int,int,std::string,double,float,float,float,double,int> first = series[index];
+      std::tuple<int,int,int,std::string,double,float,float,float,double,int> second = series[index+1];
+      // If two adjacent scatters are not in unique cells, return false
+      if(!UniqueCellsOnePair(first,second,Dimensions,Binnings)){
+        return false;
+      }
+    }
+    // All the sccatters are in unique cells
+    return true;
+  }
+
+  else{
+  // Defaults to "Standard" if somehow, you get an invalid filter value
+    return true;
+  }
 }
 
 void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string &outParam){
@@ -235,7 +312,8 @@ void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
 
 void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > GramsG4Map,
   std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > GramsDetSimMap,
-  std::string outputRootFile,bool verbose){
+  std::string outputRootFile, std::string FilterType,
+  std::vector<double> Dimensions,  std::vector<int> Binnings, double seperation,  bool verbose){
   // Create output file
   TFile* output = new TFile(outputRootFile.c_str(), "RECREATE");
   TTree* ntuple = new TTree("FilteredSeries","Compton scatter series");
@@ -285,7 +363,7 @@ void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,in
     auto value = (*i).second;
   // Sort events by time
     SortEvents(value);
-    bool keep = filter(value,verbose);
+    bool keep = filter(value, FilterType, Dimensions, Binnings,seperation, verbose);
   // Keep easy series
     if(keep){
   // Figures out wheather the series is escape or all in

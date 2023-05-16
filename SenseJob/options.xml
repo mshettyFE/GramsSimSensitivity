@@ -2,7 +2,7 @@
 
 <!-- Please see GramsSim/util/README.md for documentation. -->
 
-<parameters xmlns:xi="http://www.w3.org/2001/XInclude">
+<parameters>
   
   <global>
 
@@ -61,6 +61,30 @@
         <option name="GramsDetSimName" value="SourceDet.root" type="string" desc="Name of input GramsDetSim file that was generated from GramsG4 file">
         </option>
         <option name="ExtractOutput" short="o" value="ExtractedSource.root" type="string" desc="Output of ExtractComptons">
+        </option>
+        <option name="Filter" short="f" value="Standard" type="string" desc="How to filter each event">
+            Possible values:
+                - Standard. Self explainatory. You do the standard selection criterion (at least 2 Compton scatters inside the TPC)
+                - UniqueCells. Add on the constraint that each scatter must occur in a unique cell.
+                - Sphere. Use constraint that each scatter must be at least x cm apart.
+        </option>
+        <!-- For all of these dimensionful variables, the units will be the same as specified in global. Defaults to cm.-->
+        <!-- Internally, converts all dimensions to cm (so if you specify "mm" as the length scale, all values are divided by 10)-->
+        <option name="Dimensions" value="(70,70,80)" type="vector" desc="Dimensions of LArTPC (x,y,z)">
+            Holds the dimensions of the LArTPC. Used in the unique cell calculation of Filter. Kind of repeats information found in 
+            the .gdml file, but I didn't want to try to parse that file to extract the dimensions of the TPC. Please, make sure
+            that the values you input here are consistent with the values in your gdml file.
+        </option>
+        <option name="Binnings" value="(7,7,8)" type="vector" desc="Size of a cell in each direction">
+            The number of optically isolated cells along each dimension. The same caveat that held for Dimensions holds here.
+            (ie. make sure whatever you put here is consistent with the .gdml file).
+            For instance, if you have a seperation of 10 between each optical isolation sheet along each dimension,
+            and your dimensions are 70,70,80, then your binnings are 7,7,8.
+            Please make sure that you input integers for the binnings and that you're binnings for each dimension is greater than 1.
+        </option>
+        <option name="Seperation" value="10" type="double" desc="Seperation between adjacent scatters. Used in Sphere option of Filter">
+            Stipulated the minimum seperation between Compton scatters to be a valid series. Needs Filter to be set to Sphere
+            (since this seperation creates a sphere of exclusion).
         </option>
     </Extract>
 
