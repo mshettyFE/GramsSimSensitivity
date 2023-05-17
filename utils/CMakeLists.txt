@@ -66,3 +66,11 @@ set_target_properties( ${PROG}
    PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
    "${CMAKE_BINARY_DIR}/EffArea/SenseJob" 
    )
+
+# Create Reconstruction Executable 
+set (PROG2 "Reconstruct${EXE}")
+add_executable(${PROG2} Reconstruct.cpp)
+# Specify location of linked libraries
+#target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}SenseUtilities )
+#target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}Extract )
+target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}ReadRoot )
