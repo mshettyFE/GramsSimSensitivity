@@ -74,3 +74,6 @@ add_executable(${PROG2} Reconstruct.cpp)
 #target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}SenseUtilities )
 #target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}Extract )
 target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}ReadRoot )
+
+# Copy GenEnergySpectrum.py over to utils
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/GenEnergySpectrum.py)
