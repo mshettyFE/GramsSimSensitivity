@@ -29,6 +29,17 @@ add_library (${ExtractLibName} SHARED ${ExtractSrc})
 target_link_libraries(${ExtractLibName} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}Extract PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Create ReadRootFiles library
+file(GLOB ReadRootSrc src/ReadRootFiles.cpp
+                    ${PROJECT_SOURCE_DIR}/util/src/ReadRootFiles.cpp
+    )
+
+set(ReadRootLib ${CMAKE_PROJECT_NAME}ReadRoot)
+add_library (${ReadRootLib} SHARED ${ReadRootSrc})
+
+target_link_libraries(${ReadRootLib} ${ROOT_LIBRARIES} )
+target_include_directories (${CMAKE_PROJECT_NAME}ReadRoot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Create Extract Executable to be used in Effective  Area Calculation and Condor Generation
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
@@ -39,6 +50,7 @@ add_executable(${PROG} Extract.cpp)
 # Specify location of linked libraries
 target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}Extract )
+target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 # Put Extract file in SenseJob location at 3 locations
 

@@ -1,5 +1,8 @@
 #include "Options.h"
 #include "ExtractUtils.h"
+#include "ReadRootFiles.h"
+
+#include <iostream>
 
 
 int main(int argc, char** argv){
