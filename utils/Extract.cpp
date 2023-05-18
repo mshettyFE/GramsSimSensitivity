@@ -6,7 +6,7 @@
 
 
 int main(int argc, char** argv){
-// Parser logic adapted from from https://github.com/wgseligman/GramsSim/tree/master/util
+// Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
 
     auto options = util::Options::GetInstance();
     auto result = options->ParseOptions(argc, argv, "Extract");
@@ -137,6 +137,7 @@ int main(int argc, char** argv){
   std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > DetMapping;
   DetMapping = ReadGramsDetSim(DetSimName,verbose);
 // Select scatter series that match the criterion and write these series to an output root file
+// Note that the output always write the first interaction as a Primary gamma ray, and not a Compton scatter
   FilterWrite(mapping,DetMapping,outputFile, filterValue, Dimensions, Binnings, Seperation, verbose);
   return 0;
 }

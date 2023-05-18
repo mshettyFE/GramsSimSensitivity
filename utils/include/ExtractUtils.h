@@ -20,11 +20,9 @@ bool UniqueCellsOnePair(std::tuple<int,int,int,std::string,double,float,float,fl
 std::vector<double> Dimensions, std::vector<int> Binnings);
 
 // Filter GramsG4 Series to see if it passes criterion. Return true if it does pass
-bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string FilterType,
-std::vector<double> Dimensions = {70.0,70.0,80.0},
-std::vector<int> Binnings = {7,7,8},
-double seperation = 10,
-bool verbose=false);
+bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string SeriesType, 
+std::string FilterType, std::vector<double> Dimensions = {70.0,70.0,80.0},
+std::vector<int> Binnings = {7,7,8}, double seperation = 10, bool verbose=false);
 
 // Figure out if Series is an escape event or not
 void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string &outParam);

@@ -21,23 +21,13 @@ void print_G4map(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,in
 void print_DetSimMap(  std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > DetMapping);
 
 // Print output of Extraction
-void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double>> > Mapping);
-// Overloaded for case where everything was read in at once
 void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > Mapping);
 
 // Push key value pair to map
-void push_to_map(std::tuple<int,int> &key, std::tuple<double,double,double,double,double,double,double,double,double,double> &values, 
-std::map< std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double>> > &Series);
-// Overloaded push_to_map when reading everything to 1 map
 void push_to_map(std::tuple<int,int> &key, std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> &values, 
   std::map< std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > &Series);
 
 // Read in output from Extract.cpp
-int ReadExtract(std::string ExtractFileName, 
-  std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double>> > &AllInSeries,
-  std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double>> > &EscapeSeries,
-  bool verbose =false);
-
 std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > ReadExtract(
   std::string ExtractFileName, bool verbose=false);
 

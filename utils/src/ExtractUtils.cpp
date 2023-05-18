@@ -63,8 +63,8 @@ std::vector<double> Dimensions, std::vector<int> Binnings){
   return first_bin==second_bin;
 }
 
-bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string FilterType,
-  std::vector<double> Dimensions ,  std::vector<int> Binnings,  double seperation , bool verbose){
+bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string SeriesType,
+ std::string FilterType,  std::vector<double> Dimensions ,  std::vector<int> Binnings,  double seperation , bool verbose){
   // variables in series corresponds to the following:
     //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
   // Function that sorts through events and selects easy to analyze Compton series
@@ -82,9 +82,6 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
         std::cout << PName << '\t';
       }
       std::cout << std::endl;
-    }
-    if(series.size()<3){
-      return false;
     }
     for(int i =0; i<series.size(); ++i){
         auto &event = series[i];
@@ -107,6 +104,20 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
         return false;
       }
     }
+  if(SeriesType=="Escape"){
+    if(series.size()<4){
+      return false;
+    }
+  }
+  else if(SeriesType=="AllIn"){
+    if(series.size()<3){
+      return false;
+    }
+  }
+  else{
+    std::cerr << "Invalid Series Type" << std::endl;
+    return false;
+  }
   if(FilterType=="Standard"){
     // No additional filters
     return true;
@@ -148,6 +159,7 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
 void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string &outParam){
   // int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
   // Assuming the events are time sorted, we see if last event was a photoabsorbtion
+  // Each series is gaurenteed to be at least 1 (since the gamma ray is part of the series)
     if (std::get<3>(series.at(series.size()-1)) == "phot"){
         outParam =  std::string("AllIn");
     }
@@ -209,11 +221,11 @@ void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,in
     auto value = (*i).second;
   // Sort events by time
     SortEvents(value);
-    bool keep = filter(value, FilterType, Dimensions, Binnings,seperation, verbose);
-  // Keep easy series
-    if(keep){
   // Figures out wheather the series is escape or all in
       escape(value,series_type);
+    bool keep = filter(value, series_type, FilterType, Dimensions, Binnings,seperation, verbose);
+  // Keep easy series
+    if(keep){
   // Extract all the  variables and write out to ntuple
       for (const auto& event : value){
         Run = std::get<0>(key);

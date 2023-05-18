@@ -88,6 +88,19 @@
         </option>
     </Extract>
 
+    <Reconstruct>
+        <option name="Input" value="ExtractedSource.root" short='i' type="string" desc="Input root file from Extract.cpp program"></option>
+        <option name="SourceType" value="Iso" type="string" desc="Type of input source. Either 'Iso' or 'Point'"></option>
+        <option name="SourceLoc" value="(0,90)" type="vector" desc="Right Ascension and Altitude coordinates of source. See options.xml for details"></option>
+        <!-- Right Ascension (RA) refers to the angle you make with the x axis in a CCW manner.
+         Altitude (ALT) refers to the angle you make moving up from the equator to your point.
+         So for instance, you you wanted your source along the y-axis 45 degrees above the equator, you input (90,45).
+         Defaults to source directly from the zenith aimed at the north pole.-->
+        <option name="Output" value="ReconstructedSource.root" short='o' type="string" desc="Output Root file containing cone data and ARM. Defaults to 2*pi for isotropic"></option>
+        <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
+        This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the source was isotropic-->
+    </Reconstruct>
+
   <gramssky>
 
     <!-- Number of sky events to generate -->
@@ -513,8 +526,8 @@
 
     Options associated with the diffusion model. These values come
     from MicroBooNE:
-  https://github.com/LArSoft/larsim/blob/develop/larsim/Simulation/simulationservices.fcl
-  https://github.com/MicroBooNE/uboonecode/blob/develop/uboone/Simulation/simulationservices_microboone.fcl
+    https://github.com/LArSoft/larsim/blob/develop/larsim/Simulation/simulationservices.fcl
+    https://github.com/MicroBooNE/uboonecode/blob/develop/uboone/Simulation/simulationservices_microboone.fcl
 
     <option name="diffusion" value="true" type="boolean"
         desc="model diffusion effects"/>

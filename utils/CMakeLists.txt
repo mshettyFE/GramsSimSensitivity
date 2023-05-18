@@ -40,6 +40,17 @@ add_library (${ReadRootLib} SHARED ${ReadRootSrc})
 target_link_libraries(${ReadRootLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}ReadRoot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Create ReconstructUtils library
+file(GLOB ReconstructSrc src/ReconstructUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/util/src/ReconstructUtils.cpp
+    )
+
+set(ReconstructLib ${CMAKE_PROJECT_NAME}ReconstructUtils)
+add_library (${ReconstructLib} SHARED ${ReconstructSrc})
+
+target_link_libraries(${ReconstructLib} ${ROOT_LIBRARIES} )
+target_include_directories (${CMAKE_PROJECT_NAME}ReconstructUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Create Extract Executable to be used in Effective  Area Calculation and Condor Generation
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
@@ -53,15 +64,16 @@ target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}Extract )
 target_link_libraries(${PROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 # Put Extract file in SenseJob location at 3 locations
-
 set_target_properties( ${PROG} 
    PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
    "${CMAKE_BINARY_DIR}/BackgroundRecon/SenseJob" 
    )
+
 set_target_properties( ${PROG} 
    PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
    "${CMAKE_BINARY_DIR}/SourceRecon/SenseJob" 
    )
+
 set_target_properties( ${PROG} 
    PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
    "${CMAKE_BINARY_DIR}/EffArea/SenseJob" 
@@ -70,10 +82,21 @@ set_target_properties( ${PROG}
 # Create Reconstruction Executable 
 set (PROG2 "Reconstruct${EXE}")
 add_executable(${PROG2} Reconstruct.cpp)
-# Specify location of linked libraries
-#target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}SenseUtilities )
-#target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}Extract )
+## Specify location of linked libraries
+target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}ReadRoot )
+target_link_libraries(${PROG2} ${CMAKE_PROJECT_NAME}ReconstructUtils )
+
+# Put Reconstruct file in SenseJob location at 2 locations
+set_target_properties( ${PROG2} 
+   PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
+   "${CMAKE_BINARY_DIR}/BackgroundRecon/SenseJob" 
+   )
+
+#set_target_properties( ${PROG2} 
+   PROPERTIES RUNTIME_OUTPUT_DIRECTORY 
+   "${CMAKE_BINARY_DIR}/SourceRecon/SenseJob" 
+   )
 
 # Copy GenEnergySpectrum.py over to utils
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/GenEnergySpectrum.py)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
