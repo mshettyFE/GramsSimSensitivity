@@ -150,7 +150,6 @@ void Reconstruction(std::map<std::tuple<int,int>, std::vector<std::tuple<double,
     EventNumber = std::get<1>(id);
     auto Events = (*Series).second;
     std::string EscapeType = std::get<10>(Events[0]);
-    std::cout << EscapeType << std::endl;
     if(EscapeType=="AllIn"){
         escape=0;
     }

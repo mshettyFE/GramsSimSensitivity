@@ -1,8 +1,5 @@
-#ifndef EffAreaScripts
-#define EffAreaScripts 1
+#include "EffArea.h"
 
-int gen_EffArea_macros();
-int gen_EffArea_sh();
-int gen_EffArea_cmd();
-
-#endif
+int gen_EffArea_macros(){return 0;};
+int gen_EffArea_sh(){return 0;};
+int gen_EffArea_cmd(){return 0;};

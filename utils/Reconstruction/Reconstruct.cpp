@@ -15,7 +15,7 @@ int main(int argc, char** argv){
   // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
 
     auto options = util::Options::GetInstance();
-    auto result = options->ParseOptions(argc, argv, "Extract");
+    auto result = options->ParseOptions(argc, argv, "Reconstruct");
 
     // Abort if we couldn't parse the job options.
     if (!(result)){
