@@ -104,6 +104,7 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
         return false;
       }
     }
+    
   if(SeriesType=="Escape"){
     if(series.size()<4){
       return false;
@@ -118,6 +119,7 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
     std::cerr << "Invalid Series Type" << std::endl;
     return false;
   }
+
   if(FilterType=="Standard"){
     // No additional filters
     return true;

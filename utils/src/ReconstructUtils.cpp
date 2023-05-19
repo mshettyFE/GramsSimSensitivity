@@ -159,6 +159,7 @@ void Reconstruction(std::map<std::tuple<int,int>, std::vector<std::tuple<double,
     else{
         continue;
     }
+  
   // Define Adjacent Distances and Kinetic Energies
     std::vector<std::tuple<double,double,double>> AdjacentDist;
     std::vector<double> KEs;
