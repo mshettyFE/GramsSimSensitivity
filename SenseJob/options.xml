@@ -100,6 +100,15 @@
         <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
         This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the source was isotropic-->
     </Reconstruct>
+Output BackgroundFileName RA_bins ALT_bins NPts
+    <GenSkyMap>
+        <option name="Plot" short="p" type="flag" desc="Plot 2D Histogram"></option>
+        <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
+        <option name="Output" value="SkyMap.root" short='0' type="string" desc="Output root file containing TH2D of SkyMap"></option>
+        <option name="RABins" value="500.0" type="double" desc="Number of bins in RA axis. Rounded Down"></option>
+        <option name="ALTBins" value="300.0" type="double" desc="Number of bins in ALT axis. Rounded Down"></option>
+        <option name="NPts" value="1000.0" short='N' type="double" desc="Number of Points generated for each cone. Rounded Down"></option>
+    </GenSkyMap>
 
   <gramssky>
 

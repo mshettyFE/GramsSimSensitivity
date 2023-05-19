@@ -136,6 +136,7 @@ void Reconstruction(std::map<std::tuple<int,int>, std::vector<std::tuple<double,
   tree->Branch("zTip",&zTip,"zTip/D");
     // Define the reconstruction Angle of the cone
   tree->Branch("RecoAngle",&ReconstructionAngle,"RecoAngle/D");
+  tree->Branch("ARM",&ARM_val,"ARM/D");
     // Define the reconstructed energies and true original energy of gamma ray
   tree->Branch("RecoEnergy",&RecoEnergy,"RecoEnergy/D");
   tree->Branch("TruthEnergy",&TruthEnergy,"TruthEnergy/D");

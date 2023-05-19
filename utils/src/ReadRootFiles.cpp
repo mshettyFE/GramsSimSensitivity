@@ -2,7 +2,7 @@
 #include <ROOT/RDataFrame.hxx>
 #include <TFile.h>
 #include <TTree.h>
-
+#include <TChain.h>
 
 // The C++ includes.
 #include <vector>
@@ -136,6 +136,24 @@ void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<doubl
 
 }
 
+void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double> > Mapping){
+  // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle>,  ...>
+  for ( auto i = Mapping.begin(); i != Mapping.end(); ++i ){
+    auto key = (*i).first;
+    auto event = (*i).second;
+    std::cout << " run=" << std::get<0>(key) << " event= " << std::get<1>(key) << std::endl; 
+      std::cout <<'\t'
+      << " xDir = " << std::get<0>(event)
+      << " yDir = " << std::get<1>(event)
+      << " zDir = " << std::get<2>(event)
+      << " xTip = " << std::get<3>(event)
+      << " yTip = " << std::get<4>(event)
+      << " zTip = " << std::get<5>(event)
+      << " RecoAngle = " << std::get<6>(event)
+      << std::endl;
+  }
+}
+
 std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > ReadGramsDetSim(std::string GramsDetSimFileName,bool verbose){
   // DetSim Leafs
   /*
@@ -229,6 +247,39 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double
   {"Run", "Event", "energy","t","x","y","z","tDet","xDet","yDet","zDet", "DetEnergy","SeriesType"} );
   if(verbose){
     print_ExtractMap(Output);
+  }
+  return Output;
+}
+
+std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double>> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose){
+  // Format of Extracted output
+  // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle>,  ...>
+
+  ROOT::RDataFrame Series( "Cones", ReconstructName, {"Run", "Event","EventType",
+   "xDir","yDir","zDir",
+   "xTip","yTip","zTip",
+   "RecoAngle","ARM","RecoEnergy","TruthEnergy"
+   } );
+
+  std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double>> Output;
+
+  Series.Foreach(
+  // Shove data into map depending on series type
+  [&Output](int run, int event, int eventType, double xDir, double yDir, double zDir,
+  double xTip, double yTip, double zTip, double RecoAngle, double ARM, double RecoEnergy, double TruthEnergy)
+  {
+    std::tuple<int,int> key = std::make_tuple(run,event);
+    std::tuple<double,double,double,double,double,double,double> observables;
+    observables = std::make_tuple(xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle);
+    auto pair = std::make_pair(key,observables);
+    Output.insert(pair);
+  },
+  {"Run", "Event","EventType",
+   "xDir","yDir","zDir",
+   "xTip","yTip","zTip",
+   "RecoAngle","ARM","RecoEnergy","TruthEnergy"} );
+  if(verbose){
+    print_ReconstructDataFromSkyMap(Output);
   }
   return Output;
 }

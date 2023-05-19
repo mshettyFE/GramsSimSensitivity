@@ -61,7 +61,6 @@ int main(int argc, char** argv){
   // Fill tree with Reconstructed Cone Data
   Reconstruction(Series,tree,truthLoc);
   // Write TTree to File
-  std::cout << tree->GetEntries() << std::endl;
   tree->Write();
   // Clean Up
   delete tree;

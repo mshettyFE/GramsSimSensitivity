@@ -30,6 +30,10 @@ include(cmake/ROOT.cmake)
 # Find Xerces-C XML parser for utils
 find_package (XercesC REQUIRED)
 
+# Find Eigen library for GenSkyMapUtils
+find_package(Eigen3 REQUIRED)
+link_directories(${Eigen_INCLUDE_DIRS})
+
 # Set the rpath so that the executables can find the libraries
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")

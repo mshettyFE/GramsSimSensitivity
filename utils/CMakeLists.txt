@@ -51,9 +51,22 @@ add_library (${ReconstructLib} SHARED ${ReconstructSrc})
 target_link_libraries(${ReconstructLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}ReconstructUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Create GenSkyMapUtils library
+file(GLOB GenSkyMapSrc src/GenSkyMapUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/util/src/GenSkyMapUtils.cpp
+    )
+
+set(GenSkyMapLib ${CMAKE_PROJECT_NAME}GenSkyMapUtils)
+add_library (${GenSkyMapLib} SHARED ${GenSkyMapSrc})
+
+target_link_libraries(${GenSkyMapLib} ${ROOT_LIBRARIES} )
+target_link_libraries(${GenSkyMapLib} ${Eigen_LIBRARIES} )
+target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Copy GenEnergySpectrum.py over to utils
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
+add_subdirectory(GenSkyMap)
