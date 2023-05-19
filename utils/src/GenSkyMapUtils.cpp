@@ -1,5 +1,5 @@
-#include <TH2D.h>
-#include <TCanvas.h>
+#include "TH2D.h"
+#include "TCanvas.h"
 
 #include<cstring>
 #include<cmath>
@@ -115,7 +115,7 @@ int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
 TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
 double sphere_rad=600,std::string title = "Reconstructed Sky Map"){
     double pi = acos(-1);
-    TH2D Seed = TH2D("SkyMap","Temp",RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
+    TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
     for(auto i=ConeData.begin(); i!= ConeData.end(); ++i){
       TH2D AddOn = ConeToSkyMap(i->second,RA_Bins,ALT_Bins,NPts, sphere_rad, title);
       Seed.Add(&AddOn);

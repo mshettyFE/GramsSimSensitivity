@@ -1,7 +1,7 @@
 #ifndef GenSkyMap
 #define GenSkyMap 1
 
-#include <TH2D.h>
+#include "TH2D.h"
 
 #include "eigen3/Eigen/Dense"
 

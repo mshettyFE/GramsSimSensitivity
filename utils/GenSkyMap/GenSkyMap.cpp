@@ -2,7 +2,7 @@
 #include "ReadRootFiles.h"
 #include "GenSkyMapUtils.h"
 
-#include <TH2D.h>
+#include "TH2D.h"
 
 #include <iostream>
 #include <cmath>
@@ -78,6 +78,8 @@ int main(int argc, char** argv){
     std::cout << ConeData.size() << std::endl;
     double pi = acos(-1);
     TH2D Seed = MultipleConesToSkyMap(ConeData,RABins,ALTBins,NPts);
-    SaveImage(Seed);
+    if(plot){
+      SaveImage(Seed);
+    }
     return 0;
 }

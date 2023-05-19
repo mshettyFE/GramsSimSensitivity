@@ -2,9 +2,9 @@
 #define ReadROOTFiles 1
 
 #include <vector>
-#include<map>
-#include<string>
-#include<tuple>
+#include <map>
+#include <string>
+#include <tuple>
 
 // Reads in GramsG4 Output
 // Format of map

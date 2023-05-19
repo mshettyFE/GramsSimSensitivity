@@ -1,9 +1,8 @@
 // Define the ROOT includes.
-#include <ROOT/RDataFrame.hxx>
-#include <TFile.h>
-#include <TTree.h>
-#include <TH3D.h>
-
+#include "ROOT/RDataFrame.hxx"
+#include "TFile.h"
+#include "TTree.h"
+#include "TH3D.h"
 
 // The C++ includes.
 #include <vector>
