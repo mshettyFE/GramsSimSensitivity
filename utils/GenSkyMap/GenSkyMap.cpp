@@ -77,11 +77,7 @@ int main(int argc, char** argv){
     ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
     std::cout << ConeData.size() << std::endl;
     double pi = acos(-1);
-    TH2D Seed = TH2D("SkyMap","Temp",RABins, -pi, pi, ALTBins, -pi/2.0, pi/2.0);
-    for(auto i=ConeData.begin(); i!= ConeData.end(); ++i){
-      TH2D AddOn = ConeToSkyMap(i->second,RABins,ALTBins,NPts);
-      Seed.Add(&AddOn);
-    }
+    TH2D Seed = MultipleConesToSkyMap(ConeData,RABins,ALTBins,NPts);
     SaveImage(Seed);
     return 0;
 }
