@@ -3,6 +3,9 @@
 # Specify minimum cmake version and terminate if not fulfilled
 cmake_minimum_required(VERSION 3.6 FATAL_ERROR)
 
+# Set C++ Standard to C++17 to enable use of filesystem
+set (CMAKE_CXX_STANDARD 17)
+
 project(GramsSensitivity)
 
 # Check for Mac OS X Darwin
@@ -38,9 +41,21 @@ link_directories(${Eigen_INCLUDE_DIRS})
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
-# Copy over SenseJob containing compiled GramsSim programs to EffArea and GenerateCondor
+# Copy over SenseJob containing compiled GramsSim programs to EffArea, BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+
+# Copy over GenCondorScripts.py to EffArea, BackgroundRecon and SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+
+# Copy over Commands.txt to EffArea, BackgroundRecon and SourceRecon
+# Copy over SkyMapCommands.txt to BackgroundRecon
+file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/SkyMapCommands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/EffArea/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 
 add_subdirectory(utils)

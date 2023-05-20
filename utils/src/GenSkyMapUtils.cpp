@@ -40,6 +40,38 @@ Eigen::Vector3d CalcPerp(Eigen::Vector3d Axis){
   return Output;
 }
 
+Eigen::Matrix3d CreateRotMat(Eigen::Vector3d Axis ,int NPts){
+  Eigen::Matrix3d RotationMat;
+  // Define cos_theta to be what angle you rotate the Current vector around the axis
+  // We discretize 2pi into N segments
+  double pi = acos(-1);
+  double arg  = 2.0*pi/(double) NPts;
+  double cos_theta = cos(arg);
+  double sin_theta = sin(arg);
+  double subtracted_cos = 1-cos_theta;
+  // https://en.wikipedia.org/wiki/Rotation_matrix under section Rotation Matrix from axis and angle
+  RotationMat << cos_theta+Axis(0)*Axis(0)*subtracted_cos, Axis(0)*Axis(1)*subtracted_cos-Axis(2)*sin_theta, Axis(0)*Axis(2)*subtracted_cos+Axis(1)*sin_theta,
+  Axis(1)*Axis(0)*subtracted_cos+Axis(2)*sin_theta, cos_theta+Axis(1)*Axis(1)*subtracted_cos, Axis(1)*Axis(2)*subtracted_cos-Axis(0)*sin_theta,
+  Axis(2)*Axis(0)*subtracted_cos-Axis(1)*sin_theta, Axis(2)*Axis(1)*subtracted_cos+Axis(0)*sin_theta, cos_theta+Axis(2)*Axis(2)*subtracted_cos;
+  return RotationMat;
+}
+
+Eigen::Vector3d Project( Eigen::Vector3d Current, Eigen::Vector3d Tip,double sphere_rad){
+    // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+    // Assuming that Current remains normal overtime, we need to project all the rays onto the same sphere for accurate comparison
+    // Let vec{D} be the surface vector on the cone, vec{P} be the first interaction point and R be the radius of a sphere that encompasses the detector (default 6000)
+    // We  write the surface vector as r(t) = Dt+P. We want to find t such that |r(t)|^2 = R^2. This reduces to solving a quadratic equation
+    // t = (-b+-sqrt(b^2-4ac))/2a. a = |D|^2 b = 2 \vec{P} dot \vec{D} and c = |P|^{2}-R^2.
+    // Since D is normalized (hopefully) and we want the forward extension, this means that t = -b/2+sqrt(b^2/4-c)
+    double c = Tip.dot(Tip)-sphere_rad*sphere_rad;
+    double b= 2*Current.dot(Tip);
+    double t = -b/2.0 + sqrt(b*b/4.0-c);
+    Eigen::Vector3d Proj = Tip+t*Current;
+    // We normalize the projected vector since we only care about the RA and ALT of the vector, hence normalizing makes these calcs easier
+    Proj.normalize();
+    return Proj;
+}
+
 TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double> &Cone, 
 int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
   // Tip of cone where all surface vector eminate from
@@ -70,64 +102,44 @@ int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
     Current.normalize();
 
   double initial_dot = Current.dot(Axis);
-  // Define cos_theta to be what angle you rotate the Current vector around the axis
-  // We discretize 2pi into N segments
-  double arg  = 2.0*pi/(double) NPts;
-  double cos_theta = cos(arg);
-  double sin_theta = sin(arg);
-  double subtracted_cos = 1-cos_theta;
-  // https://en.wikipedia.org/wiki/Rotation_matrix under section Rotation Matrix from axis and angle
-  Eigen::Matrix3d Rot;
-  Rot << cos_theta+xDir*xDir*subtracted_cos, xDir*yDir*subtracted_cos-zDir*sin_theta, xDir*zDir*subtracted_cos+yDir*sin_theta,
-  yDir*xDir*subtracted_cos+zDir*sin_theta, cos_theta+yDir*yDir*subtracted_cos, yDir*zDir*subtracted_cos-xDir*sin_theta,
-  zDir*xDir*subtracted_cos-yDir*sin_theta, zDir*yDir*subtracted_cos+xDir*sin_theta, cos_theta+zDir*zDir*subtracted_cos;
+  Eigen::Matrix3d Rot = CreateRotMat(Axis,NPts);
   for(int pt=0; pt<NPts; ++pt){
     Current = Rot*Current;
-    // Check to make sure that we remain on the cone (the dot produce should not change)
-    //    std::cout << initial_dot << '\t' << Current.dot(Axis) << std::endl;
-    //    getchar();
-    // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
-    // Assuming that Current remains normal overtime, we need to project all the rays onto the same sphere for accurate comparison
-    // Let vec{D} be the surface vector on the cone, vec{P} be the first interaction point and R be the radius of a sphere that encompasses the detector (default 6000)
-    // We  write the surface vector as r(t) = Dt+P. We want to find t such that |r(t)|^2 = R^2. This reduces to solving a quadratic equation
-    // t = (-b+-sqrt(b^2-4ac))/2a. a = |D|^2 b = 2 \vec{P} dot \vec{D} and c = |P|^{2}-R^2.
-    // Since D is normalized (hopefully) and we want the forward extension, this means that t = -b/2+sqrt(b^2/4-c)
-    double c = Tip.dot(Tip)-sphere_rad*sphere_rad;
-    double b= 2*Current.dot(Tip);
-    double t = -b/2.0 + sqrt(b*b/4.0-c);
-    Eigen::Vector3d Proj = Tip+t*Current;
-    double norm = sqrt(Proj.dot(Proj));
-    Proj = Proj/norm;
+    Eigen::Vector3d Proj = Project(Current,Tip,sphere_rad); 
   //    std::cout << Proj.dot(Proj) << '\t' << sphere_rad*sphere_rad <<  std::endl;
     double RA_val = atan2(Proj(1),Proj(0));
     double ALT_val = asin(Proj(2));
   //    std::cout <<pt << '\t' <<Proj(0) << '\t'<<Proj(1) << '\t'<< Proj(2) << '\t' << RA_val << '\t' << ALT_val << std::endl;
-
     int bin_num = SkyMap.FindBin(RA_val,ALT_val);
     if (SkyMap.GetBinContent(bin_num)<=0){
         SkyMap.SetBinContent(bin_num,1);
-    }
- 
+    } 
   }
   return SkyMap;
 }
 
 TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
 double sphere_rad=600,std::string title = "Reconstructed Sky Map"){
-    double pi = acos(-1);
-    TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
-    for(auto i=ConeData.begin(); i!= ConeData.end(); ++i){
-      TH2D AddOn = ConeToSkyMap(i->second,RA_Bins,ALT_Bins,NPts, sphere_rad, title);
-      Seed.Add(&AddOn);
-    }
-    return Seed;
+  // Define pi
+  double pi = acos(-1);
+  // Create empty skymap with correct binning
+  TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
+  // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
+  for(auto i=ConeData.begin(); i!= ConeData.end(); ++i){
+    TH2D AddOn = ConeToSkyMap(i->second,RA_Bins,ALT_Bins,NPts, sphere_rad, title);
+    Seed.Add(&AddOn);
+  }
+  return Seed;
 }
 
 
 void SaveImage(TH2D &SkyMap,std::string pic_name){
-        TCanvas *c1 = new TCanvas();
-        SkyMap.SetStats(0);
-        SkyMap.Draw("colz");
-        c1->SaveAs(pic_name.c_str());
-        delete c1;
+  // Create a canvas
+  TCanvas *c1 = new TCanvas();
+  // Remove statistics from image
+  SkyMap.SetStats(0);
+  // Draw Sky map as with z axis in color
+  SkyMap.Draw("colz");
+  c1->SaveAs(pic_name.c_str());
+  delete c1;
 }
