@@ -17,6 +17,10 @@ add_custom_command(TARGET ${RECONPROG}
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/SourceRecon/SenseJob)
 
+add_custom_command(TARGET ${RECONPROG} 
+                   POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/EffArea/SenseJob)
+
 # Remove Reconstruction executable from current directory
 add_custom_command(TARGET ${RECONPROG}
                     POST_BUILD 

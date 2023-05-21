@@ -68,3 +68,4 @@ file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/SkyMapCommands.txt DESTINATION ${
 file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 add_subdirectory(utils)
+add_subdirectory(EffArea)

@@ -11,7 +11,7 @@ target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}Extract )
 target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 
-# Copy over Reconstruction executable to BackgroundRecon, SourceRecon
+# Copy over Extraction executable to BackgroundRecon, SourceRecon
 
 add_custom_command(TARGET ${EXTRACTPROG} 
                    POST_BUILD
