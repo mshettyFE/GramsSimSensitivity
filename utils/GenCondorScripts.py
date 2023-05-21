@@ -111,8 +111,11 @@ if __name__=="__main__":
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(events_per_batch)+'\n')
     if(args.macros):
-        ## Clean batch directory of any prior mac files by erasing directory, and then recreating directory
-        subprocess.run(["rm", "-rf", "SenseJob/mac/batch"]) 
+        ## Clean batch directory of any prior mac files
+        ## Create an empty directory, use rsync to sync batch to empty directory, delete empty directory and batch, then recreate batch
+        subprocess.run(["mkdir","empty"])
+        subprocess.run(["rsync", "-a", "--delete", "empty" , "SenseJob/mac/batch"]) 
+        subprocess.run(["rm", "-rf", "empty", "SenseJob/mac/batch"])
         subprocess.run(["mkdir", "SenseJob/mac/batch"]) 
         ## CD to batch folder
         os.chdir("SenseJob/mac/batch")
