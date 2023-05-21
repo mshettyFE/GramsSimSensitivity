@@ -43,6 +43,11 @@ set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/SenseJob/mac/batch)
 
+# Copy over Command files to EffArea
+file( COPY ${CMAKE_SOURCE_DIR}/EffArea/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+file( COPY ${CMAKE_SOURCE_DIR}/EffArea/CommandsSphere.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+file( COPY ${CMAKE_SOURCE_DIR}/EffArea/CommandsUnique.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+
 # Copy over SenseJob containing compiled GramsSim programs to EffArea, BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
