@@ -34,13 +34,14 @@ if __name__=="__main__":
     shell_script_name = args.Process_name+".sh"
     cmd_script_name = args.Process_name+".cmd"
     macrofile_name = args.Process_name+".mac"
+    tar_name = "SenseJob"+args.Process_name+".tar.gz"
     condor_output_name = args.Process_name+"_$(Process).out"
     condor_error_name = args.Process_name+"_$(Process).err"
     condor_log_name = args.Process_name+"_$(Process).log"
     ## We need out current working directory for later...
     home = os.getcwd()
     shell_path = os.path.join(home,shell_script_name)
-    tar_path = os.path.join(home,"SenseJob.tar.gz")
+    tar_path = os.path.join(home,tar_name)
     macrofile_path = os.path.join(home,"SenseJob","mac",macrofile_name)
     # Validate batch macro parameters
     if(args.macros):
@@ -129,4 +130,4 @@ if __name__=="__main__":
                 f.write("/run/beamOn "+str(args.n_batches)+"\n")
     ## Return home so that we can create a tarball out of SenseJob
     os.chdir(home)
-    subprocess.run(["tar", "-czf", "SenseJob.tar.gz", "SenseJob/"]) 
+    subprocess.run(["tar", "-czf", tar_name, "SenseJob/"]) 
