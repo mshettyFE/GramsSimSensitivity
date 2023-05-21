@@ -87,7 +87,7 @@ if __name__=="__main__":
         f.write("export G4NEUTRONHPDATA=/usr/local/share/Geant4-10.5.1/data/G4NDL4.5\n")
         f.write("source /usr/nevis/adm/nevis-init.sh\n")
         f.write("module load cmake root geant4 hepmc3 healpix\n")
-        f.write("tar -xzf SenseJob.tar.gz\n")
+        f.write("tar -xzf "+tar_name+"\n")
         f.write("cd SenseJob\n")
         ## Write the additional commands
         f.write(commands)
