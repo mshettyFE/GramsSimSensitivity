@@ -110,8 +110,11 @@ if __name__=="__main__":
     with open(macrofile_path,'w') as f:
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(events_per_batch)+'\n')
-    os.chdir("SenseJob/mac/batch")
     if(args.macros):
+        ## Clean batch directory of any prior mac files
+        subprocess.run(["rm", "-f", "SenseJob/mac/batch/*"]) 
+        ## CD to batch folder
+        os.chdir("SenseJob/mac/batch")
         ## For each energy, we create a macro that produces isotropic, monoenergetic gamma rays aimed at the detector center.
         ## This is difficult to replicate with gramssky, hence why this is here
         for i in range(args.n_batches):
