@@ -41,6 +41,8 @@ link_directories(${Eigen_INCLUDE_DIRS})
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
+file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/SenseJob/mac/batch)
+
 # Copy over SenseJob containing compiled GramsSim programs to EffArea, BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
