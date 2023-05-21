@@ -1,5 +1,5 @@
-./gramsg4 -g ThinGrams.gdml -s ${process} -r ${process} -o EffA_${process} -m mac/batch/Mono${process}.mac
+./gramsg4 -g ThinGrams.gdml -s ${process} -r ${process} -o EffA_${process} -m mac/EffA_${process}.mac
 ./gramsdetsim -i EffA_${process}.root -s ${process} -o EffA_Det_${process}.root
-./Extract EffA_${process}.root EffA_Det_${process}.root EffA_Extracted_${process}.root
+./Extract --GramsG4Name EffA_${process}.root --GramsDetSimName EffA_Det_${process}.root -o EffA_Extracted_${process}.root
 cp EffA_Extracted_${process}.root ..
 cd ..
