@@ -48,6 +48,9 @@ file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/Backgrou
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 
+# Copy over options.xml to EffArea
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+
 # Copy over GenCondorScripts.py to EffArea, BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
@@ -58,6 +61,5 @@ file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BIN
 file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/SkyMapCommands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/EffArea/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 
 add_subdirectory(utils)

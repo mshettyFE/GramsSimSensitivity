@@ -110,6 +110,12 @@ Output BackgroundFileName RA_bins ALT_bins NPts
         <option name="NPts" value="1000.0" short='N' type="double" desc="Number of Points generated for each cone. Rounded Down"></option>
     </GenSkyMap>
 
+    <CalcEffArea>
+        <option name="start_folder" short="p" desc="Folder where root files from condor output are stored at"></option>
+        <option name="base_name" short="b" desc="base_name of root files in folder. Ex. Ext_0.root as a base_name of Ext_"></option>
+        <option name="TotalEvents" short="n" type="integer" desc="The number of events assigned to each batch (ie. events_per_batch)"></option>        
+    </CalcEffArea>
+
   <gramssky>
 
     <!-- Number of sky events to generate -->

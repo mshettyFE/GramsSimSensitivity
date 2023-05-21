@@ -111,8 +111,9 @@ if __name__=="__main__":
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(events_per_batch)+'\n')
     if(args.macros):
-        ## Clean batch directory of any prior mac files
-        subprocess.run(["rm", "-f", "SenseJob/mac/batch/*"]) 
+        ## Clean batch directory of any prior mac files by erasing directory, and then recreating directory
+        subprocess.run(["rm", "-rf", "SenseJob/mac/batch"]) 
+        subprocess.run(["mkdir", "SenseJob/mac/batch"]) 
         ## CD to batch folder
         os.chdir("SenseJob/mac/batch")
         ## For each energy, we create a macro that produces isotropic, monoenergetic gamma rays aimed at the detector center.
