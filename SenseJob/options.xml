@@ -113,7 +113,7 @@ Output BackgroundFileName RA_bins ALT_bins NPts
     <CalcEffArea>
         <option name="start_folder" short="p" type="string"  value="" desc="Folder where root files from condor output are stored at"></option>
         <option name="base_name" short="b" type="string" value="" desc="base_name of root files in folder. Ex. Ext_0.root as a base_name of Ext_"></option>
-        <option name="tree_name" type="string" value="FilteredSeries" desc="Name of TTree in EffArea root files"></option>
+        <option name="tree_name" type="string" value="Cones" desc="Name of TTree in EffArea root files"></option>
         <option name="TotalEvents" short="n" type="integer" value="100000" desc="The number of events assigned to each batch (ie. events_per_batch)"></option>
         <option name="TotalBatches" type="integer" value="10000" desc="The number of batches run"></option>
         <option name="FileType" short="f" type="string" value=".txt" desc="Output type of file (currently .txt or .root.)"></option>

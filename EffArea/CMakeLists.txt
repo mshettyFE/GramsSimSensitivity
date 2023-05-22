@@ -11,7 +11,6 @@ set(CalcEffAreaLib ${CMAKE_PROJECT_NAME}CalcEffAreaFuncs)
 add_library (${CalcEffAreaLib} SHARED ${CalcEffAreaFuncSrc})
 
 target_link_libraries(${CalcEffAreaLib} ${ROOT_LIBRARIES} )
-target_link_libraries(${CalcEffAreaLib} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 target_include_directories (${CMAKE_PROJECT_NAME}CalcEffAreaFuncs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

@@ -42,11 +42,11 @@ int main(int argc, char** argv){
     return -1;
   }
   else{
-    if(StartPath==""){
+    if(StartPath.size()==0){
       std::cerr << "You need to provide a path to the directory containing the root files" << std::endl;
       return -1;
     }
-    if(base_name==""){
+    if(base_name.size()==0){
       std::cerr << "You need to provide a non-empty base_name" << std::endl;
       return -1;
     }
@@ -96,14 +96,18 @@ int main(int argc, char** argv){
     return -1;
   }
 
-  std::string current_path = gen_path(StartPath,base_name,10);
   auto mapping = ExtractEffArea(StartPath, base_name, tree_name, NBatches, NEvents,verbose);
 
-/*
-  for(auto i=mapping.begin(); i!=mapping.end(); ++i){
-    std::cout << (*i).first << '\t' << (*i).second << std::endl;
+  if(FileTypeName== ".txt"){
+    WriteToText(OutputName,mapping);
   }
-*/
+  else if(FileTypeName==".root"){
+    WriteToROOT(OutputName,mapping);
+  }
+  else{
+    std::cerr << "Something went horribly wrong with writing out EffArea to file" << std::endl;
+  }
+
 
   return 0;
 }
