@@ -133,7 +133,7 @@ if __name__=="__main__":
                 f.write("/gps/pos/centre 0 0 "+str(args.Zcenter)+" cm\n")
                 f.write("/gps/ang/type focused\n")
                 f.write("/gps/ang/focuspoint 0 0 "+str(args.Zcenter)+" cm\n")
-                f.write("/run/beamOn "+str(args.n_batches)+"\n")
+                f.write("/run/beamOn "+str(events_per_batch)+"\n")
     ## Return home so that we can create a tarball out of SenseJob
     os.chdir(home)
     subprocess.run(["tar", "-czf", tar_name, "SenseJob/"]) 
