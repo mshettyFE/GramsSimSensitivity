@@ -83,6 +83,10 @@ if __name__=="__main__":
         f.write("n_batches="+str(args.n_batches)+'\n')
         f.write("total_events="+str(args.n_events)+'\n')
         f.write("event_per_batch="+str(events_per_batch)+'\n')
+        if(args.macros):
+            f.write("minE="+str(args.minE)+'\n')
+            f.write("maxE="+str(args.maxE)+'\n')
+            f.write("BatchPath=mac/batch/"+args.BatchMacroName+"${process}.mac\n")
         f.write("export PATH=/sbin:/usr/sbin:/bin:/usr/bin\n")
         f.write("export G4NEUTRONHPDATA=/usr/local/share/Geant4-10.5.1/data/G4NDL4.5\n")
         f.write("source /usr/nevis/adm/nevis-init.sh\n")

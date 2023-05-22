@@ -74,9 +74,9 @@ if __name__ == "__main__":
     EnergyCenters = [EnergyHist.GetBinCenter(i) for i in range(args.NumDiv)]
 ## Need to modify the following line if you have a different function
 # Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
-#    output = [BrokenPowerLaw(energy,args.Scale,Eref=3,Gamma1=3.3,Gamma2=2) for energy in EnergyCenters]
+    output = [BrokenPowerLaw(energy,args.Scale,Eref=3,Gamma1=3.3,Gamma2=2) for energy in EnergyCenters]
 # Standard LogUniform distribution (ie. equal probabilities amoungst log bins)
-    output = [LogUniform(energy,a=args.minE,b=args.maxE) for energy in EnergyCenters]    
+#    output = [LogUniform(energy,a=args.minE,b=args.maxE) for energy in EnergyCenters]    
 ## Fills output histogram with flux function by filling each bin weighted by the function
     for i in range(len(output)):
         EnergyHist.Fill(EnergyCenters[i],output[i])
