@@ -4,3 +4,5 @@
 ./Reconstruct -i EffA_Extracted_${process}.root -o EffA_Reco_${process}.root --SourceType Iso 
 cp EffA_Reco_${process}.root ..
 cd ..
+rm -rf SenseJob
+
