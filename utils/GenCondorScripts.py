@@ -83,6 +83,7 @@ if __name__=="__main__":
         f.write("n_batches="+str(args.n_batches)+'\n')
         f.write("total_events="+str(args.n_events)+'\n')
         f.write("event_per_batch="+str(events_per_batch)+'\n')
+        f.write("mac_path=/mac/"+macrofile_name+'\n')
         if(args.macros):
             f.write("minE="+str(args.minE)+'\n')
             f.write("maxE="+str(args.maxE)+'\n')

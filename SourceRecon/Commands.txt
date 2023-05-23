@@ -1,0 +1,8 @@
+./gramssky -o SourceEvents.hepmc3  --RadiusSphere 300 --PositionGeneration Iso --PhiMinMax "(-3.14159,3.14159)" --ThetaMinMax "(0,3.14159265)" --EnergyMin 0.1 --EnergyMax 10.0 -n ${event_per_batch} -s ${process} -r ${process}  --OriginSphere "(0,0,-40.0 )"  --EnergyGeneration Fixed --FixedEnergy 0.1
+./gramsg4 -g ThinGrams.gdml -i BackEvents.hepmc3  -s ${process} -r ${process} -o Background_${process} -m ${mac_path}
+./gramsdetsim -i Back_${process}.root -s ${process} -o Back_Det_${process}.root
+./Extract --GramsG4Name Back_${process}.root --GramsDetSimName Back_Det_${process}.root -o Back_Extracted_${process}.root
+./Reconstruct -i Back_Extracted_${process}.root -o Back_Reco_${process}.root --SourceType Iso 
+cp Back_Reco_${process}.root ..
+cp Back_Extracted_${process}.root ..
+cd ..
