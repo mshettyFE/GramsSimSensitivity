@@ -55,6 +55,71 @@
 
   </global>
 
+    <Extract>
+        <option name="GramsG4Name" value="Source.root" type="string" desc="Name of Input GramsG4 File">
+        </option>
+        <option name="GramsDetSimName" value="SourceDet.root" type="string" desc="Name of input GramsDetSim file that was generated from GramsG4 file">
+        </option>
+        <option name="ExtractOutput" short="o" value="ExtractedSource.root" type="string" desc="Output of ExtractComptons">
+        </option>
+        <option name="Filter" short="f" value="Standard" type="string" desc="How to filter each event">
+            Possible values:
+                - Standard. Self explainatory. You do the standard selection criterion (at least 2 Compton scatters inside the TPC)
+                - UniqueCells. Add on the constraint that each scatter must occur in a unique cell.
+                - Sphere. Use constraint that each scatter must be at least x cm apart.
+        </option>
+        <!-- For all of these dimensionful variables, the units will be the same as specified in global. Defaults to cm.-->
+        <!-- Internally, converts all dimensions to cm (so if you specify "mm" as the length scale, all values are divided by 10)-->
+        <option name="Dimensions" value="(70,70,80)" type="vector" desc="Dimensions of LArTPC (x,y,z)">
+            Holds the dimensions of the LArTPC. Used in the unique cell calculation of Filter. Kind of repeats information found in 
+            the .gdml file, but I didn't want to try to parse that file to extract the dimensions of the TPC. Please, make sure
+            that the values you input here are consistent with the values in your gdml file.
+        </option>
+        <option name="Binnings" value="(7,7,8)" type="vector" desc="Size of a cell in each direction">
+            The number of optically isolated cells along each dimension. The same caveat that held for Dimensions holds here.
+            (ie. make sure whatever you put here is consistent with the .gdml file).
+            For instance, if you have a seperation of 10 between each optical isolation sheet along each dimension,
+            and your dimensions are 70,70,80, then your binnings are 7,7,8.
+            Please make sure that you input integers for the binnings and that you're binnings for each dimension is greater than 1.
+        </option>
+        <option name="Seperation" value="10" type="double" desc="Seperation between adjacent scatters. Used in Sphere option of Filter">
+            Stipulated the minimum seperation between Compton scatters to be a valid series. Needs Filter to be set to Sphere
+            (since this seperation creates a sphere of exclusion).
+        </option>
+    </Extract>
+
+    <Reconstruct>
+        <option name="Input" value="ExtractedSource.root" short='i' type="string" desc="Input root file from Extract.cpp program"></option>
+        <option name="SourceType" value="Iso" type="string" desc="Type of input source. Either 'Iso' or 'Point'"></option>
+        <option name="SourceLoc" value="(0,90)" type="vector" desc="Right Ascension and Altitude coordinates of source. See options.xml for details"></option>
+        <!-- Right Ascension (RA) refers to the angle you make with the x axis in a CCW manner.
+         Altitude (ALT) refers to the angle you make moving up from the equator to your point.
+         So for instance, you you wanted your source along the y-axis 45 degrees above the equator, you input (90,45).
+         Defaults to source directly from the zenith aimed at the north pole.-->
+        <option name="Output" value="ReconstructedSource.root" short='o' type="string" desc="Output Root file containing cone data and ARM. Defaults to 2*pi for isotropic"></option>
+        <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
+        This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the source was isotropic-->
+    </Reconstruct>
+Output BackgroundFileName RA_bins ALT_bins NPts
+    <GenSkyMap>
+        <option name="Plot" short="p" type="flag" desc="Plot 2D Histogram"></option>
+        <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
+        <option name="Output" value="SkyMap.root" short='0' type="string" desc="Output root file containing TH2D of SkyMap"></option>
+        <option name="RABins" value="500.0" type="double" desc="Number of bins in RA axis. Rounded Down"></option>
+        <option name="ALTBins" value="300.0" type="double" desc="Number of bins in ALT axis. Rounded Down"></option>
+        <option name="NPts" value="1000.0" short='N' type="double" desc="Number of Points generated for each cone. Rounded Down"></option>
+    </GenSkyMap>
+
+    <CalcEffArea>
+        <option name="start_folder" short="p" type="string"  value="" desc="Folder where root files from condor output are stored at"></option>
+        <option name="base_name" short="b" type="string" value="" desc="base_name of root files in folder. Ex. Ext_0.root as a base_name of Ext_"></option>
+        <option name="tree_name" type="string" value="Cones" desc="Name of TTree in EffArea root files"></option>
+        <option name="TotalEvents" short="n" type="integer" value="100000" desc="The number of events assigned to each batch (ie. events_per_batch)"></option>
+        <option name="TotalBatches" type="integer" value="10000" desc="The number of batches run"></option>
+        <option name="FileType" short="f" type="string" value=".txt" desc="Output type of file (currently .txt or .root.)"></option>
+        <option name="Output" short="o" type="string" value="EffAreaData" desc="Name of output files sans file type"></option>
+    </CalcEffArea>
+
   <gramssky>
 
     <!-- Number of sky events to generate -->
@@ -480,8 +545,8 @@
 
     Options associated with the diffusion model. These values come
     from MicroBooNE:
-  https://github.com/LArSoft/larsim/blob/develop/larsim/Simulation/simulationservices.fcl
-  https://github.com/MicroBooNE/uboonecode/blob/develop/uboone/Simulation/simulationservices_microboone.fcl
+    https://github.com/LArSoft/larsim/blob/develop/larsim/Simulation/simulationservices.fcl
+    https://github.com/MicroBooNE/uboonecode/blob/develop/uboone/Simulation/simulationservices_microboone.fcl
 
     <option name="diffusion" value="true" type="boolean"
         desc="model diffusion effects"/>

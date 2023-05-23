@@ -1,0 +1,8 @@
+./gramsg4 -g ThinGrams.gdml -s ${process} -r ${process} -o EffA_${process} -m mac/batch/Mono${process}.mac
+./gramsdetsim -i EffA_${process}.root -s ${process} -o EffA_Det_${process}.root
+./Extract --GramsG4Name EffA_${process}.root --GramsDetSimName EffA_Det_${process}.root -o EffA_Extracted_${process}.root -f Sphere
+./Reconstruct -i EffA_Extracted_${process}.root -o EffA_Reco_${process}.root --SourceType Iso 
+cp EffA_Reco_${process}.root ..
+cd ..
+rm -rf SenseJob
+
