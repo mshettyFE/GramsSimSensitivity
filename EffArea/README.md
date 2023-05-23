@@ -1,0 +1,1 @@
+Contains the code needed to calculate the effective area of a detector.
