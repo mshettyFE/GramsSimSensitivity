@@ -26,7 +26,7 @@ python GenCondorScripts.py -h
 ```
 to get a feel for what options you can tweak.
 
-As an example, the following
+As an example, the following, when run in the built EffArea directory, performs these actions:
 * Creates a directory at ${output_dir}
 * Creates a .cmd file that has 10 batches that generate 1000000 events in total. 
 * Appends the contents of CommandsSphere.txt to a partially generated shell script
@@ -41,7 +41,6 @@ Once this is done running, you should see EffAreaSphere.cmd and EffAreaSphere.sh
 ```
 condor_submit EffAreaSphere.cmd -batch-name EffAreaSphere
 ```
-
 You can monitor your jobs with 
 ```
 condor_q
