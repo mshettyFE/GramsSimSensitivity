@@ -28,7 +28,7 @@ NOTE:
 ```
 module load cmake root
 ```
-is a utility unique to the Nevis cluster. You need to substitute that with whatever commands will load in cmake and root on your machine.
+is unique to the Nevis cluster. You need to substitute that with whatever commands will load in cmake and root on your machine.
 
 # TODO
 There are two very important caveats to keep in mind when interpreting your results from the above simulations.

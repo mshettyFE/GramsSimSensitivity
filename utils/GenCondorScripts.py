@@ -16,7 +16,7 @@ if __name__=="__main__":
     parser.add_argument("Command_file", help="File containing the commands that come after the preamble in the .sh file")
     parser.add_argument("-nb","--n_batches", default=1000, type=int, help="Number of batches to be generated")
     parser.add_argument("-mem","--MemoryRequested", default=300, type=int, help="Amount of memory in MB requested per job")
-    parser.add_argument("-dsk","--DiskUsageRequested", default=300000, type=int, help="Amount of disk usage requested in kB per job")
+    parser.add_argument("-dsk","--DiskUsageRequested", default=3000000, type=int, help="Amount of disk usage requested in kB per job")
     parser.add_argument("-ne","--n_events", default=1000000, type=int, help="Total number of events across all batches to be generated")
     parser.add_argument('-m',"--macros", action="store_true", help="Denotes that SenseJob/mac/batch will be filled with a series of macro files. For when gramssky is not enough.")
     parser.add_argument("--BatchMacroName", default="REPLACE_ME_", help="Default batch macro file name. Please, give it a better name when you actually run this script")
