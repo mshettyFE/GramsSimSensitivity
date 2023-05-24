@@ -12,6 +12,8 @@ Each folder contains a different aspect of calculating the sensitivity. For more
 * [utils](utils/README.md) contains a bunch of static libraries and programs that are used elsewhere
 
 # Building the Project
+You will need to be able to install cmake, ROOT, and XercesC.
+
 Go to the directory containing the github repo, but not the repo itself. Run the following commands:
 
 ```
