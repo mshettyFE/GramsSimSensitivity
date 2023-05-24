@@ -43,25 +43,14 @@ set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/SenseJob/mac/batch)
 
-# Copy over Command files to EffArea
-file( COPY ${CMAKE_SOURCE_DIR}/EffArea/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
-file( COPY ${CMAKE_SOURCE_DIR}/EffArea/CommandsSphere.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
-file( COPY ${CMAKE_SOURCE_DIR}/EffArea/CommandsUnique.txt DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
-
-# Copy over SenseJob containing compiled GramsSim programs to EffArea, BackgroundRecon and SourceRecon
+# Copy over SenseJob containing compiled GramsSim programs to  BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 
-# Copy over options.xml to EffArea
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
-
-# Copy over GenCondorScripts.py to EffArea, BackgroundRecon and SourceRecon
+# Copy over GenCondorScripts.py to  BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 
-# Copy over Commands.txt to EffArea, BackgroundRecon and SourceRecon
 # Copy over SkyMapCommands.txt to BackgroundRecon
 file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/SkyMapCommands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
