@@ -102,23 +102,18 @@
     </Reconstruct>
 Output BackgroundFileName RA_bins ALT_bins NPts
     <GenSkyMap>
-        <option name="Plot" short="p" type="flag" desc="Plot 2D Histogram"></option>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
         <option name="Output" value="SkyMap.root" short='0' type="string" desc="Output root file containing TH2D of SkyMap"></option>
-        <option name="RABins" value="500.0" type="double" desc="Number of bins in RA axis. Rounded Down"></option>
-        <option name="ALTBins" value="300.0" type="double" desc="Number of bins in ALT axis. Rounded Down"></option>
-        <option name="NPts" value="1000.0" short='N' type="double" desc="Number of Points generated for each cone. Rounded Down"></option>
+        <option name="RABins" value="500" type="integer" desc="Number of bins in RA axis. Rounded Down"></option>
+        <option name="ALTBins" value="300" type="integer" desc="Number of bins in ALT axis. Rounded Down"></option>
+        <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
+        <option name="ExposureTime" value="3600.0" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
+        <!-- Hacky way of allowing total events to exceed range of int. Read as string, interpret as integer. I really didn't want to figure out the templating GetOptions -->
+        <option name="TotalEvents" value="100000" type="string" desc="The total number of events assigned to the batch job"></option>
+        <option name="ReferenceFluxFile" value="ReferenceFlux.root" type="string" desc="Reference energy flux that follows a Log Uniform distribution. From GenEnergySpectrum.py"></option>
+        <option name="PhysicalFluxFile" value="BackgroundFlux.root" type="string" desc="Physical energy flux that follows a user defined distribution. From GenEnergySpectrum.py"></option>
+        <option name="EffAreaFile" value="EffArea.root" type="string" desc="Effective Area histogram generated from CalcEffArea.py"></option>
     </GenSkyMap>
-
-    <CalcEffArea>
-        <option name="start_folder" short="p" type="string"  value="" desc="Folder where root files from condor output are stored at"></option>
-        <option name="base_name" short="b" type="string" value="" desc="base_name of root files in folder. Ex. Ext_0.root as a base_name of Ext_"></option>
-        <option name="tree_name" type="string" value="Cones" desc="Name of TTree in EffArea root files"></option>
-        <option name="TotalEvents" short="n" type="integer" value="100000" desc="The number of events assigned to each batch (ie. events_per_batch)"></option>
-        <option name="TotalBatches" type="integer" value="10000" desc="The number of batches run"></option>
-        <option name="FileType" short="f" type="string" value=".txt" desc="Output type of file (currently .txt or .root.)"></option>
-        <option name="Output" short="o" type="string" value="EffAreaData" desc="Name of output files sans file type"></option>
-    </CalcEffArea>
 
   <gramssky>
 

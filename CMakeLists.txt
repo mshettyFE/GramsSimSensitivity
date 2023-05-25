@@ -51,10 +51,12 @@ file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRe
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
-# Copy over SkyMapCommands.txt to BackgroundRecon
+# Copy over Commands.txt to BackgroundRecon
 file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/SkyMapCommands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands100KeV.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands1MeV.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands10MeV.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 add_subdirectory(utils)
 add_subdirectory(EffArea)

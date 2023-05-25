@@ -3,6 +3,7 @@
 
 #include<cstring>
 #include<cmath>
+#include<iostream>
 
 // The Eigen Import
 #include "eigen3/Eigen/Dense"
@@ -72,8 +73,39 @@ Eigen::Vector3d Project( Eigen::Vector3d Current, Eigen::Vector3d Tip,double sph
     return Proj;
 }
 
-TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double> &Cone, 
-int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
+double reweight_energy(double energy, TH1D* Reference, TH1D* Physical, double epsilon=1E-7){
+// Takes in normalized histograms and returns the weight that needs to be assigned to 
+  double ProbRef = Reference->GetBinContent(Reference->FindBin(energy));
+  double ProbPhysical = Physical->GetBinContent(Physical->FindBin(energy));
+  double output;
+  if (ProbRef<epsilon){
+    std::cout << "Reference Probability too small. Defaulting to 1" << std::endl;
+    output = 1.0;
+  }
+  else{
+    output = ProbPhysical/ProbRef; 
+  }
+//  std::cout << energy<< '\t' <<  ProbPhysical << '\t' << ProbRef << '\t'<<  output << std::endl;
+  return output;
+}
+
+double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time, long NEvents){
+  // Assumes that you can multiply EffArea and EnergyDepFlux, we take the integral of the product
+  TH1D Multiplied;
+    Multiplied = (*EffArea)*(*EnergyDepFlux);
+//    Multiplied = (EffArea->GetMean())*(*EnergyDepFlux);
+  // integrated_flux now has units of 1/(s sr)
+  double integrated_flux = Multiplied.Integral( "width");
+  double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
+  double weight = projected_photons/((double) NEvents);
+//  std::cout << EnergyDepFlux->Integral("width") << std::endl;
+//  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
+// We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
+  return (integrated_flux*exposure_time*4*acos(-1))/((double) NEvents);
+}
+
+TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double,double> &Cone, 
+int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string title){
   // Tip of cone where all surface vector eminate from
     double pi = acos(-1);
     TH2D SkyMap = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
@@ -112,34 +144,34 @@ int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
   //    std::cout <<pt << '\t' <<Proj(0) << '\t'<<Proj(1) << '\t'<< Proj(2) << '\t' << RA_val << '\t' << ALT_val << std::endl;
     int bin_num = SkyMap.FindBin(RA_val,ALT_val);
     if (SkyMap.GetBinContent(bin_num)<=0){
-        SkyMap.SetBinContent(bin_num,1);
+        SkyMap.SetBinContent(bin_num,weight);
     } 
   }
   return SkyMap;
 }
 
-TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
-double sphere_rad=600,std::string title = "Reconstructed Sky Map"){
+TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
+TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, double exposure_time,long NEvents,
+double sphere_rad,std::string title){
   // Define pi
   double pi = acos(-1);
+  // Calculate the exposure weight
+  double exposure_weight = reweight_duration(EffArea,EnergyDepFlux, exposure_time,NEvents);
+  // Need to normalize Energy DepFlux and ReferenceFlux before calculating energy weight
+  EnergyDepFlux->Scale(1./EnergyDepFlux->Integral());
+  ReferenceFlux->Scale(1./ReferenceFlux->Integral());
+  // placeholder for final weight
+  double weight;
   // Create empty skymap with correct binning
   TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
   // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
-  for(auto i=ConeData.begin(); i!= ConeData.end(); ++i){
-    TH2D AddOn = ConeToSkyMap(i->second,RA_Bins,ALT_Bins,NPts, sphere_rad, title);
+  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
+    double TEnergy = std::get<7>(Cone->second);
+    // Calculate the energy dependent weight
+    double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
+    weight = energy_weight*exposure_weight;
+    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
     Seed.Add(&AddOn);
   }
   return Seed;
-}
-
-
-void SaveImage(TH2D &SkyMap,std::string pic_name){
-  // Create a canvas
-  TCanvas *c1 = new TCanvas();
-  // Remove statistics from image
-  SkyMap.SetStats(0);
-  // Draw Sky map as with z axis in color
-  SkyMap.Draw("colz");
-  c1->SaveAs(pic_name.c_str());
-  delete c1;
 }

@@ -5,9 +5,22 @@ import numpy as np
 import argparse
 from array import array
 
-def BrokenPowerLaw(E,**kwargs):
-## Broken power law spectrum. Flux function must have the form func(E,**kwargs)
+## Flux function must have the form func(E,**kwargs)
 ## Please make sure that you sanatize your inputs like below when you write your own
+## Also, physical fluxes should have units of 1/(MeV cm^2 s sr) to be consistent with the rest of the programs
+
+def BrokenPowerLaw(E,**kwargs):
+## Broken power law spectrum. 
+# Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
+    try:
+    ## Constant before flux function has units of 1/(MeV cm^2 s sr)
+        A = kwargs["A"]
+        if(A<=0):
+            print("Invalid constant")
+            sys.exit()
+    except:
+        print("Invalid constant")
+        sys.exit()
     try:
         Eref = kwargs["Eref"]
     except:
@@ -24,14 +37,15 @@ def BrokenPowerLaw(E,**kwargs):
         print("Gamma2 not specified")
         sys.exit()
     if E<=Eref:
-        return np.power((1/Eref)*E,-Gamma1)
+        return A*np.power((1/Eref)*E,-Gamma1)
     else:
-        return np.power((1/Eref)*E,-Gamma2)
+        return A*np.power((1/Eref)*E,-Gamma2)
 
 def LogUniform(E,**kwargs):
 ## Suppose that you treat this function as a probability distribution.
 ## If you draw enough points and set energy to a log scale, then you get a uniform distribution
-## This is desirable for Sensitivity studies since energies span a wide range of orders of magnitude
+## This is desirable for sensitivity studies since energies span a wide range of orders of magnitude
+## This is the Reference energy-dependent flux used in GenSkyMap, hence the units don't really matter for this one
     try:
         a = kwargs["a"]
     except:
@@ -49,46 +63,38 @@ if __name__ == "__main__":
 ## Read in output file name, min and max energies, and bin width
     parser = argparse.ArgumentParser(
                     prog='GenEnergySpectrum.py',
-                    description='Generate energy spectrum of background. Log scale on x')
-    parser.add_argument('-o', '--OutputFileName', default="EnergySpec.root",help="Name of output file")
-    parser.add_argument('-p','--Plot',action='store_true', help="Plot Energy Spectrum")
-    parser.add_argument("--minE",type=float, default = 0.1, help="Minimum energy of range.")
-    parser.add_argument("--maxE",type=float, default=10, help="Maximum energy of range.")
-    parser.add_argument("-n","--NumDiv",default=100, help="Number of divisions")
+                    description='Generate energy-dependent flux. Used for reweighting of background.')
+    parser.add_argument("EffAreaFile", help="Effective Area file. Will use the binnings from this file for the physical and reference energy binnings")
+    parser.add_argument('-pfn','--PhysicalFileName', default="BackgroundFlux.root",help="Name of physical flux root file")
+    parser.add_argument('-rfn','--ReferenceFileName', default="ReferenceFlux.root",help="Name of reference flux root file")
     args = parser.parse_args()
-## Sanity check to make sure that energies are strictly greater than zero and that maxE is greater than minE
-    if((args.minE<=0) or (args.maxE<=0) or (args.maxE<=args.minE)):
-        print("Invalid energies")
-        sys.exit()
-## Create histogram with log binnings
-## Generate logarithmic binnings
-    new_bins = [0]*(args.NumDiv+1)
-    base = np.log10(args.minE)
-    fin = np.log10(args.maxE)
-    width = (fin-base)/(args.NumDiv)
-    for i in range(0,args.NumDiv+1):
-        pwr = base+i*width
-        new_bins[i] = 10**pwr
-    EnergyHist = ROOT.TH1D("BackgroundSpectrum", 'Background Flux', args.NumDiv, array('d',new_bins) )
+    EffAreaFile = ROOT.TFile(args.EffAreaFile, "READ")
+    EffAreaHist = EffAreaFile.EffArea
+    BackgroundFile = ROOT.TFile(args.PhysicalFileName ,"RECREATE")
+    BackgroundEnergyHist = EffAreaHist.Clone("BackgroundFlux")
+    BackgroundEnergyHist.Reset()
 ## Get centers of bins
-    EnergyCenters = [EnergyHist.GetBinCenter(i) for i in range(args.NumDiv)]
+    EnergyCenters = [BackgroundEnergyHist.GetBinCenter(i) for i in range(BackgroundEnergyHist.GetNbinsX())]
 ## Need to modify the following line if you have a different function
 # Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
-    output = [BrokenPowerLaw(energy,args.Scale,Eref=3,Gamma1=3.3,Gamma2=2) for energy in EnergyCenters]
-# Standard LogUniform distribution (ie. equal probabilities amoungst log bins)
-#    output = [LogUniform(energy,a=args.minE,b=args.maxE) for energy in EnergyCenters]    
+    BackOutput = [BrokenPowerLaw(energy,A=2.2E-4,Eref=3,Gamma1=3.3,Gamma2=2) for energy in EnergyCenters]
 ## Fills output histogram with flux function by filling each bin weighted by the function
-    for i in range(len(output)):
-        EnergyHist.Fill(EnergyCenters[i],output[i])
+    for bin in range(0,BackgroundEnergyHist.GetNbinsX()):
+        BackgroundEnergyHist.SetBinContent(bin,BackOutput[bin])
 ## Save to disk
-    inFile = ROOT.TFile.Open(args.OutputFileName ,"recreate")
-## Draw if needed
-    if(args.Plot):
-        c1=ROOT.TCanvas()
-        EnergyHist.SetMarkerStyle(3)
-        EnergyHist.Draw("hist P")
-        ROOT.gPad.SetLogx()
-        c1.Print("EnergySpec.png")
-## Clean up
-    EnergyHist.Write()
-    inFile.Close()
+    BackgroundFile.WriteObject(BackgroundEnergyHist, "PhysicalFlux")
+## Create reference file
+    ReferenceFile = ROOT.TFile(args.ReferenceFileName ,"RECREATE")
+    ReferenceEnergyHist = EffAreaHist.Clone("ReferenceFlux")
+    ReferenceEnergyHist.Reset()
+    EnergyCenters = [ReferenceEnergyHist.GetBinCenter(i) for i in range(ReferenceEnergyHist.GetNbinsX())]
+# Standard LogUniform distribution (ie. equal probabilities amoungst log bins)
+    bottom_edge = EffAreaHist.GetBinLowEdge(0)
+    center_of_top =  ReferenceEnergyHist.GetBinCenter(ReferenceEnergyHist.GetNbinsX())
+    top_edge = (center_of_top-ReferenceEnergyHist.GetBinLowEdge(ReferenceEnergyHist.GetNbinsX()))+center_of_top
+    RefOutput = [LogUniform(energy,a=bottom_edge,b=top_edge) for energy in EnergyCenters]
+## Fills output histogram with flux function by filling each bin weighted by the function
+    for bin in range(0,ReferenceEnergyHist.GetNbinsX()):
+        ReferenceEnergyHist.SetBinContent(bin,RefOutput[bin])
+## Save to disk
+    ReferenceFile.WriteObject(ReferenceEnergyHist,"ReferenceFlux")
