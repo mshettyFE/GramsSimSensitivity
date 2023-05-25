@@ -136,7 +136,7 @@ void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<doubl
 
 }
 
-void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double> > Mapping){
+void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double> > Mapping){
   // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle>,  ...>
   for ( auto i = Mapping.begin(); i != Mapping.end(); ++i ){
     auto key = (*i).first;
@@ -150,6 +150,7 @@ void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::tuple<do
       << " yTip = " << std::get<4>(event)
       << " zTip = " << std::get<5>(event)
       << " RecoAngle = " << std::get<6>(event)
+      << " Truth Energy =" << std::get<7>(event)
       << std::endl;
   }
 }
@@ -251,9 +252,9 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double
   return Output;
 }
 
-std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double>> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose){
+std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose){
   // Format of Extracted output
-  // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle>,  ...>
+  // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle,TruthEnergy>,  ...>
 
   ROOT::RDataFrame Series( "Cones", ReconstructName, {"Run", "Event","EventType",
    "xDir","yDir","zDir",
@@ -261,7 +262,7 @@ std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,doub
    "RecoAngle","ARM","RecoEnergy","TruthEnergy"
    } );
 
-  std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double>> Output;
+  std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> Output;
 
   Series.Foreach(
   // Shove data into map depending on series type
@@ -269,8 +270,8 @@ std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,doub
   double xTip, double yTip, double zTip, double RecoAngle, double ARM, double RecoEnergy, double TruthEnergy)
   {
     std::tuple<int,int> key = std::make_tuple(run,event);
-    std::tuple<double,double,double,double,double,double,double> observables;
-    observables = std::make_tuple(xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle);
+    std::tuple<double,double,double,double,double,double,double,double> observables;
+    observables = std::make_tuple(xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle,TruthEnergy);
     auto pair = std::make_pair(key,observables);
     Output.insert(pair);
   },

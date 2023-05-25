@@ -24,7 +24,7 @@ void print_DetSimMap(  std::map<std::tuple<int,int,int>, std::vector<std::tuple<
 void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > Mapping);
 
 // Print the REconstruction data used to generate a sky map
-void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double>> > Mapping);
+void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double>> > Mapping);
 
 // Push key value pair to map
 void push_to_map(std::tuple<int,int> &key, std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> &values, 
@@ -35,5 +35,5 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double
   std::string ExtractFileName, bool verbose=false);
 
 // Read in output from Reconstruct.cpp for 2D sky map generation
-std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double>> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose=false);
+std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose=false);
 #endif

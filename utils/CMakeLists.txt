@@ -63,8 +63,8 @@ target_link_libraries(${GenSkyMapLib} ${ROOT_LIBRARIES} )
 target_link_libraries(${GenSkyMapLib} ${Eigen_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Copy GenEnergySpectrum.py over to utils
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# Copy GenEnergySpectrum.py over to Background
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)

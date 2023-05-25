@@ -57,4 +57,4 @@ if __name__=="__main__":
             EffAreaHist.SetBinContent(bin,mapping[bin][1])
             if args.verbose:
                 print(binnings[bin],EffAreaHist.GetBinContent(bin))
-        root_file.Write()
+        root_file.WriteObject(EffAreaHist,"EffArea")
