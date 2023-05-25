@@ -37,9 +37,9 @@ def BrokenPowerLaw(E,**kwargs):
         print("Gamma2 not specified")
         sys.exit()
     if E<=Eref:
-        return np.power((1/Eref)*E,-Gamma1)
+        return A*np.power((1/Eref)*E,-Gamma1)
     else:
-        return np.power((1/Eref)*E,-Gamma2)
+        return A*np.power((1/Eref)*E,-Gamma2)
 
 def LogUniform(E,**kwargs):
 ## Suppose that you treat this function as a probability distribution.

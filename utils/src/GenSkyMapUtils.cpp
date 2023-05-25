@@ -77,11 +77,16 @@ double reweight_energy(double energy, TH1D* Reference, TH1D* Physical, double ep
 // Takes in normalized histograms and returns the weight that needs to be assigned to 
   double ProbRef = Reference->GetBinContent(Reference->FindBin(energy));
   double ProbPhysical = Physical->GetBinContent(Physical->FindBin(energy));
+  double output;
   if (ProbRef<epsilon){
-    std::cout << "Reference to small. Defaulting to 1" << std::endl;
-    return 1.0;
+    std::cout << "Reference Probability too small. Defaulting to 1" << std::endl;
+    output = 1.0;
   }
-  return ProbPhysical/ProbRef;
+  else{
+    output = ProbPhysical/ProbRef; 
+  }
+//  std::cout << energy<< '\t' <<  ProbPhysical << '\t' << ProbRef << '\t'<<  output << std::endl;
+  return output;
 }
 
 double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time, long NEvents){
@@ -90,14 +95,14 @@ double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time
     Multiplied = (*EffArea)*(*EnergyDepFlux);
 //    Multiplied = (EffArea->GetMean())*(*EnergyDepFlux);
   // integrated_flux now has units of 1/(s sr)
-  double integrated_flux = Multiplied.Integral();
+  double integrated_flux = Multiplied.Integral( "width");
   double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
   double weight = projected_photons/((double) NEvents);
-  std::cout << integrated_flux << '\t' << projected_photons << '\t' << NEvents << std::endl;
+//  std::cout << EnergyDepFlux->Integral("width") << std::endl;
+//  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
 // We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
   return (integrated_flux*exposure_time*4*acos(-1))/((double) NEvents);
 }
-
 
 TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double,double> &Cone, 
 int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string title){
