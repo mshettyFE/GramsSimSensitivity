@@ -66,6 +66,10 @@ target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_C
 # Copy GenEnergySpectrum.py over to Background
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 
+# Copy over GenCondorScripts.py to BackgroundRecon and SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)

@@ -14,11 +14,11 @@ target_link_libraries(${GEN_SKY_MAP} ${CMAKE_PROJECT_NAME}GenSkyMapUtils )
 
 add_custom_command(TARGET ${GEN_SKY_MAP} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_SKY_MAP}> ${CMAKE_BINARY_DIR}/BackgroundRecon/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_SKY_MAP}> ${CMAKE_BINARY_DIR}/BackgroundRecon)
 
 add_custom_command(TARGET ${GEN_SKY_MAP} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_SKY_MAP}> ${CMAKE_BINARY_DIR}/SourceRecon/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_SKY_MAP}> ${CMAKE_BINARY_DIR}/SourceRecon)
 
 # Remove GenSkyMap executable from current directory
 add_custom_command(TARGET ${GEN_SKY_MAP}

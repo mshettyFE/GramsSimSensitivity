@@ -47,16 +47,13 @@ file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/SenseJob/mac/batch)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
-# Copy over GenCondorScripts.py to  BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over BackgroundRecon
+file(GLOB BACKGROUND_RECON_FILES "${CMAKE_SOURCE_DIR}/BackgroundRecon/*")
+file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 
-# Copy over Commands.txt to BackgroundRecon
-file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/Commands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/BackgroundRecon/SkyMapCommands.txt DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands100KeV.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands1MeV.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SourceRecon/Commands10MeV.txt DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over SourceRecon
+file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/SourceRecon/*")
+file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 add_subdirectory(utils)
 add_subdirectory(EffArea)

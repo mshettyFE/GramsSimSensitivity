@@ -37,6 +37,9 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
+  bool weighted;
+  options->GetOption("weighted",weighted);
+
 // Reads in input and output file names
   std::string RecoName;
   std::string OutputFileName;
@@ -120,20 +123,26 @@ int main(int argc, char** argv){
 
     std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ConeData;
     ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
-    std::unique_ptr<TFile> EffAreaFile(TFile::Open(EffectiveAreaRoot.c_str(), "READ"));
-    std::unique_ptr<TFile> RefFile(TFile::Open(ReferenceFluxRoot.c_str(), "READ"));
-    std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
-    TH1D* EffAreaFlux= (TH1D*)EffAreaFile->Get("EffArea");
-    TH1D* RefFlux = (TH1D*)RefFile->Get("ReferenceFlux");
-    TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
-    int NbinsPhys = PhysFlux->GetNbinsX(); 
-    int NbinsEffArea = EffAreaFlux->GetNbinsX(); 
-    if(NbinsPhys != NbinsEffArea){
-      std::cout << "Binnings don't match. Physical flux has " << NbinsPhys << " while EffArea has " << NbinsEffArea << std::endl;
-      return -1;
-    }
     std::unique_ptr<TFile> OutputFile(TFile::Open(OutputFileName.c_str(), "RECREATE"));
-    TH2D Seed = MultipleConesToSkyMap(ConeData,RABins,ALTBins,NPts,EffAreaFlux,PhysFlux,RefFlux,ExposureTime,NEvents);
+    TH2D Seed;
+    if(weighted){
+      std::unique_ptr<TFile> EffAreaFile(TFile::Open(EffectiveAreaRoot.c_str(), "READ"));
+      std::unique_ptr<TFile> RefFile(TFile::Open(ReferenceFluxRoot.c_str(), "READ"));
+      std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
+      TH1D* EffAreaFlux= (TH1D*)EffAreaFile->Get("EffArea");
+      TH1D* RefFlux = (TH1D*)RefFile->Get("ReferenceFlux");
+      TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
+      int NbinsPhys = PhysFlux->GetNbinsX(); 
+      int NbinsEffArea = EffAreaFlux->GetNbinsX(); 
+      if(NbinsPhys != NbinsEffArea){
+        std::cout << "Binnings don't match. Physical flux has " << NbinsPhys << " while EffArea has " << NbinsEffArea << std::endl;
+        return -1;
+      }
+      Seed = MultipleConesToSkyMapWeighted(ConeData,RABins,ALTBins,NPts,EffAreaFlux,PhysFlux,RefFlux,ExposureTime,NEvents);
+    }
+    else{
+      Seed = MultipleConesToSkyMapUnweighted(ConeData,RABins,ALTBins,NPts);
+    }
     OutputFile->WriteObject(&Seed, "SkyMap");
     return 0;
 }

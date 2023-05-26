@@ -98,7 +98,7 @@ double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time
   double integrated_flux = Multiplied.Integral( "width");
   double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
   double weight = projected_photons/((double) NEvents);
-//  std::cout << EnergyDepFlux->Integral("width") << std::endl;
+//  std::cout << EnergyDepFlux->Integral("width") << '\t' << integrated_flux <<  std::endl;
 //  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
 // We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
   return (integrated_flux*exposure_time*4*acos(-1))/((double) NEvents);
@@ -150,7 +150,7 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
   return SkyMap;
 }
 
-TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
+TH2D MultipleConesToSkyMapWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
 TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, double exposure_time,long NEvents,
 double sphere_rad,std::string title){
   // Define pi
@@ -170,6 +170,23 @@ double sphere_rad,std::string title){
     // Calculate the energy dependent weight
     double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
     weight = energy_weight*exposure_weight;
+  //    std::cout << TEnergy << '\t' <<  weight << std::endl;
+    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
+    Seed.Add(&AddOn);
+  }
+  return Seed;
+}
+
+TH2D MultipleConesToSkyMapUnweighted(
+std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, 
+int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
+    // Define pi
+  double pi = acos(-1);
+  // Create empty skymap with correct binning
+  TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
+  // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
+  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
+    double weight = 1.0;
     TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
     Seed.Add(&AddOn);
   }

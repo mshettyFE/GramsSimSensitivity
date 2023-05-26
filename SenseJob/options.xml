@@ -103,10 +103,11 @@
 Output BackgroundFileName RA_bins ALT_bins NPts
     <GenSkyMap>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
-        <option name="Output" value="SkyMap.root" short='0' type="string" desc="Output root file containing TH2D of SkyMap"></option>
+        <option name="Output" value="SkyMap.root" short='o' type="string" desc="Output root file containing TH2D of SkyMap"></option>
         <option name="RABins" value="500" type="integer" desc="Number of bins in RA axis. Rounded Down"></option>
         <option name="ALTBins" value="300" type="integer" desc="Number of bins in ALT axis. Rounded Down"></option>
         <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
+        <option name="weighted" short="w" type="flag"></option>
         <option name="ExposureTime" value="3600.0" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
         <!-- Hacky way of allowing total events to exceed range of int. Read as string, interpret as integer. I really didn't want to figure out the templating GetOptions -->
         <option name="TotalEvents" value="100000" type="string" desc="The total number of events assigned to the batch job"></option>
