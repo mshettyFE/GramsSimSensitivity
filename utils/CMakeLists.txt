@@ -70,6 +70,10 @@ file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_BI
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
+# Copy over GenCondorScriptsHist.py to BackgroundRecon and SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScriptsHist.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScriptsHist.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
