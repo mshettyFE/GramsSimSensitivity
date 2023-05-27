@@ -85,7 +85,8 @@ if __name__=="__main__":
         pic_name = "ARM_Dist.jpg"
         ROOT.gStyle.SetOptFit(111)
     ## Create histogram of ARM
-    Cones.Draw("ARM>>hist("+str(args.nbins)+",-5,5)")
+    pi = np.pi
+    Cones.Draw("ARM>>hist("+str(args.nbins)+",-"+str(pi)+","+str(pi)+")")
     ARM_Dist = ROOT.gDirectory.Get("hist")
     ## Define Lorentzian to fit to ARM.
     func = ROOT.TF1("Lorentzian",lorentzian,-90,90,3)
@@ -100,7 +101,7 @@ if __name__=="__main__":
         ARM_Dist.Draw()
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
-    mask = create_mask(blankHist,0,0,ARM)
+    mask = create_mask(blankHist,args.RA_loc,args.ALT_loc,ARM)
     if(args.draw):
         c2 = ROOT.TCanvas()
         pic_name = "Mask.jpg"

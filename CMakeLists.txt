@@ -55,5 +55,14 @@ file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/BackgroundR
 file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/SourceRecon/*")
 file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
+# Create Histogram zip directories
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/SkyMap)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/SourceRecon/SkyMap)
+
+# Copy over options.xml to SkyMap
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/SkyMap)
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SkyMap)
+
+
 add_subdirectory(utils)
 add_subdirectory(EffArea)
