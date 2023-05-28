@@ -96,6 +96,7 @@ if __name__=="__main__":
     ## Fit function and extract ARM
     ARM_Dist.Fit("Lorentzian")
     ARM = abs(func.GetParameter(2))
+    print(ARM)
     ## Draw ARM distribution
     if(args.draw):
         ARM_Dist.Draw()
