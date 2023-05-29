@@ -58,6 +58,7 @@ if __name__=="__main__":
     parser.add_argument("HistogramPath", help="A sample histogram we want to create a mask for (for instance, a background histogram)")
     parser.add_argument("RA_loc", type=float, help="Right ascension Location of source")
     parser.add_argument("ALT_loc", type=float, help="Altitude location of source")
+    parser.add_argument("Output",help="Output root file name")
     parser.add_argument("-d","--draw",action="store_true", help="Wheather you want to save the ARM distribution and final map to jpgs")
     parser.add_argument("--nbins",type=int, default=50000, help="Number of binnings to create in ARM distribution")
     args = parser.parse_args()
@@ -109,3 +110,5 @@ if __name__=="__main__":
         mask.SetStats(0)
         mask.Draw("colz")
         c2.SaveAs(pic_name)
+    OutFile = ROOT.TFile.Open(args.Output, "RECREATE")
+    OutFile.WriteObject(mask, "Mask")

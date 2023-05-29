@@ -63,6 +63,17 @@ target_link_libraries(${GenSkyMapLib} ${ROOT_LIBRARIES} )
 target_link_libraries(${GenSkyMapLib} ${Eigen_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Create CalcSenseUtils library
+file(GLOB CalcSenseSrc src/CalcSenseUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/util/src/CalcSenseUtils.cpp
+    )
+
+set(CalcSenseLib ${CMAKE_PROJECT_NAME}CalcSenseUtils)
+add_library (${CalcSenseLib} STATIC ${CalcSenseSrc})
+
+target_link_libraries(${CalcSenseLib} ${ROOT_LIBRARIES} )
+target_include_directories (${CMAKE_PROJECT_NAME}CalcSenseUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Copy GenEnergySpectrum.py over to Background
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 
@@ -78,3 +89,4 @@ file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScriptsHist.py DESTINATION ${CMAKE
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
 add_subdirectory(GenSkyMap)
+add_subdirectory(CalculateSensitivity)

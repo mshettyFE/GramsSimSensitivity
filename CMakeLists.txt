@@ -61,7 +61,9 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/SourceRecon/SkyMap)
 
 # Copy over options.xml to SkyMap
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/SkyMap)
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SkyMap)
+
+#Copy over options.xml to SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 
 add_subdirectory(utils)
