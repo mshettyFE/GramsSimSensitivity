@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <cmath>
+#include <numeric>
 
 #include "TChain.h"
 #include "TFile.h"
@@ -34,4 +36,38 @@ void ReadConeData(std::string base_name, int nbatches, TChain &Output){
             std::cerr << "Couldn't find " << path << std::endl;
         }
     }
+}
+
+std::vector<double> ExtractNonZero(TH2D* histogram){
+    std::vector<double> output;
+    auto XAxis = histogram->GetXaxis();
+    auto YAxis = histogram->GetYaxis();
+    for(int i=0; i<histogram->GetNbinsX(); ++i){
+        for(int j=0; j<histogram->GetNbinsY(); ++j){
+            double RA = XAxis->GetBinCenter(i);
+            double ALT = YAxis->GetBinCenter(j);
+            long current_bin = histogram->FindBin(RA,ALT);
+            double counts = histogram->GetBinContent(current_bin);
+            if(counts >0){
+                output.push_back(counts);
+            }
+        }
+    }
+    return output;
+}
+
+double Mean(std::vector<double> data){
+    double sum = std::accumulate(std::begin(data), std::end(data), 0.0);
+    return sum /((double) data.size());
+}
+
+double StdDev(std::vector<double> data){
+    double mean = Mean(data);
+
+    double accum = 0.0;
+    std::for_each (std::begin(data), std::end(data), [&](const double d) {
+        accum += (d - mean) * (d - mean);
+    });
+
+    return sqrt(accum /((double) (data.size()-1)));
 }

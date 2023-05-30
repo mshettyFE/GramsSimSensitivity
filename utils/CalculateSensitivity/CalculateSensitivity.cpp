@@ -151,13 +151,13 @@ int main(int argc, char** argv){
 
   // Open up Mask histogram
   std::string MaskPath;
-  TH2D* Mask;
   bool MaskPathCheck = options->GetOption("MaskLocation", MaskPath);
   if(MaskPathCheck){
     if(std::filesystem::exists(MaskPath)){
       try{
+        // Make sure we can read file
         std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
-        Mask= (TH2D*)MaskFile->Get("Mask");
+        TH2D* Mask= (TH2D*)MaskFile->Get("Mask");
       }
       catch(...){
         std::cerr << "Couldn't open Mask root file "  << std::endl;
@@ -176,13 +176,13 @@ int main(int argc, char** argv){
 
   // Open up Effective Area histogram
   std::string EffectiveAreaPath;
-  TH1D* EffArea;
   bool EffAPathCheck = options->GetOption("EffectiveAreaRoot", EffectiveAreaPath);
   if(EffAPathCheck){
     if(std::filesystem::exists(EffectiveAreaPath)){
       try{
+        // Make sure that we can open up file and read contents
         std::unique_ptr<TFile> EffAFile(TFile::Open(EffectiveAreaPath.c_str(), "READ"));
-        Mask= (TH2D*)EffAFile->Get("Mask");
+        TH2D* Mask= (TH2D*)EffAFile->Get("EffArea");
       }
       catch(...){
         std::cerr << "Couldn't open Effective Area root file "  << std::endl;
@@ -228,6 +228,35 @@ int main(int argc, char** argv){
   bool CheckAgg = ReadBackgroundSkyMaps(AbsBackRootName,batches,AggSkyMap);
   std::unique_ptr<TFile> TestFile(TFile::Open("TestFile.root", "RECREATE"));
   TestFile->WriteObject(AggSkyMap, "MyObject");
+
+/*
+    // Load in skeleton of AggSkyMap from the first generated background skymap
+    TH2D* AggSource;
+    std::string seed = AbsSourceRootName+"0.root";
+    if(!std::filesystem::exists(seed)){
+      std::cerr << seed << " could not be found " << std::endl;
+      return -1;
+    }
+    std::unique_ptr<TFile> SourceSeed(TFile::Open(seed.c_str(), "READ"));
+    AggSource = (TH2D*)SourceSeed->Get("SkyMap");
+    AggSource->Reset();
+
+  // Aggregate all the sky maps that exist
+  bool CheckAgg = ReadBackgroundSkyMaps(AbsSourceRootName,batches,AggSource);
+*/
+
+  std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
+  TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
+
+  AggSkyMap->Multiply(Mask);
+
+  //  std::unique_ptr<TFile> TestFileSource(TFile::Open("TestFileSource.root", "RECREATE"));
+  //  TestFileSource->WriteObject(AggSource, "MyObject");
+
+  std::vector<double> NonZeroBack = ExtractNonZero(AggSkyMap);
+  std::cout << NonZeroBack.size() << std::endl;
+  std::cout << Mean(NonZeroBack) << std::endl;
+  std::cout << StdDev(NonZeroBack) << std::endl;
 /*
   TChain SourceCones("Cones");
   ReadConeData(AbsSourceRootName,  batches, SourceCones);
