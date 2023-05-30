@@ -103,8 +103,8 @@
     <GenSkyMap>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
         <option name="Output" value="SkyMap.root" short='o' type="string" desc="Output root file containing TH2D of SkyMap"></option>
-        <option name="RABins" value="500" type="integer" desc="Number of bins in RA axis. Rounded Down"></option>
-        <option name="ALTBins" value="300" type="integer" desc="Number of bins in ALT axis. Rounded Down"></option>
+        <option name="RABins" value="500" type="integer" desc="Number of bins in RA axis."></option>
+        <option name="ALTBins" value="500" type="integer" desc="Number of bins in ALT axis."></option>
         <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
         <option name="weighted" short="w" type="flag"></option>
         <option name="ExposureTime" value="3600.0" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
@@ -121,12 +121,16 @@
         <option name="SourceConesFolder" type="string" value="" desc="Folder containing reconstructed source cones"></option>
         <option name="SourceConesBaseName" type="string" value="" desc="Base name of cones file. For example, Reconstruct_0.root => Reconstruct_"></option>
         <option name="MaskLocation" type="string" value="" desc="Location to Mask root file"></option>
+        <option name="SourceEnergy" type="double" value="-1" desc="Energy of source cones"></option>
         <option name="EffectiveAreaRoot" type="string" value="" desc="Location of Effective Area root file"></option>
         <!-- Hack to get around int size limitation/ Don't want to template options. Check for validity of option in program-->
         <option name="TotalSourceEvents" type="string" value="" desc="Total number of source events generated initially"></option>
         <option name="Batches" type="integer" value="10000" desc="Number of source cone files"></option>
         <option name="ExposureTime" type="double" value="-1" desc="Total exposure time"></option>
         <option name="Distribution" type="string" value="Gauss" desc="Assumed distribution. Either 'Gauss' or 'Poisson'. Defaults to Gauss"></option>
+        <option name="RABins" value="500" type="integer" desc="Number of bins in RA axis. Rounded Down"></option>
+        <option name="ALTBins" value="500" type="integer" desc="Number of bins in ALT axis. Rounded Down"></option>
+        <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
     </Sensitivity>
 
   <gramssky>

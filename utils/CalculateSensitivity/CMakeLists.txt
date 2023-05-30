@@ -7,6 +7,7 @@ set (SENSEPROG "CalcSensi${EXE}")
 add_executable(${SENSEPROG} CalculateSensitivity.cpp)
 # Specify location of linked libraries
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
+target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}GenSkyMapUtils )
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}CalcSenseUtils )
 
 

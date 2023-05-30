@@ -71,3 +71,13 @@ double StdDev(std::vector<double> data){
 
     return sqrt(accum /((double) (data.size()-1)));
 }
+
+double ExtractEffArea(double SourceEnergy, TH1D* EffAreaHist){
+    int nbins = EffAreaHist->GetNbinsX();
+    double upper_bound = EffAreaHist->GetXaxis()->GetBinCenter(nbins);
+    if(SourceEnergy>= upper_bound){
+        std::cerr << "Source Energy too high. Defaulting to highest bin..." << std::endl;
+        return     EffAreaHist->GetBinContent(nbins-1);
+    }
+    return EffAreaHist->GetBinContent(EffAreaHist->FindBin(SourceEnergy));
+}
