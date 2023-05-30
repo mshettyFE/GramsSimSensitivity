@@ -18,7 +18,13 @@ double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time
 TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double> &Cone, int RA_Bins, int ALT_Bins, int NPts, 
 double weight=1,double sphere_rad=600,std::string title = "Reconstructed Sky Map");
 
-TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &Cone, int RA_Bins, int ALT_Bins, int NPts,
+TH2D ConeToSkyMap(double xDir, double yDir, double zDir, double xTip, double yTip, double zTip, double RecoAngle, 
+int RA_Bins, int ALT_Bins, int NPts, double weight=1,double sphere_rad=600,std::string title = "Reconstructed Sky Map");
+
+TH2D MultipleConesToSkyMapWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &Cone, int RA_Bins, int ALT_Bins, int NPts,
 TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, double exposure_time=3600, long NEvents=100000,
+double sphere_rad=600,std::string title = "Reconstructed Sky Map");
+
+TH2D MultipleConesToSkyMapUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &Cone, int RA_Bins, int ALT_Bins, int NPts,
 double sphere_rad=600,std::string title = "Reconstructed Sky Map");
 #endif

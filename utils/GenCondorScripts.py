@@ -9,8 +9,7 @@ if __name__=="__main__":
     # Parse command line
     parser = argparse.ArgumentParser(
                     prog='GenCondorScripts.py',
-                    description='Generates basic .cmd and .sh files to send to condor on the nevis cluster',
-                    epilog='Text at the bottom of help')
+                    description='Generates basic .cmd and .sh files to send to condor on the nevis cluster')
     parser.add_argument("output_path", help="Absolute path to output directory. Folder will be created if not present.")
     parser.add_argument("Process_name", help="Name assigned to .cmd and .sh files, and the default output of condor.")
     parser.add_argument("Command_file", help="File containing the commands that come after the preamble in the .sh file")

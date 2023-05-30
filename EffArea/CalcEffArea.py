@@ -31,8 +31,8 @@ if __name__=="__main__":
             sys.exit()
         counts = tree.GetEntries()
         if(counts==0):
-            print("Root file empty")
-            sys.exit()
+            print("Root file empty. Skipping energy")
+            continue
         for entry in tree:
             TruthEnergy = entry.TruthEnergy
             break

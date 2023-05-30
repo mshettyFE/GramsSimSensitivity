@@ -106,7 +106,7 @@ bool ARM(double RecoAngle, std::vector<std::tuple<double,double,double>> Dist, s
     else if(SourceType=="Point"){
         // Axis of Cone, which we assume is normalized
         std::tuple<double,double,double> Axis = Dist[0];
-        ARM_val = acos(dot(Axis,SourceLoc));
+        ARM_val = RecoAngle-acos(dot(Axis,SourceLoc));
         return true;
     }
     else{

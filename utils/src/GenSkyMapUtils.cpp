@@ -98,7 +98,7 @@ double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time
   double integrated_flux = Multiplied.Integral( "width");
   double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
   double weight = projected_photons/((double) NEvents);
-//  std::cout << EnergyDepFlux->Integral("width") << std::endl;
+//  std::cout << EnergyDepFlux->Integral("width") << '\t' << integrated_flux <<  std::endl;
 //  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
 // We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
   return (integrated_flux*exposure_time*4*acos(-1))/((double) NEvents);
@@ -150,7 +150,45 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
   return SkyMap;
 }
 
-TH2D MultipleConesToSkyMap(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
+TH2D ConeToSkyMap(double xDir, double yDir, double zDir, double xTip, double yTip, double zTip, double RecoAngle, 
+int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string title){
+  // Tip of cone where all surface vector eminate from
+    double pi = acos(-1);
+    TH2D SkyMap = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
+  // Tip of Cone
+    Eigen::Vector3d Tip(xTip, yTip, zTip);
+  // Axis of Cone
+    Eigen::Vector3d Axis(xDir, yDir, zDir);
+    Axis.normalize();
+    Eigen::Vector3d perp = CalcPerp(Axis);
+
+    // To Generate our cone, we need a vector that lies on the surface of the cone
+    // We take a linear combination of the axis of the cone and the perpendicular vector
+    // ie. r = cos(Angle)*Axis+sin(Angle)*Perp
+    // NOTE: this assumes that both Director and Perp and normalized
+    // We also normalize it because this will make projection easier (and make numerical stability verification easier)
+    Eigen::Vector3d Current;
+    Current = cos(RecoAngle)*Axis+sin(RecoAngle)*perp;
+    Current.normalize();
+
+  double initial_dot = Current.dot(Axis);
+  Eigen::Matrix3d Rot = CreateRotMat(Axis,NPts);
+  for(int pt=0; pt<NPts; ++pt){
+    Current = Rot*Current;
+    Eigen::Vector3d Proj = Project(Current,Tip,sphere_rad); 
+  //    std::cout << Proj.dot(Proj) << '\t' << sphere_rad*sphere_rad <<  std::endl;
+    double RA_val = atan2(Proj(1),Proj(0));
+    double ALT_val = asin(Proj(2));
+  //    std::cout <<pt << '\t' <<Proj(0) << '\t'<<Proj(1) << '\t'<< Proj(2) << '\t' << RA_val << '\t' << ALT_val << std::endl;
+    int bin_num = SkyMap.FindBin(RA_val,ALT_val);
+    if (SkyMap.GetBinContent(bin_num)<=0){
+        SkyMap.SetBinContent(bin_num,weight);
+    } 
+  }
+  return SkyMap;
+}
+
+TH2D MultipleConesToSkyMapWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
 TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, double exposure_time,long NEvents,
 double sphere_rad,std::string title){
   // Define pi
@@ -170,6 +208,23 @@ double sphere_rad,std::string title){
     // Calculate the energy dependent weight
     double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
     weight = energy_weight*exposure_weight;
+  //    std::cout << TEnergy << '\t' <<  weight << std::endl;
+    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
+    Seed.Add(&AddOn);
+  }
+  return Seed;
+}
+
+TH2D MultipleConesToSkyMapUnweighted(
+std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, 
+int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
+    // Define pi
+  double pi = acos(-1);
+  // Create empty skymap with correct binning
+  TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
+  // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
+  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
+    double weight = 1.0;
     TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
     Seed.Add(&AddOn);
   }
