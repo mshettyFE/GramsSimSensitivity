@@ -37,9 +37,6 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
-  bool weighted;
-  options->GetOption("weighted",weighted);
-
 // Reads in input and output file names
   std::string RecoName;
   std::string OutputFileName;
@@ -53,32 +50,47 @@ int main(int argc, char** argv){
   }
 
 // Reads in ReferenceFlux, PhysicalFlux, and EffectiveArea histograms
-    std::string ReferenceFluxRoot,PhysicalFluxRoot,EffectiveAreaRoot;
+    std::string ReferenceFluxRoot,PhysicalFluxRoot,EffectiveAreaRoot, MaskRoot;
     bool successRef = options->GetOption("ReferenceFluxFile",ReferenceFluxRoot);
     bool successPhys = options->GetOption("PhysicalFluxFile",PhysicalFluxRoot);
     bool successEffArea = options->GetOption("EffAreaFile",EffectiveAreaRoot);
+    bool successMask = options->GetOption("MaskFile",MaskRoot);
  
-    if (!(successRef && successEffArea && successPhys)){
+    if (!(successRef && successEffArea && successPhys && successMask)){
       std::cerr << "Invalid Root histograms" << std::endl;
       exit(EXIT_FAILURE);
       return -1;
     }
+    else{
+      if(EffectiveAreaRoot.size()<=0){
+        std::cerr << "Need to provide an effective area file. Generate from CalcEffArea.py" << std::endl;
+        return -1;
+      }
+      if(ReferenceFluxRoot.size()<=0){
+        std::cerr << "Need to provide a reference flux. Generate from GenEnergySpectrum.py" << std::endl;
+        return -1;
+      }
+      if(PhysicalFluxRoot.size()<=0){
+        std::cerr << "Need to provide a physical flux. Generate from GenEnergySpectrum.py" << std::endl;
+        return -1;
+      }
+      if(MaskRoot.size()<=0){
+        std::cerr << "Need to provide a binary mask. Generate from GenMask.py" << std::endl;
+        return -1;
+      }
+    }
 
-  // Read in RABins, ALTBins, and NPts
-    int RABins, ALTBins, NPts;
-    bool successRA = options->GetOption("RABins",RABins);
-    bool successALT = options->GetOption("ALTBins",ALTBins);
+  // Read in NPts
+    int NPts;
     bool successN = options->GetOption("NPts",NPts);
 
-    if (!(successALT && successN && successRA)){
-      std::cerr << "Invalid Binnings or Number of Points per cone" << std::endl;
-      exit(EXIT_FAILURE);
+    if (!(successN)){
+      std::cerr << "Invalid Number of Points per cone" << std::endl;
       return -1;
     }
     else{
-      if((RABins <=0) || (ALTBins <= 0) || (NPts <= 0)){
-        std::cerr << "Invalid Binnings or number of points per cone" << std::endl;
-        exit(EXIT_FAILURE);
+      if((NPts <= 0)){
+        std::cerr << "Invalid number of points per cone" << std::endl;
         return -1;
       }
     }
@@ -87,7 +99,6 @@ int main(int argc, char** argv){
     bool successExposureTime = options->GetOption("ExposureTime",ExposureTime);
     if (!(successExposureTime)){
       std::cerr << "Invalid Exposure time" << std::endl;
-      exit(EXIT_FAILURE);
       return -1;
     }
     else{
@@ -123,26 +134,28 @@ int main(int argc, char** argv){
 
     std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ConeData;
     ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
+    std::unique_ptr<TFile> EffAreaFile(TFile::Open(EffectiveAreaRoot.c_str(), "READ"));
+    std::unique_ptr<TFile> RefFile(TFile::Open(ReferenceFluxRoot.c_str(), "READ"));
+    std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
+    std::unique_ptr<TFile> MaskFile(TFile::Open(MaskRoot.c_str(), "READ"));
+    TH1D* EffAreaFlux= (TH1D*)EffAreaFile->Get("EffArea");
+    TH1D* RefFlux = (TH1D*)RefFile->Get("ReferenceFlux");
+    TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
+    TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
+    int NbinsPhys = PhysFlux->GetNbinsX(); 
+    int NbinsEffArea = EffAreaFlux->GetNbinsX(); 
+    if(NbinsPhys != NbinsEffArea){
+      std::cout << "Binnings don't match. Physical flux has " << NbinsPhys << " while EffArea has " << NbinsEffArea << std::endl;
+      return -1;
+    }
+
     std::unique_ptr<TFile> OutputFile(TFile::Open(OutputFileName.c_str(), "RECREATE"));
+  // Old code for when I though I needed the reconstrution image
+  // If you want to generate sky maps, uncomment code
+  /*
     TH2D Seed;
-    if(weighted){
-      std::unique_ptr<TFile> EffAreaFile(TFile::Open(EffectiveAreaRoot.c_str(), "READ"));
-      std::unique_ptr<TFile> RefFile(TFile::Open(ReferenceFluxRoot.c_str(), "READ"));
-      std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
-      TH1D* EffAreaFlux= (TH1D*)EffAreaFile->Get("EffArea");
-      TH1D* RefFlux = (TH1D*)RefFile->Get("ReferenceFlux");
-      TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
-      int NbinsPhys = PhysFlux->GetNbinsX(); 
-      int NbinsEffArea = EffAreaFlux->GetNbinsX(); 
-      if(NbinsPhys != NbinsEffArea){
-        std::cout << "Binnings don't match. Physical flux has " << NbinsPhys << " while EffArea has " << NbinsEffArea << std::endl;
-        return -1;
-      }
-      Seed = MultipleConesToSkyMapWeighted(ConeData,RABins,ALTBins,NPts,EffAreaFlux,PhysFlux,RefFlux,ExposureTime,NEvents);
-    }
-    else{
-      Seed = MultipleConesToSkyMapUnweighted(ConeData,RABins,ALTBins,NPts);
-    }
+    Seed = MultipleConesToSkyMapWeighted(ConeData,RABins,ALTBins,NPts,EffAreaFlux,PhysFlux,RefFlux,ExposureTime,NEvents);
     OutputFile->WriteObject(&Seed, "SkyMap");
+  */
     return 0;
 }
