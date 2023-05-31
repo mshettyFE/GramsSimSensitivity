@@ -17,7 +17,7 @@ You will need to be able to install cmake, ROOT, and XercesC.
 Go to the directory containing the github repo, but not the repo itself. Run the following commands:
 
 ```
-module load cmake root
+module load cmake root geant4 hepmc3 healpix
 mkdir GramsSimSensitivityWork
 cd GramsSimSensitivityWork
 cmake ../GramsSimSensitivity
@@ -26,9 +26,9 @@ make
 
 NOTE:
 ```
-module load cmake root
+module load cmake root geant4 hepmc3 healpix
 ```
-is unique to the Nevis cluster. You need to substitute that with whatever commands will load in cmake and root on your machine.
+is unique to the Nevis cluster. You need to substitute that with whatever commands will load in these programs/packages on your machine.
 
 # TODO
 There are two very important caveats to keep in mind when interpreting your results from the above simulations.
