@@ -74,7 +74,7 @@ Eigen::Vector3d Project( Eigen::Vector3d Current, Eigen::Vector3d Tip,double sph
 }
 
 double reweight_energy(double energy, TH1D* Reference, TH1D* Physical, double epsilon=1E-7){
-// Takes in normalized histograms and returns the weight that needs to be assigned to 
+  // Takes in normalized histograms and returns the weight that needs to be assigned to 
   double ProbRef = Reference->GetBinContent(Reference->FindBin(energy));
   double ProbPhysical = Physical->GetBinContent(Physical->FindBin(energy));
   double output;
@@ -85,7 +85,7 @@ double reweight_energy(double energy, TH1D* Reference, TH1D* Physical, double ep
   else{
     output = ProbPhysical/ProbRef; 
   }
-//  std::cout << energy<< '\t' <<  ProbPhysical << '\t' << ProbRef << '\t'<<  output << std::endl;
+  //  std::cout << energy<< '\t' <<  ProbPhysical << '\t' << ProbRef << '\t'<<  output << std::endl;
   return output;
 }
 
@@ -93,14 +93,13 @@ double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time
   // Assumes that you can multiply EffArea and EnergyDepFlux, we take the integral of the product
   TH1D Multiplied;
     Multiplied = (*EffArea)*(*EnergyDepFlux);
-//    Multiplied = (EffArea->GetMean())*(*EnergyDepFlux);
   // integrated_flux now has units of 1/(s sr)
   double integrated_flux = Multiplied.Integral( "width");
   double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
   double weight = projected_photons/((double) NEvents);
-//  std::cout << EnergyDepFlux->Integral("width") << '\t' << integrated_flux <<  std::endl;
-//  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
-// We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
+  //  std::cout << EnergyDepFlux->Integral("width") << '\t' << integrated_flux <<  std::endl;
+  //  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
+  // We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
   return (integrated_flux*exposure_time*4*acos(-1))/((double) NEvents);
 }
 
@@ -199,7 +198,7 @@ double sphere_rad,std::string title){
   EnergyDepFlux->Scale(1./EnergyDepFlux->Integral());
   ReferenceFlux->Scale(1./ReferenceFlux->Integral());
   // placeholder for final weight
-  double weight;
+  double weight=0.0;
   // Create empty skymap with correct binning
   TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
   // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
@@ -229,4 +228,34 @@ int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
     Seed.Add(&AddOn);
   }
   return Seed;
+}
+
+void ConesToCountsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int NPts,
+TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask, TH1D* OutputHist,
+double exposure_time, long NEvents, double proj_sphere_rad){
+  // Define pi
+  double pi = acos(-1);
+  int RA_Bins = Mask->GetNbinsX();
+  int ALT_Bins = Mask->GetNbinsY();
+  // Calculate the exposure weight
+  double exposure_weight = reweight_duration(EffArea,EnergyDepFlux, exposure_time,NEvents);
+  // Need to normalize Energy DepFlux and ReferenceFlux before calculating energy weight
+  EnergyDepFlux->Scale(1./EnergyDepFlux->Integral());
+  ReferenceFlux->Scale(1./ReferenceFlux->Integral());
+  // placeholder for final weight
+  double weight = 0.0;
+  // For each cone in Cone data, calculate the sky map for that cone
+  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
+    double TEnergy = std::get<7>(Cone->second);
+    // Calculate the energy dependent weight
+    double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
+    weight = energy_weight*exposure_weight;
+    //    std::cout << TEnergy << '\t' <<  weight << std::endl;
+    std::string title =  "Tmp";
+    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
+    AddOn.Multiply(Mask);
+    if(AddOn.Integral() >0){
+      OutputHist->Fill(TEnergy,weight);
+    }
+  }
 }

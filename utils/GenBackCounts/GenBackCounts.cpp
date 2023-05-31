@@ -134,14 +134,20 @@ int main(int argc, char** argv){
 
     std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ConeData;
     ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
+
     std::unique_ptr<TFile> EffAreaFile(TFile::Open(EffectiveAreaRoot.c_str(), "READ"));
     std::unique_ptr<TFile> RefFile(TFile::Open(ReferenceFluxRoot.c_str(), "READ"));
     std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
     std::unique_ptr<TFile> MaskFile(TFile::Open(MaskRoot.c_str(), "READ"));
+
     TH1D* EffAreaFlux= (TH1D*)EffAreaFile->Get("EffArea");
     TH1D* RefFlux = (TH1D*)RefFile->Get("ReferenceFlux");
     TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
     TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
+
+    TH1D* BackgroundCounts = (TH1D*) EffAreaFlux->Clone();
+    BackgroundCounts->Reset();
+
     int NbinsPhys = PhysFlux->GetNbinsX(); 
     int NbinsEffArea = EffAreaFlux->GetNbinsX(); 
     if(NbinsPhys != NbinsEffArea){
@@ -150,6 +156,10 @@ int main(int argc, char** argv){
     }
 
     std::unique_ptr<TFile> OutputFile(TFile::Open(OutputFileName.c_str(), "RECREATE"));
+
+    ConesToCountsWeighted(ConeData, NPts, EffAreaFlux, PhysFlux, RefFlux, Mask, BackgroundCounts, ExposureTime,NEvents);
+   OutputFile->WriteObject(BackgroundCounts, "BackgroundCounts");
+ 
   // Old code for when I though I needed the reconstrution image
   // If you want to generate sky maps, uncomment code
   /*
