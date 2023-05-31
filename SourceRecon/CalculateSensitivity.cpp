@@ -290,8 +290,6 @@ int main(int argc, char** argv){
   Long64_t count = 0;
   std::cout << "Calculating Sensitivity..." << std::endl;
   for(Long64_t i=0; i<TotalCones; ++i){
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
     SourceCones.GetEntry(i);
     TH2D SourceHist = ConeToSkyMap( xDir,  yDir,  zDir,  xTip,  yTip,  zTip, RecoAngle, 
      RA_Bins,  ALT_Bins,NPts);
@@ -309,11 +307,9 @@ int main(int argc, char** argv){
       FiveSigmaCount = count;
       break;
     }
-    end = std::chrono::system_clock::now();
     if(verbose){
-      std::chrono::duration<double> elapsed_seconds = end - start;
       std::cout << " Thresholds: " << ThreeSigmaThreshold << "\t" << FiveSigmaThreshold <<
-      " Current Cone: " << i << " Total Cones: " << TotalCones << " Elasped Time: " << elapsed_seconds.count() << std::endl;
+      " Current count" << count << "Current Cone" << i << std::endl;
     }
   }
 

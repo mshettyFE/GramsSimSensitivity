@@ -58,7 +58,7 @@ file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 # Create BackgroundCount zip directories
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCount)
 
-# Copy over options.xml to SkyMap
+# Copy over options.xml to BackgroundCount
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCount)
 
 #Copy over options.xml to SourceRecon
@@ -66,3 +66,5 @@ file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_D
 
 add_subdirectory(utils)
 add_subdirectory(EffArea)
+add_subdirectory(BackgroundRecon)
+add_subdirectory(SourceRecon)

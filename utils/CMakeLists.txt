@@ -81,5 +81,3 @@ file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BIN
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
-add_subdirectory(GenBackCounts)
-add_subdirectory(CalculateSensitivity)
