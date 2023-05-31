@@ -9,7 +9,7 @@
 
 #include "Options.h"
 #include "CalcSenseUtils.h"
-#include "GenSkyMapUtils.h"
+#include "GenBackCountsUtils.h"
 
 /*
 ## Plan: Read in all background histograms as TChain into a single summed background
