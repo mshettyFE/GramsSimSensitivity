@@ -1,4 +1,4 @@
-This repository contains the various scripts and tools used to calculate the sensitivity of the GRAMS detector to MeV gamma rays. Based on the Geant4 simulation [GramsSim](https://github.com/wgseligman/GramsSim).
+ This repository contains the various scripts and tools used to calculate the sensitivity of the GRAMS detector to MeV gamma rays. Based on the Geant4 simulation [GramsSim](https://github.com/wgseligman/GramsSim).
 
 # Folders
 Each folder contains a different aspect of calculating the sensitivity. For more information on a particular aspect of the simulation, please read the associated README.md in each folder.
