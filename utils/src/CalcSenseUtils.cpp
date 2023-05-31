@@ -10,7 +10,7 @@
 #include "TFile.h"
 #include "TH2D.h"
 
-bool ReadBackgroundSkyMaps(std::string base_name,int nbatches, TH1D* AggBackCounts){
+bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggBackCounts){
         for(int i=0; i< nbatches; ++i){
           std::string id = std::to_string(i);
           std::string path = base_name+id+".root";

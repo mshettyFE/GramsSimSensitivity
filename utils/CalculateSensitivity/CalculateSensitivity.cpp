@@ -1,6 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include <stdexcept>
+#include <chrono>
 
 #include "TChain.h"
 #include "TH2D.h"
@@ -57,8 +58,8 @@ int main(int argc, char** argv){
   std::string BackgroundPath;
   std::string BackgroundBase;
   std::string AbsBackRootName;
-  bool BackPathCheck = options->GetOption("BackgroundCountFolder", BackgroundPath);
-  bool BackBaseCheck  = options->GetOption("BackgroundBaseName", BackgroundBase);
+  bool BackPathCheck = options->GetOption("BackgroundBaseName", BackgroundPath);
+  bool BackBaseCheck  = options->GetOption("BackgroundCountFolder", BackgroundBase);
   if(BackBaseCheck && BackBaseCheck){
     if((BackgroundPath.length()>0) || (BackgroundBase.length()>0)){
       AbsBackRootName = BackgroundPath+"/"+BackgroundBase;
@@ -77,8 +78,8 @@ int main(int argc, char** argv){
   std::string SourcePath;
   std::string SourceBase;
   std::string AbsSourceRootName;
-  bool SourcePathCheck = options->GetOption("SourceConesFolder", SourcePath);
-  bool SourceBaseCheck  = options->GetOption("SourceConesBaseName", SourceBase);
+  bool SourcePathCheck = options->GetOption("SourceConesBaseName", SourcePath);
+  bool SourceBaseCheck  = options->GetOption("SourceConesFolder", SourceBase);
   if(SourceBaseCheck && SourceBaseCheck){
     if((SourcePath.length()>0) || (SourceBase.length()>0)){
       AbsSourceRootName = SourcePath+"/"+SourceBase;
@@ -126,7 +127,7 @@ int main(int argc, char** argv){
         SourceEventsPerJob = std::stol(TempNEvents);
       }
       catch(...){
-        std::cerr << "Can't convert NEvents to long "  << std::endl;
+        std::cerr << "Can't convert SourceEventsPerJob  to long "  << std::endl;
         return -1;
       }
     // We need SourceEventsPerJob to be strictly positive
@@ -142,7 +143,7 @@ int main(int argc, char** argv){
     bool CheckExposure = options->GetOption("ExposureTime",ExposureTime);
     if(CheckExposure){
         if(ExposureTime<=0){
-            std::cerr << "Invalid exposure time. needs to be strictly positive" << std::endl;
+            std::cerr << "Invalid exposure time. needs to be strictly positive. Units of seconds" << std::endl;
             return -1;
         }
     }
@@ -156,7 +157,7 @@ int main(int argc, char** argv){
     bool CheckSourceEnergy = options->GetOption("SourceEnergy",SourceEnergy);
     if(CheckSourceEnergy){
         if(SourceEnergy<=0){
-            std::cerr << "Invalid Source Energy. needs to be strictly positive" << std::endl;
+            std::cerr << "Invalid Source Energy. needs to be strictly positive. Units MeV" << std::endl;
             return -1;
         }
     }
@@ -253,7 +254,7 @@ int main(int argc, char** argv){
   int TargetBin = ExtractBinNum(SourceEnergy, AggBackCounts);
 
   // Aggregate all the sky maps that exist
-  bool CheckAgg = ReadBackgroundSkyMaps(AbsBackRootName,batches,AggBackCounts);
+  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggBackCounts);
 
   std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
   TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
@@ -265,8 +266,8 @@ int main(int argc, char** argv){
 
   std::cout << "Mean: " << mu << '\t' << "Sigma: " << sigma << std::endl;
  
-  int RA_Bins = AggBackCounts->GetNbinsX(); 
-  int ALT_Bins = AggBackCounts->GetNbinsY(); 
+  int RA_Bins = Mask->GetNbinsX();
+  int ALT_Bins = Mask->GetNbinsY(); 
 
   std::cout << "Reading Source Cones..." << std::endl;
   TChain SourceCones("Cones");
@@ -289,26 +290,30 @@ int main(int argc, char** argv){
   Long64_t count = 0;
   std::cout << "Calculating Sensitivity..." << std::endl;
   for(Long64_t i=0; i<TotalCones; ++i){
-    if(verbose){
-      std::cout << "Current Cone: " << i << " Total Cones: " << TotalCones <<  " Current Count: " << Tally <<
-       " Thresholds: " << ThreeSigmaThreshold << "\t" << FiveSigmaThreshold << std::endl;
-    }
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
     SourceCones.GetEntry(i);
     TH2D SourceHist = ConeToSkyMap( xDir,  yDir,  zDir,  xTip,  yTip,  zTip, RecoAngle, 
      RA_Bins,  ALT_Bins,NPts);
+     SourceHist.Multiply(Mask);
     double inside_count = SourceHist.Integral();
     if(inside_count > 0){
-      Tally += inside_count;
       count += 1;
     }
-    if((Tally>= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
+    if((count>= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
       ThreeSigmaFlag = true;
       ThreeSigmaCount = count;
     }
-    if((Tally>= FiveSigmaThreshold) && !(FiveSigmaFlag)){
+    if((count>= FiveSigmaThreshold) && !(FiveSigmaFlag)){
       FiveSigmaFlag = true;
       FiveSigmaCount = count;
       break;
+    }
+    end = std::chrono::system_clock::now();
+    if(verbose){
+      std::chrono::duration<double> elapsed_seconds = end - start;
+      std::cout << " Thresholds: " << ThreeSigmaThreshold << "\t" << FiveSigmaThreshold <<
+      " Current Cone: " << i << " Total Cones: " << TotalCones << " Elasped Time: " << elapsed_seconds.count() << std::endl;
     }
   }
 
