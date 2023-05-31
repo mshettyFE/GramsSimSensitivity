@@ -10,15 +10,3 @@ add_executable(${SENSEPROG} CalculateSensitivity.cpp)
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}GenBackCountsUtils )
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}CalcSenseUtils )
-
-
-# Copy over executable to SourceRecon
-
-#add_custom_command(TARGET ${SENSEPROG} 
-#                   POST_BUILD
-#                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SENSEPROG}> ${CMAKE_BINARY_DIR}/SourceRecon)
-
-# Remove executable from current directory
-#add_custom_command(TARGET ${SENSEPROG}
-#                    POST_BUILD
-#                    COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE:${SENSEPROG}>)

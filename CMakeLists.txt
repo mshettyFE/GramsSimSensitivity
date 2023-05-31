@@ -55,16 +55,21 @@ file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/BackgroundR
 file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/SourceRecon/*")
 file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
-# Create BackgroundCount zip directories
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCount)
+# Create BackgroundCountHist zip directory
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
 
-# Copy over options.xml to BackgroundCount
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCount)
+# Copy over options.xml to BackgroundCountHist
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
+
+# Create SourceCountHist zip directory
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
+
+# Copy over options.xml to SourceCountHist
+file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
 
 #Copy over options.xml to SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 add_subdirectory(utils)
 add_subdirectory(EffArea)
-add_subdirectory(BackgroundRecon)
 add_subdirectory(SourceRecon)
