@@ -57,8 +57,8 @@ int main(int argc, char** argv){
   std::string BackgroundPath;
   std::string BackgroundBase;
   std::string AbsBackRootName;
-  bool BackPathCheck = options->GetOption("BackgroundHistFolder", BackgroundPath);
-  bool BackBaseCheck  = options->GetOption("BackgroundHistBaseName", BackgroundBase);
+  bool BackPathCheck = options->GetOption("BackgroundCountFolder", BackgroundPath);
+  bool BackBaseCheck  = options->GetOption("BackgroundBaseName", BackgroundBase);
   if(BackBaseCheck && BackBaseCheck){
     if((BackgroundPath.length()>0) || (BackgroundBase.length()>0)){
       AbsBackRootName = BackgroundPath+"/"+BackgroundBase;
@@ -93,26 +93,9 @@ int main(int argc, char** argv){
     return -1;
   }
 
-  // Read in distribution type. This determines 3 and 5 sigma thresholds
-  std::string Distribution;
-  std::string Gauss = "Gauss";
-  std::string Poisson = "Poisson";
-  bool DistCheck = options->GetOption("Distribution",Distribution);
-  if(DistCheck){
-    if((Distribution!=Gauss) && (Distribution!=Poisson)){
-        std::cerr << "Invalid Distribution Name" << std::endl;
-        return -1;
-    }
-  }
-  else{
-    std::cerr << "Invalid Distribution Name" << std::endl;
-    return -1;
-  }
-
   // Read in NPts
     int NPts;
     bool successN = options->GetOption("NPts",NPts);
-
     if (!(successN)){
       std::cerr << "Invalid Number of Points per cone" << std::endl;
       exit(EXIT_FAILURE);
@@ -126,11 +109,12 @@ int main(int argc, char** argv){
       }
     }
 
-    // Determine number of events. This is a workaround of parsing a string and fact checking that it can be a positive long
+    // Determine number of events per batch job of source.
+    // This is a workaround of parsing a string and fact checking that it can be a positive long
     // I really didn't want to try and template Options.h
     std::string TempNEvents;
-    long NEvents;
-    bool successNEvents = options->GetOption("TotalSourceEvents",TempNEvents);
+    long SourceEventsPerJob;
+    bool successNEvents = options->GetOption("SourceEventsPerJob",TempNEvents);
     if (!(successNEvents)){
       std::cerr << "Invalid Number of total events" << std::endl;
       exit(EXIT_FAILURE);
@@ -139,14 +123,14 @@ int main(int argc, char** argv){
     else{
         // try catch to see if we can convert to long
       try{
-        NEvents = std::stol(TempNEvents);
+        SourceEventsPerJob = std::stol(TempNEvents);
       }
       catch(...){
         std::cerr << "Can't convert NEvents to long "  << std::endl;
         return -1;
       }
-    // We need NEvents to be strictly positive
-      if(NEvents<=0){
+    // We need SourceEventsPerJob to be strictly positive
+      if(SourceEventsPerJob<=0){
         std::cerr << "Number of total events needs be positive and non-zero" << std::endl;
         exit(EXIT_FAILURE);
         return -1;
@@ -253,59 +237,36 @@ int main(int argc, char** argv){
 
     std::cout << "Reading in Background..." << std::endl;
 
-    // Load in skeleton of AggSkyMap from the first generated background skymap
-    TH2D* AggSkyMap;
+    // Load in skeleton of BackgroundCounts from the first background count histogram
+    TH1D* AggBackCounts;
     std::string seed = AbsBackRootName+"0.root";
     if(!std::filesystem::exists(seed)){
       std::cerr << seed << " could not be found " << std::endl;
       return -1;
     }
 
-    std::unique_ptr<TFile> Seed(TFile::Open(seed.c_str(), "READ"));
-    AggSkyMap = (TH2D*)Seed->Get("SkyMap");
-    AggSkyMap->Reset();
+  std::unique_ptr<TFile> Seed(TFile::Open(seed.c_str(), "READ"));
+  AggBackCounts = (TH1D*)Seed->Get("BackgroundCounts");
+  AggBackCounts->Reset();
+
+  // Get bin number of region of background we are comparing against
+  int TargetBin = ExtractBinNum(SourceEnergy, AggBackCounts);
 
   // Aggregate all the sky maps that exist
-  bool CheckAgg = ReadBackgroundSkyMaps(AbsBackRootName,batches,AggSkyMap);
-
+  bool CheckAgg = ReadBackgroundSkyMaps(AbsBackRootName,batches,AggBackCounts);
 
   std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
   TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
 
-  //Store aggregate histograms for viewing later
-  //std::unique_ptr<TFile> TestFile(TFile::Open("TestFile.root", "RECREATE"));
-  //TestFile->WriteObject(AggSkyMap, "AllSky");
-  std::cout << "Applying mask..." << std::endl;
-  AggSkyMap->Multiply(Mask);
-  //TestFile->WriteObject(AggSkyMap, "Masked");
-
-  std::vector<double> NonZeroBack = ExtractNonZero(AggSkyMap);
-
-  double sum = 0.0;
-  for(auto i=NonZeroBack.begin(); i!= NonZeroBack.end(); ++i){
-    sum += (*i);
-  }
-
-  //std::cout << sum << '\t' << AggSkyMap->Integral() << std::endl;
-
-  double mu,sigma;
-  if(Distribution==Gauss){
-    mu = Mean(NonZeroBack);
-    sigma = StdDev(NonZeroBack);
-  }
-  else if(Distribution==Poisson){
-    mu = Mean(NonZeroBack);
-    sigma = sqrt(mu);
-  }
-  else{
-    std::cerr << "Invalid distribution type" << std::endl;
-  }
+  double mu = AggBackCounts->GetBinContent(TargetBin);
+  double sigma = AggBackCounts->GetBinError(TargetBin);
   double ThreeSigmaThreshold = mu+3*sigma;
   double FiveSigmaThreshold = mu+5*sigma;
+
   std::cout << "Mean: " << mu << '\t' << "Sigma: " << sigma << std::endl;
  
-  int RA_Bins = AggSkyMap->GetNbinsX(); 
-  int ALT_Bins = AggSkyMap->GetNbinsY(); 
+  int RA_Bins = AggBackCounts->GetNbinsX(); 
+  int ALT_Bins = AggBackCounts->GetNbinsY(); 
 
   std::cout << "Reading Source Cones..." << std::endl;
   TChain SourceCones("Cones");
@@ -351,8 +312,13 @@ int main(int argc, char** argv){
     }
   }
 
-  double NPhotonsThreeSigma = ((ThreeSigmaCount)/((double)(TotalCones))) * ((double) NEvents);
-  double NPhotonsFiveSigma = ((FiveSigmaCount)/((double)(TotalCones))) * ((double) NEvents);
+
+  std::tuple<long,long> Used3Sigma = CalculateUsedPhotons(AbsSourceRootName,batches,  SourceEventsPerJob, ThreeSigmaCount);
+  std::tuple<long,long> Used5Sigma = CalculateUsedPhotons(AbsSourceRootName, batches, SourceEventsPerJob, FiveSigmaCount);
+
+  // Fix this. Total cones to cones read in files
+  double NPhotonsThreeSigma = ((ThreeSigmaCount)/((double)(std::get<1>(Used3Sigma)))) * ((double) std::get<0>(Used3Sigma));
+  double NPhotonsFiveSigma = ((FiveSigmaCount)/((double)(std::get<1>(Used5Sigma)))) * ((double) std::get<0>(Used5Sigma));
 
   std::unique_ptr<TFile> EffAFile(TFile::Open(EffectiveAreaPath.c_str(), "READ"));
   TH1D* EffA= (TH1D*) EffAFile->Get("EffArea");

@@ -1,4 +1,5 @@
 #include <string>
+#include <tuple>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -9,7 +10,7 @@
 #include "TFile.h"
 #include "TH2D.h"
 
-bool ReadBackgroundSkyMaps(std::string base_name,int nbatches, TH2D* AggSkyMap){
+bool ReadBackgroundSkyMaps(std::string base_name,int nbatches, TH1D* AggBackCounts){
         for(int i=0; i< nbatches; ++i){
           std::string id = std::to_string(i);
           std::string path = base_name+id+".root";
@@ -18,8 +19,8 @@ bool ReadBackgroundSkyMaps(std::string base_name,int nbatches, TH2D* AggSkyMap){
             continue;
           }
             std::unique_ptr<TFile> Current(TFile::Open(path.c_str(), "READ"));
-            TH2D* AddonHist = (TH2D*)Current->Get("SkyMap");
-            AggSkyMap->Add(AddonHist);
+            TH1D* AddonHist = (TH1D*)Current->Get("BackgroundCounts");
+            AggBackCounts->Add(AddonHist);
         }
     return true;
 }
@@ -38,39 +39,16 @@ void ReadConeData(std::string base_name, int nbatches, TChain &Output){
     }
 }
 
-std::vector<double> ExtractNonZero(TH2D* histogram){
-    std::vector<double> output;
-    auto XAxis = histogram->GetXaxis();
-    auto YAxis = histogram->GetYaxis();
-    for(int i=0; i<histogram->GetNbinsX(); ++i){
-        for(int j=0; j<histogram->GetNbinsY(); ++j){
-            double RA = XAxis->GetBinCenter(i);
-            double ALT = YAxis->GetBinCenter(j);
-            long current_bin = histogram->FindBin(RA,ALT);
-            double counts = histogram->GetBinContent(current_bin);
-            if(counts >0){
-                output.push_back(counts);
-            }
-        }
+int ExtractBinNum(double SourceEnergy, TH1D* Histogram){
+    int nbins = Histogram->GetNbinsX();
+    double upper_bound = Histogram->GetXaxis()->GetBinCenter(nbins);
+    if(SourceEnergy>= upper_bound){
+        std::cerr << "Source Energy too high. Defaulting to highest bin..." << std::endl;
+        return nbins-1;
     }
-    return output;
+    return Histogram->FindBin(SourceEnergy);
 }
 
-double Mean(std::vector<double> data){
-    double sum = std::accumulate(std::begin(data), std::end(data), 0.0);
-    return sum /((double) data.size());
-}
-
-double StdDev(std::vector<double> data){
-    double mean = Mean(data);
-
-    double accum = 0.0;
-    std::for_each (std::begin(data), std::end(data), [&](const double d) {
-        accum += (d - mean) * (d - mean);
-    });
-
-    return sqrt(accum /((double) (data.size()-1)));
-}
 
 double ExtractEffArea(double SourceEnergy, TH1D* EffAreaHist){
     int nbins = EffAreaHist->GetNbinsX();
@@ -80,4 +58,36 @@ double ExtractEffArea(double SourceEnergy, TH1D* EffAreaHist){
         return     EffAreaHist->GetBinContent(nbins-1);
     }
     return EffAreaHist->GetBinContent(EffAreaHist->FindBin(SourceEnergy));
+}
+
+std::tuple<long,long> CalculateUsedPhotons(std::string base_name, int nbatches, int PhotonsPerBatch, double threshold){
+    //0: TotalPhotons, 1: TotalCones associated with total photons
+    std::tuple<long,long> output;
+
+    int count = 0;
+    for(int i=0; i<nbatches; ++i){
+        std::string id = std::to_string(i);
+        std::string path = base_name+id+".root";
+        long sum = 0;
+        if(std::filesystem::exists(path)){
+            count++;
+            std::unique_ptr<TFile> SourceCones(TFile::Open(path.c_str(), "READ"));
+            TH1D* Cones = (TH1D*) SourceCones->Get("Cones");
+            sum += Cones->GetEntries();
+            if(sum>=threshold){
+                long nphotons = count*PhotonsPerBatch;
+                long ncones = sum;
+                output = std::make_tuple(nphotons,ncones);
+                return output;
+            }
+        }
+        else{
+            std::cerr << "Couldn't find " << path << std::endl;
+            continue;
+        }
+    }
+
+    std::cerr << "Threshold not met" << std::endl;
+    output= std::make_tuple(0,0);
+    return output;
 }
