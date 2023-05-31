@@ -1,4 +1,4 @@
-# Create GenSkyMap Executable to be used in BackgroundRecon and SourceRecon
+# Create BackCounts Executable to be used in BackgroundRecon
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
 
@@ -10,13 +10,13 @@ target_link_libraries(${GEN_BACK_COUNT} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${GEN_BACK_COUNT} ${CMAKE_PROJECT_NAME}ReadRoot )
 target_link_libraries(${GEN_BACK_COUNT} ${CMAKE_PROJECT_NAME}GenBackCountsUtils )
 
-# Copy over GenSkyMap executable to BackgroundRecon, SourceRecon
+# Copy over BackCounts executable to BackgroundRecon
 
 add_custom_command(TARGET ${GEN_BACK_COUNT} 
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_BACK_COUNT}> ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCount)
 
-# Remove GenSkyMap executable from current directory
+# Remove executable from current directory
 add_custom_command(TARGET ${GEN_BACK_COUNT}
                     POST_BUILD 
                     COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE:${GEN_BACK_COUNT}>)
