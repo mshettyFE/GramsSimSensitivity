@@ -4,7 +4,7 @@ file(GLOB UtilSrc src/Options.cpp
     )
 
 # The library's name will be lib(project)SenseUtilities and will
-# be located in /util within the build directory. .
+# be located in /util within the build directory.
 set(LibName ${CMAKE_PROJECT_NAME}SenseUtilities)
 add_library (${LibName} STATIC ${UtilSrc})
 
@@ -78,6 +78,11 @@ target_include_directories (${CMAKE_PROJECT_NAME}CalcSenseUtils PUBLIC ${CMAKE_C
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
+# Copy over GenCondorCountsHistsScripts.py to BackgroundRecon and SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
+add_subdirectory(GenCountsHists)

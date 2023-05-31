@@ -33,4 +33,13 @@ void ConesToCountsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double
 TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask, TH1D* OutputHist,
 double exposure_time=3600, long NEvents=100000, double proj_sphere_rad=600);
 
+void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+ int NPts,
+TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask,double exposure_time, long NEvents, 
+TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad=600);
+
+void CountsHistsUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+ int NPts, TH2D*Mask, TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad=600);
+
+
 #endif

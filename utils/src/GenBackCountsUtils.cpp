@@ -259,3 +259,56 @@ double exposure_time, long NEvents, double proj_sphere_rad){
     }
   }
 }
+
+void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+ int NPts,
+ TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask,double exposure_time, long NEvents, 
+ TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad){
+  // Define pi
+  double pi = acos(-1);
+  int RA_Bins = Mask->GetNbinsX();
+  int ALT_Bins = Mask->GetNbinsY();
+  // Calculate the exposure weight
+  double exposure_weight = reweight_duration(EffArea,EnergyDepFlux, exposure_time,NEvents);
+  // Need to normalize Energy DepFlux and ReferenceFlux before calculating energy weight
+  EnergyDepFlux->Scale(1./EnergyDepFlux->Integral());
+  ReferenceFlux->Scale(1./ReferenceFlux->Integral());
+  // placeholder for final weight
+  double weight = 0.0;
+  // For each cone in Cone data, calculate the sky map for that cone
+  std::string title =  "Tmp";
+  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
+    double TEnergy = std::get<7>(Cone->second);
+    // Calculate the energy dependent weight
+    double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
+    weight = energy_weight*exposure_weight;
+    //    std::cout << TEnergy << '\t' <<  weight << std::endl;
+    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
+    AddOn.Multiply(Mask);
+    OutputSkyMap->Add(&AddOn);
+    if(AddOn.Integral() >0){
+      OutputHist->Fill(TEnergy,weight);
+    }
+  }
+}
+
+void CountsHistsUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+ int NPts, TH2D* Mask, TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad){
+  // Define pi
+  double pi = acos(-1);
+  int RA_Bins = Mask->GetNbinsX();
+  int ALT_Bins = Mask->GetNbinsY();
+  // Fix weight to be 1
+  double weight = 1.0;
+  // For each cone in Cone data, calculate the sky map for that cone
+  std::string title =  "Tmp";
+  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
+    double TEnergy = std::get<7>(Cone->second);
+    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
+    AddOn.Multiply(Mask);
+    OutputSkyMap->Add(&AddOn);
+    if(AddOn.Integral() >0){
+      OutputHist->Fill(TEnergy,weight);
+    }
+  }
+ }
