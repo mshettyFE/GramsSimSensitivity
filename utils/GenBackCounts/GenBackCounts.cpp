@@ -1,6 +1,6 @@
 #include "Options.h"
 #include "ReadRootFiles.h"
-#include "GenSkyMapUtils.h"
+#include "GenBackCountsUtils.h"
 
 #include "TH2D.h"
 #include "TH1D.h"

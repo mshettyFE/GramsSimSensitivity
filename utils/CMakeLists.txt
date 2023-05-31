@@ -51,17 +51,17 @@ add_library (${ReconstructLib} STATIC ${ReconstructSrc})
 target_link_libraries(${ReconstructLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}ReconstructUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Create GenSkyMapUtils library
-file(GLOB GenSkyMapSrc src/GenSkyMapUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/GenSkyMapUtils.cpp
+# Create GenBackCountsUtils library
+file(GLOB GenBackCountsSrc src/GenBackCountsUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/util/src/GenBackCountsUtils.cpp
     )
 
-set(GenSkyMapLib ${CMAKE_PROJECT_NAME}GenSkyMapUtils)
-add_library (${GenSkyMapLib} STATIC ${GenSkyMapSrc})
+set(GenBackLib ${CMAKE_PROJECT_NAME}GenBackCountsUtils)
+add_library (${GenBackLib} STATIC ${GenBackCountsSrc})
 
-target_link_libraries(${GenSkyMapLib} ${ROOT_LIBRARIES} )
-target_link_libraries(${GenSkyMapLib} ${Eigen_LIBRARIES} )
-target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(${GenBackLib} ${ROOT_LIBRARIES} )
+target_link_libraries(${GenBackLib} ${Eigen_LIBRARIES} )
+target_include_directories (${CMAKE_PROJECT_NAME}GenBackCountsUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create CalcSenseUtils library
 file(GLOB CalcSenseSrc src/CalcSenseUtils.cpp
@@ -74,19 +74,12 @@ add_library (${CalcSenseLib} STATIC ${CalcSenseSrc})
 target_link_libraries(${CalcSenseLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}CalcSenseUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Copy GenEnergySpectrum.py over to Background
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenEnergySpectrum.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-
 # Copy over GenCondorScripts.py to BackgroundRecon and SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
-# Copy over GenCondorScriptsHist.py to BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScriptsHist.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScriptsHist.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-
 # Create Extract and Reconstruct helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
-add_subdirectory(GenSkyMap)
+add_subdirectory(GenBackCounts)
 add_subdirectory(CalculateSensitivity)
