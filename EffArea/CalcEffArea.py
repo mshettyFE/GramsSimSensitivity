@@ -10,8 +10,7 @@ if __name__=="__main__":
     parser.add_argument("Output", help="Outputs EffArea data in specified format. Available formats are either .txt or .root.")
     parser.add_argument("-n","--TotalEvents",type=int,default=10000,help="Number of events assigned to each batch file")
     parser.add_argument("-b", "--TotalBatches", type=int,default=10000,help="Number of batches")
-    parser.add_argument("--tree_name", default='Cones',help="Name of TTree in EffArea root files")
-    parser.add_argument("--sphere_rad", default=300,type=float,help="Radius of generating sphere")
+    parser.add_argument("--sphere_rad", default=300,type=float,help="Radius of generating sphere. Default 300")
     parser.add_argument("--seperator", default='\t',help="Seperator of .txt file output")
     parser.add_argument("-v","--verbose",action="store_true")
     args = parser.parse_args()
@@ -25,7 +24,7 @@ if __name__=="__main__":
         path = os.path.join(args.start_folder,args.base_name+str(batch)+".root")
         try:
             file = ROOT.TFile(path,"READ")
-            tree = file.Get(args.tree_name)
+            tree = file.Get("Cones")
         except:
             print("Problem with opening ROOT file:", path)
             sys.exit()

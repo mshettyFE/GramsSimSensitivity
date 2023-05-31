@@ -103,16 +103,14 @@
     <GenSkyMap>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
         <option name="Output" value="SkyMap.root" short='o' type="string" desc="Output root file containing TH2D of SkyMap"></option>
-        <option name="RABins" value="500" type="integer" desc="Number of bins in RA axis."></option>
-        <option name="ALTBins" value="500" type="integer" desc="Number of bins in ALT axis."></option>
-        <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
-        <option name="weighted" short="w" type="flag"></option>
-        <option name="ExposureTime" value="3600.0" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
+        <option name="ExposureTime" value="-1" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
         <!-- Hacky way of allowing total events to exceed range of int. Read as string, interpret as integer. I really didn't want to figure out the templating GetOptions -->
-        <option name="TotalEvents" value="100000" type="string" desc="The total number of events assigned to the batch job"></option>
-        <option name="ReferenceFluxFile" value="ReferenceFlux.root" type="string" desc="Reference energy flux that follows a Log Uniform distribution. From GenEnergySpectrum.py"></option>
-        <option name="PhysicalFluxFile" value="BackgroundFlux.root" type="string" desc="Physical energy flux that follows a user defined distribution. From GenEnergySpectrum.py"></option>
-        <option name="EffAreaFile" value="EffArea.root" type="string" desc="Effective Area histogram generated from CalcEffArea.py"></option>
+        <option name="TotalEvents" value="-1" type="string" desc="The total number of events assigned to the batch job"></option>
+        <option name="ReferenceFluxFile" value="" type="string" desc="Reference energy flux that follows a Log Uniform distribution. From GenEnergySpectrum.py"></option>
+        <option name="PhysicalFluxFile" value="" type="string" desc="Physical energy flux that follows a user defined distribution. From GenEnergySpectrum.py"></option>
+        <option name="EffAreaFile" value="" type="string" desc="Effective Area histogram generated from CalcEffArea.py"></option>
+        <option name="MaskFile" value="" type="string" desc="Binary mask file. From GenMask.py"></option>
+        <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
     </GenSkyMap>
 
     <Sensitivity>

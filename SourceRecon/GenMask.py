@@ -55,18 +55,18 @@ if __name__=="__main__":
                         description='What the program does')
     parser.add_argument("SourcePath", help="Location where all the reconstruction files of the source are at")
     parser.add_argument("ReconstructionBase", help="The base name of the source files (ie. drop the ${num}.root part)")
-    parser.add_argument("HistogramPath", help="A sample histogram we want to create a mask for (for instance, a background histogram)")
     parser.add_argument("RA_loc", type=float, help="Right ascension Location of source")
     parser.add_argument("ALT_loc", type=float, help="Altitude location of source")
     parser.add_argument("Output",help="Output root file name")
+    parser.add_argument("--RABins",type=int, default=500, help="Number of bins along RA axis")
+    parser.add_argument("--ALTBins",type=int, default=500, help="Number of bins along ALT axis")
     parser.add_argument("-d","--draw",action="store_true", help="Wheather you want to save the ARM distribution and final map to jpgs")
     parser.add_argument("--nbins",type=int, default=50000, help="Number of binnings to create in ARM distribution")
     args = parser.parse_args()
     ## Set batch mode on so that canvas doesn't keep opening
     ROOT.gROOT.SetBatch(1)
-    ## Read in the example histogram and create a blank copy that preserves the binnings
-    TemplateHistogramFile = ROOT.TFile(args.HistogramPath,"READ")
-    blankHist = TemplateHistogramFile.Get("SkyMap").Clone()
+    ## Create blank sky map
+    blankHist = ROOT.TH2D("Mask","Binary Mask",args.RABins,-np.pi,np.pi,args.ALTBins,-np.pi/2.0, np.pi/2.0)
     blankHist.Reset()
     ## The regex? you pass to glob to identify the reconstruction files
     ## https://docs.python.org/3/library/glob.html
@@ -97,7 +97,7 @@ if __name__=="__main__":
     ## Fit function and extract ARM
     ARM_Dist.Fit("Lorentzian")
     ARM = abs(func.GetParameter(2))
-    print(ARM)
+    print("ARM:",ARM)
     ## Draw ARM distribution
     if(args.draw):
         ARM_Dist.Draw()
