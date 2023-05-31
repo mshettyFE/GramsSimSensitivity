@@ -17,6 +17,7 @@ if __name__=="__main__":
     parser.add_argument("--PhysicalFlux", default="", help="Name of Root file (not the path) containing physical flux of gamma ray source")
     parser.add_argument("--EffectiveArea", default="", help="Name of Effective Area root file (not the path)")
     parser.add_argument("--MaskFile", default="", help="Name of Mask root file (not the path)")
+    parser.add_argument("--Folder", default="BackgroundCount", help="Folder to  be zipped that contains root files and executable")
     parser.add_argument("--TotalEvents", default=-1, type=int, help="Total number of events generated across the entire condor job")
     parser.add_argument("--ExposureTime", default=-1.0,type=float, help="Total exposure time in seconds")
     parser.add_argument("-mem","--MemoryRequested", default=300, type=int, help="Amount of memory in MB requested per job")
@@ -32,7 +33,7 @@ if __name__=="__main__":
     # Create absolute path to GenBackCounts for histograms, shell script path, Reconstructed data location (ie. input), and output file name
     home = os.getcwd()
     shell_path = os.path.join(home,shell_script_name)
-    GenSkyMap_path = os.path.join(home,"BackgroundCount")
+    GenSkyMap_path = os.path.join(home,args.Folder)
     tar_path = os.path.join(home,tar_name)
     ReconstructedDataFileName = args.Input_Path_Rootname+"$(Process).root"
     ShellReconstructedDataFileName = args.Input_Path_Rootname+"${process}.root"
@@ -50,10 +51,10 @@ if __name__=="__main__":
     if((args.RefFlux=="")  or (args.PhysicalFlux=="") or (args.EffectiveArea=="") or (args.MaskFile=="")):
         print("Need to input Reference Flux, PhysicalFlux, Effective Area and Mask File names for reweighting")
         sys.exit()
-    RefFluxPath = os.path.join(home,"BackgroundCount",args.RefFlux)
-    PhysFluxPath = os.path.join(home,"BackgroundCount",args.PhysicalFlux)
-    EffAreaPath = os.path.join(home,"BackgroundCount",args.EffectiveArea)
-    MaskPath = os.path.join(home,"BackgroundCount",args.MaskFile)
+    RefFluxPath = os.path.join(home,args.Folder,args.RefFlux)
+    PhysFluxPath = os.path.join(home,args.Folder,args.PhysicalFlux)
+    EffAreaPath = os.path.join(home,args.Folder,args.EffectiveArea)
+    MaskPath = os.path.join(home,args.Folder,args.MaskFile)
     if (not os.path.exists(RefFluxPath)):
         print("Reference Flux file not present in SkyMap")
         sys.exit()
@@ -79,8 +80,8 @@ if __name__=="__main__":
         f.write("source /usr/nevis/adm/nevis-init.sh\n")
         f.write("module load root\n")
         f.write("tar -xzf "+tar_name+"\n")
-        f.write("mv "+ShellReconstructedDataFileName+" SkyMap\n")
-        f.write("cd SkyMap\n")
+        f.write("mv "+ShellReconstructedDataFileName+" "+args.Folder+"\n")
+        f.write("cd "+args.Folder+"\n")
         f.write("./GenBackCounts -i "+ShellReconstructedDataFileName+" -o "+OutputFileName)
         f.write(" -t "+str(args.ExposureTime)+" --TotalEvents " +str(args.TotalEvents))
         f.write(" --EffAreaFile "+args.EffectiveArea+" --PhysicalFluxFile "+args.PhysicalFlux+" --ReferenceFluxFile "+args.RefFlux+" --MaskFile "+ args.MaskFile+"\n")
@@ -103,4 +104,4 @@ if __name__=="__main__":
         f.write("log = "+condor_log_name+"\n")
         f.write("notification   = Never\n")
         f.write("queue "+str(args.NBatches)+"\n")
-    subprocess.run(["tar", "-czf", tar_name, "BackgroundCount/"]) 
+    subprocess.run(["tar", "-czf", tar_name, args.Folder+"/"]) 
