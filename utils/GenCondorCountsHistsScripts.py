@@ -59,7 +59,7 @@ if __name__=="__main__":
         if (not os.path.exists(EffAreaPath)):
             print("Effective Area file not present in SkyMap")
             sys.exit()
-    if not args.Weighted:
+    if args.Weighted:
         if((args.RefFlux=="")  or (args.PhysicalFlux=="")):
             print("Need to input Reference Flux and PhysicalFlux for reweighting")
             sys.exit()
@@ -87,11 +87,11 @@ if __name__=="__main__":
         f.write("mv "+ShellReconstructedDataFileName+" "+args.Folder+"\n")
         f.write("cd "+args.Folder+"\n")
         if(args.Weighted):
-            f.write("./GenBackCounts -i "+ShellReconstructedDataFileName+" -o "+OutputFileName+" -w")
+            f.write("./GenCountsHists -i "+ShellReconstructedDataFileName+" -o "+OutputFileName+" -w")
             f.write(" -t "+str(args.ExposureTime)+" --TotalEvents " +str(args.TotalEvents))
             f.write(" --EffAreaFile "+args.EffectiveArea+" --PhysicalFluxFile "+args.PhysicalFlux+" --ReferenceFluxFile "+args.RefFlux+" --MaskFile "+ args.MaskFile+"\n")
         else:
-            f.write("./GenBackCounts -i "+ShellReconstructedDataFileName+" -o "+OutputFileName+" --MaskFile "+ args.MaskFile+"\n")
+            f.write("./GenCountsHists -i "+ShellReconstructedDataFileName+" -o "+OutputFileName+" --MaskFile "+ args.MaskFile+" --EffAreaFile "+args.EffectiveArea+"\n")
         f.write("mv "+OutputFileName+" ..\n")
         f.write("cd ..\n")
     ## Write the cmd file
