@@ -18,7 +18,6 @@ target_link_libraries(${LibName} ${XercesC_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}SenseUtilities PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create Extraction Utilities
-# The source code to compile
 file(GLOB ExtractSrc src/ExtractUtils.cpp
                     ${PROJECT_SOURCE_DIR}/util/src/ExtractUtils.cpp
     )
@@ -60,6 +59,8 @@ set(GenBackLib ${CMAKE_PROJECT_NAME}GenBackCountsUtils)
 add_library (${GenBackLib} STATIC ${GenBackCountsSrc})
 
 target_link_libraries(${GenBackLib} ${ROOT_LIBRARIES} )
+# We need to link Eigen as well because writing your own matrix library is always a terrible idea
+# And something I have done more than I care to admit...
 target_link_libraries(${GenBackLib} ${Eigen_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}GenBackCountsUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -82,7 +83,11 @@ file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BIN
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
 file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
-# Create Extract and Reconstruct helper executables
+# Copy over GenMask.py to BackgroundRecon and SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenMask.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/utils/GenMask.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+
+# Create Extract, Reconstruct and GenCountsHists helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
 add_subdirectory(GenCountsHists)

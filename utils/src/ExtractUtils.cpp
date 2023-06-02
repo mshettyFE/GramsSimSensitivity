@@ -30,7 +30,7 @@ void SortDetEvents(std::vector<std::tuple<double,double,double,double,double>> &
 
 std::vector<double> L2NormSquaredAdjacentScatters(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> Series){
   // Function that calculates the L2NormSquared (ie. squared Euclidean distance) between adjacent scatters
-  //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier
+  //Cone Variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier
   std::vector<double> L2NormSquared;
   // We are assuming that the first "scatter" is a gamma ray, hence we skip that interaction
   for(int i=1; i<(Series.size()-1);++i){
@@ -44,7 +44,7 @@ std::vector<double> L2NormSquaredAdjacentScatters(std::vector<std::tuple<int,int
 
 bool UniqueCellsOnePair(std::tuple<int,int,int,std::string,double,float,float,float,double,int> first, std::tuple<int,int,int,std::string,double,float,float,float,double,int> second,
 std::vector<double> Dimensions, std::vector<int> Binnings){
-  //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+  //Cone variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
   // create a histogram that aligns with the coordinate system of TPc (ie. x and y origin at center of detector. z=0 at top of detector)
     // x dimension ranges from -x_dim/2 to x_dim/2
     // y dimension from -y_dim/2 to y_dim/2
@@ -66,8 +66,8 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
  std::string FilterType,  std::vector<double> Dimensions ,  std::vector<int> Binnings,  double seperation , bool verbose){
   // variables in series corresponds to the following:
     //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
-  // Function that sorts through events and selects easy to analyze Compton series
-  // This means at least 1 non gamma ray event, wheather all events are inside detector, wheather all events are comptons and photoabsorbitons, and wheather all events came from primary (ie. no showers)
+  // Function that sorts through events and selects Compton series to be analyzed
+  // This means at  all non-gamma ray events are inside detector, all events inside TPC are comptons and photoabsorbitons, and all events came from primary (ie. no showers)
   // Assume that events are sorted in order of increasing time
   // Checks for at least 3 events (Primary, first event, second event). Need at least 2 events to perform reconstruction
   // FilterType can add on additional filtering.
@@ -78,9 +78,8 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
       for(int i =0; i<series.size(); ++i){
         auto &event = series[i];
         std::string PName = std::get<3>(event);
-        std::cout << PName << '\t';
+        std::cout << PName << std::endl;
       }
-      std::cout << std::endl;
     }
     for(int i =0; i<series.size(); ++i){
         auto &event = series[i];
@@ -92,6 +91,7 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
         }
   // If the event is not a primary photon, check if it is inside the LAr. If it is not, the reject event
         if (ProcessName != "Primary"){
+          // we divide by 1000000 since interactions in LAr have an identifier starting with 1
           if ( static_cast<int>( static_cast<float>( std::get<9>(event) ) /1000000.0)  !=1){
               return false;
           }
@@ -105,16 +105,19 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
     }
     
   if(SeriesType=="Escape"){
+    // Need 3 non-gamma events
     if(series.size()<4){
       return false;
     }
   }
   else if(SeriesType=="AllIn"){
+    // Need 2 non gamma events
     if(series.size()<3){
       return false;
     }
   }
   else{
+    // SHouldn't happen, but just in case
     std::cerr << "Invalid Series Type" << std::endl;
     return false;
   }
@@ -147,7 +150,7 @@ bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,fl
         return false;
       }
     }
-    // All the sccatters are in unique cells
+    // All the scatters are in unique cells
     return true;
   }
 
@@ -253,7 +256,7 @@ void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,in
             tDet = std::get<4>(DetEvent);
         }
         else{
-  // This should never happen, but if it does, then you write nonsensical values to indicate something went wrong
+  // This should never happen, but if it does, then you write nonsensical values to indicate something went horribly wrong
             DetEnergy = -1000;
             xDet = -1000;
             yDet = -1000;

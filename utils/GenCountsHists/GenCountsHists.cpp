@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <filesystem>
 
 int main(int argc, char** argv){
 // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
@@ -21,7 +22,6 @@ int main(int argc, char** argv){
                 << std::endl 
                 << "Aborting job due to failure to parse options"
                 << std::endl;
-        exit(EXIT_FAILURE);
         return -1;
     }
 
@@ -30,7 +30,6 @@ int main(int argc, char** argv){
   options->GetOption("help",help);
   if (help) {
     options->PrintHelp();
-    exit(EXIT_SUCCESS);
       return 0;
   }
 
@@ -48,10 +47,10 @@ int main(int argc, char** argv){
 
   if (!(successInput && successOutput)){
     std::cerr << "Invalid Input and output file names" << std::endl;
-    exit(EXIT_FAILURE);
     return -1;
   }
 
+  // Read in binary mask that isolates the region of the sky under consideration
   std::string MaskRoot;
   bool successMask = options->GetOption("MaskFile",MaskRoot);
   if (!(successMask)){
@@ -59,23 +58,24 @@ int main(int argc, char** argv){
     return -1;
   }
   else{
-    if(MaskRoot.size()<=0){
+      if(!std::filesystem::exists(MaskRoot)){
       std::cerr << "Need to provide a binary mask. Generate from GenMask.py" << std::endl;
       return -1;
-    }
+      }
   }
 
+  // Read in effective area histogram to get correct energy binnings
   std::string EffectiveAreaRoot;
   bool successEffArea = options->GetOption("EffAreaFile",EffectiveAreaRoot);
-if (!(successEffArea)){
+  if (!(successEffArea)){
     std::cerr << "Invalid Effective Area File" << std::endl;
     return -1;
   }
   else{
-    if(EffectiveAreaRoot.size()<=0){
-      std::cerr << "Need to provide an effective area root file. Generate from CalcEffArea.py" << std::endl;
-      return -1;
-    }
+      if(!std::filesystem::exists(EffectiveAreaRoot)){
+        std::cerr << "Need to provide an effective area root file. Generate from CalcEffArea.py" << std::endl;
+        return -1;
+      }
   }
 // Reads in ReferenceFlux, PhysicalFlux
     std::string ReferenceFluxRoot,PhysicalFluxRoot;
@@ -85,7 +85,18 @@ if (!(successEffArea)){
   // Read in NPts
     int NPts;
     bool successN = options->GetOption("NPts",NPts);
+    if (!(successN)){
+      std::cerr << "Invalid Number of Points per cone" << std::endl;
+      return -1;
+    }
+    else{
+      if((NPts <= 0)){
+        std::cerr << "Invalid number of points per cone" << std::endl;
+        return -1;
+      }
+    }
 
+    // Read in ExposureTime and NEvents in main scope
     double ExposureTime;
     bool successExposureTime = options->GetOption("ExposureTime",ExposureTime);
 
@@ -93,6 +104,8 @@ if (!(successEffArea)){
     long NEvents;
     bool successNEvents = options->GetOption("TotalEvents",TempNEvents);
 
+    // If we are reweighting, we need to make sure that the following are kosher:
+    // Reference file, Physical file, exposure time, total events
     if(weighted){
       if (!(successRef && successPhys)){
         std::cerr << "Invalid flux histograms" << std::endl;
@@ -100,27 +113,17 @@ if (!(successEffArea)){
         return -1;
       }
       else{
-        if(ReferenceFluxRoot.size()<=0){
+        if(!std::filesystem::exists(ReferenceFluxRoot)){
           std::cerr << "Need to provide a reference flux. Generate from GenEnergySpectrum.py" << std::endl;
           return -1;
         }
-        if(PhysicalFluxRoot.size()<=0){
+        if(!std::filesystem::exists(PhysicalFluxRoot)){
           std::cerr << "Need to provide a physical flux. Generate from GenEnergySpectrum.py" << std::endl;
           return -1;
         }
       }
 
-      if (!(successN)){
-        std::cerr << "Invalid Number of Points per cone" << std::endl;
-        return -1;
-      }
-      else{
-        if((NPts <= 0)){
-          std::cerr << "Invalid number of points per cone" << std::endl;
-          return -1;
-        }
-      }
-
+      // Check for valid exposure time and number of events
       if (!(successExposureTime)){
         std::cerr << "Invalid Exposure time" << std::endl;
         return -1;
@@ -155,29 +158,51 @@ if (!(successEffArea)){
 
     }
 
-    std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ConeData;
-    ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
-
+    // Making sure that the histograms in files are the correct ones
     std::unique_ptr<TFile> MaskFile(TFile::Open(MaskRoot.c_str(), "READ"));
     TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
+    if(Mask==NULL){
+      std::cerr << "Couldn't read Mask histogram in " << MaskRoot << std::endl;
+      return -1;
+    }
 
     std::unique_ptr<TFile> EffAreaFile(TFile::Open(EffectiveAreaRoot.c_str(), "READ"));
     TH1D* EffAreaFlux= (TH1D*)EffAreaFile->Get("EffArea");
+    if(EffAreaFlux==NULL){
+      std::cerr << "Couldn't read EffArea histogram in " << EffectiveAreaRoot << std::endl;
+      return -1;
+    }
 
+    // Creating blank skymap and count histograms
+    // Change time of histogram. The name of the histogram gets assigned at the end
     TH2D* SkyMap = (TH2D*) Mask->Clone();
     SkyMap->Reset();
+    SkyMap->SetNameTitle("SkyMap","Masked Sky Map");
     TH1D* Counts = (TH1D*) EffAreaFlux->Clone();
     Counts->Reset();
+    Counts->SetNameTitle("Counts","Counts within Mask");
+
+    std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ConeData;
+    ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
     
     std::unique_ptr<TFile> OutputFile(TFile::Open(OutputFileName.c_str(), "RECREATE"));
 
     if(weighted){
       std::unique_ptr<TFile> RefFile(TFile::Open(ReferenceFluxRoot.c_str(), "READ"));
-      std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
-
       TH1D* RefFlux = (TH1D*)RefFile->Get("ReferenceFlux");
-      TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
+      if(RefFlux==NULL){
+        std::cerr << "Couldn't read ReferenceFlux histogram in " << ReferenceFluxRoot << std::endl;
+        return -1;
+      }
     
+      std::unique_ptr<TFile> PhysFile(TFile::Open(PhysicalFluxRoot.c_str(), "READ"));
+      TH1D* PhysFlux = (TH1D*)PhysFile->Get("PhysicalFlux");
+      if(PhysFlux==NULL){
+        std::cerr << "Couldn't read PhysicalFlux histogram in " << PhysicalFluxRoot << std::endl;
+        return -1;
+      }
+
+      // Sanity check that the binnings match. We need to multiply these two histograms
       int NbinsPhys = PhysFlux->GetNbinsX(); 
       int NbinsEffArea = EffAreaFlux->GetNbinsX(); 
       if(NbinsPhys != NbinsEffArea){
@@ -189,8 +214,9 @@ if (!(successEffArea)){
     else{
       CountsHistsUnweighted(ConeData, NPts, Mask , Counts, SkyMap);
     }
-      OutputFile->WriteObject(Counts, "Counts");
-      OutputFile->WriteObject(SkyMap, "SkyMap");
+    // Name of histogram gets assigned here
+     OutputFile->WriteObject(Counts, "Counts");
+     OutputFile->WriteObject(SkyMap, "SkyMap");
 
    return 0;
 }

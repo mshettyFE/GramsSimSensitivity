@@ -1,3 +1,6 @@
+# Program to generate reference flux (log-uniform) and physical flux (ie. the background)
+# These are utilized in the reweighting scheme
+
 import ROOT
 import math
 import sys
@@ -60,7 +63,7 @@ def LogUniform(E,**kwargs):
     return np.power(E,-1)/scaling
 
 if __name__ == "__main__":
-## Read in output file name, min and max energies, and bin width
+## Read in effective area for binnings, and the output file names of the Reference and Background fluxes
     parser = argparse.ArgumentParser(
                     prog='GenEnergySpectrum.py',
                     description='Generate energy-dependent flux. Used for reweighting of background.')
@@ -71,11 +74,13 @@ if __name__ == "__main__":
     EffAreaFile = ROOT.TFile(args.EffAreaFile, "READ")
     EffAreaHist = EffAreaFile.EffArea
     BackgroundFile = ROOT.TFile(args.PhysicalFileName ,"RECREATE")
+## NOTE: When using Clone(), the title doesn't get changed. Make sure that you are aware of this
+## You can change this if you want to with SetNameTitle(), but I didnt' care enough to do so
     BackgroundEnergyHist = EffAreaHist.Clone("BackgroundFlux")
     BackgroundEnergyHist.Reset()
-## Get centers of bins
+## Get centers of bins. Use these bin centers as the x axis values
     EnergyCenters = [BackgroundEnergyHist.GetBinCenter(i) for i in range(BackgroundEnergyHist.GetNbinsX())]
-## Need to modify the following line if you have a different function
+## Need to modify the following line if you have a different background flux
 # Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
     BackOutput = [BrokenPowerLaw(energy,A=2.2E-4,Eref=3,Gamma1=3.3,Gamma2=2) for energy in EnergyCenters]
 ## Fills output histogram with flux function by filling each bin weighted by the function
@@ -89,8 +94,10 @@ if __name__ == "__main__":
     ReferenceEnergyHist.Reset()
     EnergyCenters = [ReferenceEnergyHist.GetBinCenter(i) for i in range(ReferenceEnergyHist.GetNbinsX())]
 # Standard LogUniform distribution (ie. equal probabilities amoungst log bins)
+# Bottom and top edge are the min and max energies of EffArea (normally 0.1 to 10 MeV)
     bottom_edge = EffAreaHist.GetBinLowEdge(0)
     center_of_top =  ReferenceEnergyHist.GetBinCenter(ReferenceEnergyHist.GetNbinsX())
+# Have to do some weird stuff to get the top edge since ROOT excludes the upper limit from the histogram
     top_edge = (center_of_top-ReferenceEnergyHist.GetBinLowEdge(ReferenceEnergyHist.GetNbinsX()))+center_of_top
     RefOutput = [LogUniform(energy,a=bottom_edge,b=top_edge) for energy in EnergyCenters]
 ## Fills output histogram with flux function by filling each bin weighted by the function

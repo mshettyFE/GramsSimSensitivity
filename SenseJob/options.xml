@@ -1,11 +1,8 @@
 <?xml version = "1.0" encoding = "UTF-8" ?>
 
-<!-- Please see GramsSim/util/README.md for documentation. -->
-
 <parameters>
-  
+    <!-- Directly from GramsSim-->  
   <global>
-
     <!-- The parameters in this section are meant to apply to all the
          programs. However, you can override them within the
          individual program blocks, though it's probably more useful
@@ -56,20 +53,25 @@
   </global>
 
     <Extract>
+        <!-- Input GramsG4 file name-->
         <option name="GramsG4Name" value="Source.root" type="string" desc="Name of Input GramsG4 File">
         </option>
+        <!-- Input GramsDetSim file name-->
         <option name="GramsDetSimName" value="SourceDet.root" type="string" desc="Name of input GramsDetSim file that was generated from GramsG4 file">
         </option>
-        <option name="ExtractOutput" short="o" value="ExtractedSource.root" type="string" desc="Output of ExtractComptons">
+        <!-- Name of output root file-->
+        <option name="ExtractOutput" short="o" value="ExtractedSource.root" type="string" desc="Output of Extract">
         </option>
+        <!-- Filter criteria-->
         <option name="Filter" short="f" value="Standard" type="string" desc="How to filter each event">
             Possible values:
-                - Standard. Self explainatory. You do the standard selection criterion (at least 2 Compton scatters inside the TPC)
+                - Standard. Self explainatory. You do the standard selection criterion (at least 2 Compton scatters inside the TPC for all in, 3 for escape)
                 - UniqueCells. Add on the constraint that each scatter must occur in a unique cell.
                 - Sphere. Use constraint that each scatter must be at least x cm apart.
         </option>
         <!-- For all of these dimensionful variables, the units will be the same as specified in global. Defaults to cm.-->
         <!-- Internally, converts all dimensions to cm (so if you specify "mm" as the length scale, all values are divided by 10)-->
+        <!-- I probably should have found a way to read the dimensions and the binnings from the .gdml file, but I couldn't find any simple way to do that-->
         <option name="Dimensions" value="(70,70,80)" type="vector" desc="Dimensions of LArTPC (x,y,z)">
             Holds the dimensions of the LArTPC. Used in the unique cell calculation of Filter. Kind of repeats information found in 
             the .gdml file, but I didn't want to try to parse that file to extract the dimensions of the TPC. Please, make sure
@@ -81,51 +83,70 @@
             For instance, if you have a seperation of 10 between each optical isolation sheet along each dimension,
             and your dimensions are 70,70,80, then your binnings are 7,7,8.
             Please make sure that you input integers for the binnings and that you're binnings for each dimension is greater than 1.
+            If you input floats, they will be floored down to an integer.
         </option>
         <option name="Seperation" value="10" type="double" desc="Seperation between adjacent scatters. Used in Sphere option of Filter">
             Stipulated the minimum seperation between Compton scatters to be a valid series. Needs Filter to be set to Sphere
-            (since this seperation creates a sphere of exclusion).
+            (since this seperation creates a sphere of exclusion around an interaction point).
         </option>
     </Extract>
 
     <Reconstruct>
         <option name="Input" value="ExtractedSource.root" short='i' type="string" desc="Input root file from Extract.cpp program"></option>
+        <!-- 'Iso' is used for EffArea and Background. 'Point' is used for Point sources-->
         <option name="SourceType" value="Iso" type="string" desc="Type of input source. Either 'Iso' or 'Point'"></option>
         <option name="SourceLoc" value="(0,90)" type="vector" desc="Right Ascension and Altitude coordinates of source. See options.xml for details"></option>
         <!-- Right Ascension (RA) refers to the angle you make with the x axis in a CCW manner.
          Altitude (ALT) refers to the angle you make moving up from the equator to your point.
          So for instance, you you wanted your source along the y-axis 45 degrees above the equator, you input (90,45).
-         Defaults to source directly from the zenith aimed at the north pole.-->
+         Defaults to source directly from the zenith.-->
         <option name="Output" value="ReconstructedSource.root" short='o' type="string" desc="Output Root file containing cone data and ARM. Defaults to 2*pi for isotropic"></option>
         <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
-        This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the source was isotropic-->
+        This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the generated events were isotropic-->
     </Reconstruct>
     <GenSkyMap>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
         <option name="Output" value="CountsHists.root" short='o' type="string" desc="Output root file containing Counts TH1D histogram and TH2D Sky Map"></option>
+        <!-- Something that confused me initially was that you assign the exposure time for a set of data AFTER you generate it-->
+        <!-- What this means is that, once you generate enough data to have good stats in all you energy binnings,-->
+        <!-- you can scale up or scale down the magnitude of each bin w.r.t. the exposure time-->
         <option name="ExposureTime" value="-1" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
+        <!-- If you are using the reweighting scheme, you MUST include:-->
+        <!-- ExposureTime, TotalEvents, ReferenceFluxFile, PhysicalFluxFile, EffAreaFile and MaskFile-->
+        <!-- If you are NOT using the reweighting scheme, you MUST include EffAreaFile and MaskFile-->
         <option name="weighted" short="w" type="flag" desc="Specify if we are implementing reweighting scheme"/>
-        <!-- Hacky way of allowing total events to exceed range of int. Read as string, interpret as integer. I really didn't want to figure out the templating GetOptions -->
+        <!-- Hacky way of allowing total events to exceed range of int. Read as string, interpret as integer. I really didn't want to figure out how to template GetOptions -->
         <option name="TotalEvents" value="-1" type="string" desc="The total number of events assigned to the batch job"></option>
+        <!-- Reference and Physical fluxes used in reweighting-->
         <option name="ReferenceFluxFile" value="" type="string" desc="Reference energy flux that follows a Log Uniform distribution. From GenEnergySpectrum.py"></option>
         <option name="PhysicalFluxFile" value="" type="string" desc="Physical energy flux that follows a user defined distribution. From GenEnergySpectrum.py"></option>
+        <!-- You need EffArea and MaskFile REGARDLESS of if you are reweighting or not. This is because the energy binnings and skymap binnings are based on these files-->
         <option name="EffAreaFile" value="" type="string" desc="Effective Area histogram generated from CalcEffArea.py"></option>
         <option name="MaskFile" value="" type="string" desc="Binary mask file. From GenMask.py"></option>
+        <!-- The number of points generated per cone. Increasing these linearly increases the execution time.-->
+        <!-- You need enough points such that you get continous sky circles. 1000 is good enough, unless you have a really big scattering angle-->
         <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
     </GenSkyMap>
 
     <Sensitivity>
+        <!-- Base folder containing background count root files (ie. output from ./GenCountsHists)-->
         <option name="BackgroundCountFolder" type="string" value="" desc="Folder containing background counts"></option>
+        <!-- preappended name of root files. For instance, if ${Preappend}{$id}.root, you use ${Preappend}-->
         <option name="BackgroundBaseName" type="string" value="" desc="Base name of count histograms. For example, Back_0.root => Back_"></option>
         <option name="SourceConesFolder" type="string" value="" desc="Folder containing reconstructed source cones"></option>
         <option name="SourceConesBaseName" type="string" value="" desc="Base name of cones file. For example, Reconstruct_0.root => Reconstruct_"></option>
-        <option name="MaskLocation" type="string" value="" desc="Location to Mask root file"></option>
+        <!-- Energy of source. Should be consistent with .sh file that generated cones-->
         <option name="SourceEnergy" type="double" value="-1" desc="Energy of source cones"></option>
+        <!-- Effective area root file. Used to caclulate final sensitivity at the end-->
         <option name="EffectiveAreaRoot" type="string" value="" desc="Location of Effective Area root file"></option>
         <!-- Hack to get around int size limitation/ Don't want to template options. Check for validity of option in program-->
         <option name="SourceEventsPerJob" type="string" value="" desc="Number of source events generated per job initially"></option>
-        <option name="Batches" type="integer" value="-1" desc="Number of source cone files"></option>
+        <!-- The number of batches for both source and background. You might want to uncouple these, but I found that it doesn't really matter-->
+        <option name="Batches" type="integer" value="-1" desc="Number of source/background cone files"></option>
+        <!-- Needed to calculate sensitivity at the end-->
         <option name="ExposureTime" type="double" value="-1" desc="Total exposure time"></option>
+        <!-- The number of points generated per cone. Increasing these linearly increases the execution time.-->
+        <!-- You need enough points such that you get continous sky circles. 1000 is good enough, unless you have a really big scattering angle-->
         <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
     </Sensitivity>
 

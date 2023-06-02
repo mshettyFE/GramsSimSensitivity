@@ -7,14 +7,12 @@
 #include "TChain.h"
 #include "TH2D.h"
 
+// Fill out AggSkyMap with the weighted counts at each energy level
 bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggSkyMap, bool verbose=false);
 
-// Read in Root files for sensitivity calc
-void ReadConeData(std::string base_name, int nbatches, TChain &Output);
-
+// Given an energy, extract the effective area from EffArea Hist (error checking on upper bound)
 double ExtractEffArea(double SourceEnergy, TH1D* EffAreaHist);
 
-std::tuple<long,long> CalculateUsedPhotons(std::string base_name, int nbatches, int PhotonsPerBatch, double threshold);
-
+// Extract bin number given Energy and histogram. edge checking included
 int ExtractBinNum(double SourceEnergy, TH1D* Histogram);
 #endif

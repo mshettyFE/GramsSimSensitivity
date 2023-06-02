@@ -1,3 +1,6 @@
+# Program to generate Mask based on source reconstruction
+# Also defines binnings of sky maps
+
 import numpy as np
 import ROOT
 import os,sys
@@ -6,12 +9,14 @@ import glob
 from matplotlib import pyplot as plt
 
 def lorentzian(x,params):
-## ARM follows Lorentzian distribution, hence we pass this function to ROOT for fitting
+## ARM follows a Lorentzian distribution (technically a Voigt function, but fitting to that gave we poorer results)
+# We pass this function to ROOT for fitting
 ## A is normalization, \gamma is the FWHM (ie. ARM) and x0 is the center of the distribution (ie. 0)
     A = params[0]
     xo = params[1]
     gamma = params[2]
-    return (A*(gamma/2.0)**2)/((gamma/2.0)**2+(x[0]-xo)**2)
+# https://mathworld.wolfram.com/LorentzianFunction.html
+    return (A*(gamma/2.0))/((gamma/2.0)**2+(x[0]-xo)**2)
 
 def SphereToCart(Azi,Alt):
 ## Takes in Azi and Alt as radians and calculates x,y,z direction
@@ -24,6 +29,7 @@ def create_mask(HistogramBlank,truth_RA_loc,truth_ALT_loc,ARMAngle):
     ## Calculates what area of the sky we restrict outselves to based on true RA and ALT locations and ARM value
     ## Essentially calculates the angle between the center of all the bins and the true source location and sees if this angle is less than the ARM
     ## If the above holds, we set the count to 1 (ie. include this bin when considering if a cone should be counted)
+
     ## Set up RA and ALT axes, and get x,y,z location of source
     RA_Axis = HistogramBlank.GetXaxis()
     ALT_Axis = HistogramBlank.GetYaxis()
@@ -68,7 +74,7 @@ if __name__=="__main__":
     ## Create blank sky map
     blankHist = ROOT.TH2D("Mask","Binary Mask",args.RABins,-np.pi,np.pi,args.ALTBins,-np.pi/2.0, np.pi/2.0)
     blankHist.Reset()
-    ## The regex? you pass to glob to identify the reconstruction files
+    ## glob magic to identify the reconstruction files
     ## https://docs.python.org/3/library/glob.html
     query = os.path.join(args.SourcePath,args.ReconstructionBase)+"*root"
     ## Get files and sanity check
@@ -97,18 +103,20 @@ if __name__=="__main__":
     ## Fit function and extract ARM
     ARM_Dist.Fit("Lorentzian")
     ARM = abs(func.GetParameter(2))
-    print("ARM:",ARM)
+    print("ARM: ",ARM)
     ## Draw ARM distribution
     if(args.draw):
         ARM_Dist.Draw()
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
     mask = create_mask(blankHist,args.RA_loc,args.ALT_loc,ARM)
+    # Draw mask if needed
     if(args.draw):
         c2 = ROOT.TCanvas()
         pic_name = "Mask.jpg"
         mask.SetStats(0)
         mask.Draw("colz")
         c2.SaveAs(pic_name)
+    # Write to file
     OutFile = ROOT.TFile.Open(args.Output, "RECREATE")
     OutFile.WriteObject(mask, "Mask")

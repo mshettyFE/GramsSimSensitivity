@@ -4,12 +4,14 @@
 #include "ReadRootFiles.h"
 #include "Options.h"
 #include "ReconstructUtils.h"
+#include "UsefulTypeDefs.h"
 
 #include<vector>
 #include<map>
 #include<tuple>
 #include<string>
 #include<iostream>
+#include<filesystem>
 
 int main(int argc, char** argv){
   // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
@@ -23,7 +25,6 @@ int main(int argc, char** argv){
                 << std::endl 
                 << "Aborting job due to failure to parse options"
                 << std::endl;
-        exit(EXIT_FAILURE);
         return -1;
     }
 
@@ -32,7 +33,6 @@ int main(int argc, char** argv){
   options->GetOption("help",help);
   if (help) {
     options->PrintHelp();
-    exit(EXIT_SUCCESS);
       return 0;
   }
 
@@ -41,18 +41,34 @@ int main(int argc, char** argv){
 
   std::string inputFileName;
   std::string outputFileName;
-  options->GetOption("Input",inputFileName);
-  options->GetOption("Output",outputFileName);
-
-//  std::string fname = "/nevis/milne/files/ms6556/Spring2023/Sensitivity/SensitivityJob/SourceExtracted_0.root";
+  bool checkInput = options->GetOption("Input",inputFileName);
+  bool checkOutput = options->GetOption("Output",outputFileName);
+  if(!checkInput){
+    std::cerr << "Couldn't parse input file name" << std::endl;
+    return -1;
+  }
+  else{
+    if(!std::filesystem::exists(inputFileName)){
+      std::cerr << inputFileName << " doesn't exist" << std::endl;
+      return -1;
+    }
+  }
+  if(!checkOutput){
+    std::cerr << "Couldn't parse output file name" << std::endl;
+    return -1;
+  }
 
   // Read In Source Location in spherical coordinates and convert to cartesian
   std::vector<double> TempVector;
-  options->GetOption("SourceLoc",TempVector);
-  std::tuple<double,double> Spherical = std::make_tuple(TempVector[0],TempVector[1]);
-  std::tuple<double,double,double> truthLoc = SphereToCart(Spherical);
+  bool CheckSourceLoc = options->GetOption("SourceLoc",TempVector);
+  if(!CheckSourceLoc){
+    std::cerr << "Couldn't parse source location" << std::endl;
+    return -1;
+  }
+  SkyMapLoc Spherical = std::make_tuple(TempVector[0],TempVector[1]);
+  R3 truthLoc = SphereToCart(Spherical);
 
-  std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > Series;
+  std::map<std::tuple<int,int>, std::vector<ExtractEntry> > Series;
   Series = ReadExtract(inputFileName,verbose);
 
   TFile* OFile = new TFile(outputFileName.c_str(), "RECREATE");

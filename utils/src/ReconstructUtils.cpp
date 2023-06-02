@@ -7,29 +7,28 @@
 #include <cmath>
 #include <iostream>
 
+#include "UsefulTypeDefs.h"
+
 // Convert tuple of spherical coordinates RA,ALT to a tuple of cartesian coordinates x,y,z
-std::tuple<double,double,double> SphereToCart(std::tuple<double,double> Spherical){
+R3 SphereToCart(SkyMapLoc Spherical){
     double RA = std::get<0>(Spherical);
     double ALT = std::get<1>(Spherical);
     double x = cos(ALT)*cos(RA);
     double y = cos(ALT)*sin(RA);
     double z = sin(ALT);
-    std::tuple<double,double,double> Cartesian = std::make_tuple(x,y,z);
+    R3 Cartesian = std::make_tuple(x,y,z);
     return Cartesian;
 }
 
-double dot(std::tuple<double,double,double> A, std::tuple<double,double,double> B){
+double dot(R3 A, R3 B){
     return std::get<0>(A)*std::get<0>(B)+std::get<1>(A)*std::get<1>(B)+std::get<2>(A)*std::get<2>(B);
 }
 
 
-std::vector<std::tuple<double,double,double>> Distances(
-  std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> &Series){
-  // Value of input
-  // < <energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet>,  ...>
+std::vector<R3> Distances(
+  std::vector<ExtractEntry> &Series){
   // We define the output vector
-    std::vector<std::tuple<double,double,double>> Dist;
-  //    <x,y,z,energy>,<x,y,z,energy> ...
+    std::vector<R3> Dist;
   // We ignore the Primary gamma ray and we don't work with the last event since it has no next neighbor
   for(int i =1; i<(Series.size()-1); ++i){ 
   // Calculate the vector between the interaction points
@@ -44,7 +43,7 @@ std::vector<std::tuple<double,double,double>> Distances(
 }
 
 // Extract Kinetic Energies of scatters from Series
-std::vector<double> KineticEnergies(std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> &Series, 
+std::vector<double> KineticEnergies(std::vector<ExtractEntry> &Series, 
   double e_mass = .51099895){
   // Returns the kinetic energies of the electrons
   std::vector<double> KEs;
@@ -57,7 +56,7 @@ std::vector<double> KineticEnergies(std::vector<std::tuple<double,double,double,
 }
 
 // Calculate Reconstructed angle for a given scatter series
-bool RecoAngle(std::vector<std::tuple<double,double,double>> Dist, std::vector<double> KEs, double &ReconAngle, bool escape = false, double e_mass = .51099895){
+bool RecoAngle(std::vector<R3> Dist, std::vector<double> KEs, double &ReconAngle, bool escape = false, double e_mass = .51099895){
   // Write RecoAngle function that takes in Adj and KEs and returns a boolean flag. Write to outparameter to store RecoAngle
   if(escape){
     if (KEs.size() >= 3){
@@ -96,7 +95,7 @@ bool RecoAngle(std::vector<std::tuple<double,double,double>> Dist, std::vector<d
 }
 
 // Calculate ARM from RecoAngle, Axis of Compton Cone, and True Source Location. Works for Isotropic as well
-bool ARM(double RecoAngle, std::vector<std::tuple<double,double,double>> Dist, std::tuple<double,double,double> SourceLoc, double &ARM_val, std::string SourceType="Point"){
+bool ARM(double RecoAngle, std::vector<R3> Dist, R3 SourceLoc, double &ARM_val, std::string SourceType="Point"){
   // We assume that SourceLoc is normalized
     if(SourceType=="Iso"){
   // Return 2*pi is SourceType is Iso. Remeber that is ARM value has no meaning
@@ -105,7 +104,7 @@ bool ARM(double RecoAngle, std::vector<std::tuple<double,double,double>> Dist, s
     }
     else if(SourceType=="Point"){
         // Axis of Cone, which we assume is normalized
-        std::tuple<double,double,double> Axis = Dist[0];
+        R3 Axis = Dist[0];
         ARM_val = RecoAngle-acos(dot(Axis,SourceLoc));
         return true;
     }
@@ -114,8 +113,8 @@ bool ARM(double RecoAngle, std::vector<std::tuple<double,double,double>> Dist, s
     }
 }
 
-void Reconstruction(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > &ScatterSeries,
- TTree* tree,std::tuple<double,double,double> truthLoc,std::string SourceType){
+void Reconstruction(std::map<std::tuple<int,int>, std::vector<ExtractEntry> > &ScatterSeries,
+ TTree* tree,R3 truthLoc,std::string SourceType){
 
   // Define variables to write to to fill TTree
   int RunNumber,EventNumber,escape;
@@ -142,8 +141,8 @@ void Reconstruction(std::map<std::tuple<int,int>, std::vector<std::tuple<double,
   tree->Branch("TruthEnergy",&TruthEnergy,"TruthEnergy/D");
   for ( auto Series = ScatterSeries.begin(); Series != ScatterSeries.end(); ++Series ){
     // Sort Series by time
-    sort((*Series).second.begin(), (*Series).second.end(),[](std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> a,
-    std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> b){
+    sort((*Series).second.begin(), (*Series).second.end(),[](ExtractEntry a,
+    ExtractEntry b){
     return (std::get<1>(a) < std::get<1>(b));});
     // Extract ID and Events
     auto id =  (*Series).first;
@@ -162,7 +161,7 @@ void Reconstruction(std::map<std::tuple<int,int>, std::vector<std::tuple<double,
     }
   
   // Define Adjacent Distances and Kinetic Energies
-    std::vector<std::tuple<double,double,double>> AdjacentDist;
+    std::vector<R3> AdjacentDist;
     std::vector<double> KEs;
     AdjacentDist = Distances(Events);
     KEs = KineticEnergies(Events);

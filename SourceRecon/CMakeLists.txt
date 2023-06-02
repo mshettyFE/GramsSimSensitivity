@@ -1,4 +1,4 @@
-# Create CalcSensitivity
+# Create CalcSensitivity executable
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
 
