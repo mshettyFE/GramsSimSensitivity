@@ -166,34 +166,6 @@ int main(int argc, char** argv){
         return -1;
     }
 
-  // Open up Mask histogram
-  std::string MaskPath;
-  bool MaskPathCheck = options->GetOption("MaskLocation", MaskPath);
-  if(MaskPathCheck){
-    if(std::filesystem::exists(MaskPath)){
-      try{
-        // Make sure we can read file
-        std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
-        TH2D* Mask= (TH2D*)MaskFile->Get("Mask");
-        if(Mask==NULL){
-          throw 1;
-        }
-      }
-      catch(...){
-        std::cerr << "Couldn't open Mask root file "  << std::endl;
-        return -1;
-      }
-    }
-    else{
-    std::cerr << "Invalid Mask Path" << std::endl;
-    return -1;
-    }
-  }
-  else{
-    std::cerr << "Invalid Mask Path" << std::endl;
-    return -1;
-  }
-
   // Open up Effective Area histogram
   std::string EffectiveAreaPath;
   bool EffAPathCheck = options->GetOption("EffectiveAreaRoot", EffectiveAreaPath);
@@ -254,10 +226,7 @@ int main(int argc, char** argv){
   int TargetBin = ExtractBinNum(SourceEnergy, AggCounts);
 
   // Aggregate all the sky maps that exist
-  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggCounts);
-
-  std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
-  TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
+  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggCounts,verbose);
 
   double mu = AggCounts->GetBinContent(TargetBin);
   double sigma = AggCounts->GetBinError(TargetBin);
@@ -265,67 +234,48 @@ int main(int argc, char** argv){
   double FiveSigmaThreshold = mu+5*sigma;
 
   std::cout << "Mean: " << mu << '\t' << "Sigma: " << sigma << std::endl;
- 
-  int RA_Bins = Mask->GetNbinsX();
-  int ALT_Bins = Mask->GetNbinsY(); 
 
-  std::cout << "Reading Source Cones..." << std::endl;
-  TChain SourceCones("Cones");
-  ReadConeData(AbsSourceRootName,  batches, SourceCones);
-  Long64_t TotalCones = SourceCones.GetEntries();
-  double xDir, yDir, zDir,xTip, yTip, zTip, RecoAngle;
-  SourceCones.SetBranchAddress("xDir", &xDir);
-  SourceCones.SetBranchAddress("yDir", &yDir);
-  SourceCones.SetBranchAddress("zDir", &zDir);
-  SourceCones.SetBranchAddress("xTip", &xDir);
-  SourceCones.SetBranchAddress("yTip", &yDir);
-  SourceCones.SetBranchAddress("zTip", &zDir);
-  SourceCones.SetBranchAddress("RecoAngle",&RecoAngle);
-
-  double Tally = 0.0;
-  Long64_t ThreeSigmaCount;
+  Long64_t TotalRecordedPhotons = 0.0;
+  Long64_t ThreeSigmaRecordedPhotons = 0.0;
+  Long64_t FiveSigmaRecordedPhotons = 0.0;
+  double TotalCounts = 0.0;
   bool ThreeSigmaFlag = false;
-  Long64_t FiveSigmaCount;
   bool FiveSigmaFlag = false;
-  Long64_t count = 0;
-  std::cout << "Calculating Sensitivity..." << std::endl;
-  for(Long64_t i=0; i<TotalCones; ++i){
-    SourceCones.GetEntry(i);
-    TH2D SourceHist = ConeToSkyMap( xDir,  yDir,  zDir,  xTip,  yTip,  zTip, RecoAngle, 
-     RA_Bins,  ALT_Bins,NPts);
-     SourceHist.Multiply(Mask);
-    double inside_count = SourceHist.Integral();
-    if(inside_count > 0){
-      count += 1;
-    }
-    if((count>= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
-      ThreeSigmaFlag = true;
-      ThreeSigmaCount = count;
-    }
-    if((count>= FiveSigmaThreshold) && !(FiveSigmaFlag)){
-      FiveSigmaFlag = true;
-      FiveSigmaCount = count;
-      break;
-    }
+
+  std::cout << "Calculating Sensitivity" << std::endl;
+  for(int i=0; i< batches; ++i){
+    std::string id = std::to_string(i);
+    std::string path = AbsSourceRootName+id+".root";
     if(verbose){
-      std::cout << " Thresholds: " << ThreeSigmaThreshold << "\t" << FiveSigmaThreshold <<
-      " Current count" << count << "Current Cone" << i << std::endl;
+        std::cout << path << std::endl;
+    }
+    if(!std::filesystem::exists(path)){
+      if(verbose){
+          std::cerr << path << " could not be found " << std::endl;
+      }
+      continue;
+    }
+    std::unique_ptr<TFile> Current(TFile::Open(path.c_str(), "READ"));
+    TH1D* CurrentCounts = (TH1D*)Current->Get("Counts");
+    TotalCounts += CurrentCounts->GetBinContent(CurrentCounts->FindBin(SourceEnergy));
+    TotalRecordedPhotons += SourceEventsPerJob;
+    if((TotalCounts >= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
+      ThreeSigmaFlag = true;
+      ThreeSigmaRecordedPhotons = TotalRecordedPhotons;
+    }
+    if((TotalCounts >= FiveSigmaThreshold) && !(FiveSigmaFlag)){
+      FiveSigmaFlag = true;
+      FiveSigmaRecordedPhotons = TotalRecordedPhotons;
     }
   }
 
-
-  std::tuple<long,long> Used3Sigma = CalculateUsedPhotons(AbsSourceRootName,batches,  SourceEventsPerJob, ThreeSigmaCount);
-  std::tuple<long,long> Used5Sigma = CalculateUsedPhotons(AbsSourceRootName, batches, SourceEventsPerJob, FiveSigmaCount);
-
-  // Fix this. Total cones to cones read in files
-  double NPhotonsThreeSigma = ((ThreeSigmaCount)/((double)(std::get<1>(Used3Sigma)))) * ((double) std::get<0>(Used3Sigma));
-  double NPhotonsFiveSigma = ((FiveSigmaCount)/((double)(std::get<1>(Used5Sigma)))) * ((double) std::get<0>(Used5Sigma));
+  double NPhotonsThreeSigma = (ThreeSigmaThreshold)/(TotalCounts)*((double) FiveSigmaRecordedPhotons);
+  double NPhotonsFiveSigma = (FiveSigmaThreshold)/(TotalCounts)*((double) FiveSigmaRecordedPhotons);
 
   std::unique_ptr<TFile> EffAFile(TFile::Open(EffectiveAreaPath.c_str(), "READ"));
   TH1D* EffA= (TH1D*) EffAFile->Get("EffArea");
 
   double SourceEffA = ExtractEffArea(SourceEnergy, EffA);
-
 
   double MeVtoErgs = 1.60218E-6;
 
@@ -333,7 +283,6 @@ int main(int argc, char** argv){
   double FiveSigmaDiffSensitivity = NPhotonsFiveSigma*SourceEnergy*MeVtoErgs/(SourceEffA*ExposureTime);
   double ThreeSigmaPhotonSensitivity = NPhotonsThreeSigma/(SourceEffA*ExposureTime);
   double FiveSigmaPhotonSensitivity = NPhotonsFiveSigma/(SourceEffA*ExposureTime);
-
 
   std::cout << "At a source energy of "<< SourceEnergy << " MeV and exposure time of " << ExposureTime << " seconds , the sensitivity is (in ergs*cm^-2*s^-1):" << std::endl;
   std::cout << "\tThree Sigma: " << ThreeSigmaDiffSensitivity << std::endl;
