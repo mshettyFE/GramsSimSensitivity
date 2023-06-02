@@ -7,7 +7,7 @@
 #include "TChain.h"
 #include "TH2D.h"
 
-bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggSkyMap);
+bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggSkyMap, bool verbose=false);
 
 // Read in Root files for sensitivity calc
 void ReadConeData(std::string base_name, int nbatches, TChain &Output);

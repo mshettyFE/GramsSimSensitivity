@@ -58,8 +58,8 @@ int main(int argc, char** argv){
   std::string BackgroundPath;
   std::string BackgroundBase;
   std::string AbsBackRootName;
-  bool BackPathCheck = options->GetOption("BackgroundBaseName", BackgroundPath);
-  bool BackBaseCheck  = options->GetOption("BackgroundCountFolder", BackgroundBase);
+  bool BackPathCheck = options->GetOption("BackgroundCountFolder", BackgroundPath);
+  bool BackBaseCheck  = options->GetOption("BackgroundBaseName", BackgroundBase);
   if(BackBaseCheck && BackBaseCheck){
     if((BackgroundPath.length()>0) || (BackgroundBase.length()>0)){
       AbsBackRootName = BackgroundPath+"/"+BackgroundBase;
@@ -78,8 +78,8 @@ int main(int argc, char** argv){
   std::string SourcePath;
   std::string SourceBase;
   std::string AbsSourceRootName;
-  bool SourcePathCheck = options->GetOption("SourceConesBaseName", SourcePath);
-  bool SourceBaseCheck  = options->GetOption("SourceConesFolder", SourceBase);
+  bool SourcePathCheck = options->GetOption("SourceConesFolder", SourcePath);
+  bool SourceBaseCheck  = options->GetOption("SourceConesBaseName", SourceBase);
   if(SourceBaseCheck && SourceBaseCheck){
     if((SourcePath.length()>0) || (SourceBase.length()>0)){
       AbsSourceRootName = SourcePath+"/"+SourceBase;
@@ -239,7 +239,7 @@ int main(int argc, char** argv){
     std::cout << "Reading in Background..." << std::endl;
 
     // Load in skeleton of BackgroundCounts from the first background count histogram
-    TH1D* AggBackCounts;
+    TH1D* AggCounts;
     std::string seed = AbsBackRootName+"0.root";
     if(!std::filesystem::exists(seed)){
       std::cerr << seed << " could not be found " << std::endl;
@@ -247,20 +247,20 @@ int main(int argc, char** argv){
     }
 
   std::unique_ptr<TFile> Seed(TFile::Open(seed.c_str(), "READ"));
-  AggBackCounts = (TH1D*)Seed->Get("BackgroundCounts");
-  AggBackCounts->Reset();
+  AggCounts = (TH1D*)Seed->Get("Counts");
+  AggCounts->Reset();
 
   // Get bin number of region of background we are comparing against
-  int TargetBin = ExtractBinNum(SourceEnergy, AggBackCounts);
+  int TargetBin = ExtractBinNum(SourceEnergy, AggCounts);
 
   // Aggregate all the sky maps that exist
-  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggBackCounts);
+  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggCounts);
 
   std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
   TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
 
-  double mu = AggBackCounts->GetBinContent(TargetBin);
-  double sigma = AggBackCounts->GetBinError(TargetBin);
+  double mu = AggCounts->GetBinContent(TargetBin);
+  double sigma = AggCounts->GetBinError(TargetBin);
   double ThreeSigmaThreshold = mu+3*sigma;
   double FiveSigmaThreshold = mu+5*sigma;
 

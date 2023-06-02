@@ -10,19 +10,24 @@
 #include "TFile.h"
 #include "TH2D.h"
 
-bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggBackCounts){
-        for(int i=0; i< nbatches; ++i){
-          std::string id = std::to_string(i);
-          std::string path = base_name+id+".root";
-          if(!std::filesystem::exists(path)){
-            std::cerr << path << " could not be found " << std::endl;
-            continue;
-          }
-            std::unique_ptr<TFile> Current(TFile::Open(path.c_str(), "READ"));
-            TH1D* AddonHist = (TH1D*)Current->Get("BackgroundCounts");
-            AggBackCounts->Add(AddonHist);
+bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggBackCounts, bool verbose){
+    for(int i=0; i< nbatches; ++i){
+        std::string id = std::to_string(i);
+        std::string path = base_name+id+".root";
+        if(verbose){
+            std::cout << path << std::endl;
         }
-    return true;
+        if(!std::filesystem::exists(path)){
+          if(verbose){
+              std::cerr << path << " could not be found " << std::endl;
+          }
+          continue;
+        }
+        std::unique_ptr<TFile> Current(TFile::Open(path.c_str(), "READ"));
+        TH1D* AddonHist = (TH1D*)Current->Get("Counts");
+        AggBackCounts->Add(AddonHist);
+    }
+return true;
 }
 
 
