@@ -14,9 +14,6 @@ bool ReadBackgroundCounts(std::string base_name,int nbatches, TH1D* AggBackCount
     for(int i=0; i< nbatches; ++i){
         std::string id = std::to_string(i);
         std::string path = base_name+id+".root";
-        if(verbose){
-            std::cout << path << std::endl;
-        }
         if(!std::filesystem::exists(path)){
           if(verbose){
               std::cerr << path << " could not be found " << std::endl;

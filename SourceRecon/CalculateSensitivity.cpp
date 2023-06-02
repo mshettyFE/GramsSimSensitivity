@@ -228,6 +228,8 @@ int main(int argc, char** argv){
   // Aggregate all the sky maps that exist
   bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggCounts,verbose);
 
+
+
   double mu = AggCounts->GetBinContent(TargetBin);
   double sigma = AggCounts->GetBinError(TargetBin);
   double ThreeSigmaThreshold = mu+3*sigma;
@@ -246,9 +248,6 @@ int main(int argc, char** argv){
   for(int i=0; i< batches; ++i){
     std::string id = std::to_string(i);
     std::string path = AbsSourceRootName+id+".root";
-    if(verbose){
-        std::cout << path << std::endl;
-    }
     if(!std::filesystem::exists(path)){
       if(verbose){
           std::cerr << path << " could not be found " << std::endl;
@@ -259,6 +258,9 @@ int main(int argc, char** argv){
     TH1D* CurrentCounts = (TH1D*)Current->Get("Counts");
     TotalCounts += CurrentCounts->GetBinContent(CurrentCounts->FindBin(SourceEnergy));
     TotalRecordedPhotons += SourceEventsPerJob;
+    if(verbose){
+      std::cout << "FileNum: "<< i  << " Counts: " << TotalCounts << " Thresholds: " << ThreeSigmaThreshold << '\t' << FiveSigmaThreshold << std::endl;
+    }
     if((TotalCounts >= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
       ThreeSigmaFlag = true;
       ThreeSigmaRecordedPhotons = TotalRecordedPhotons;
@@ -266,6 +268,7 @@ int main(int argc, char** argv){
     if((TotalCounts >= FiveSigmaThreshold) && !(FiveSigmaFlag)){
       FiveSigmaFlag = true;
       FiveSigmaRecordedPhotons = TotalRecordedPhotons;
+      break;
     }
   }
 
