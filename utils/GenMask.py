@@ -93,10 +93,11 @@ if __name__=="__main__":
         ROOT.gStyle.SetOptFit(111)
     ## Create histogram of ARM
     pi = np.pi
-    Cones.Draw("ARM>>hist("+str(args.nbins)+",-"+str(pi)+","+str(pi)+")")
+    ## We don't go out past 0.5 radians on either side since there are very few events past this ARM value
+    Cones.Draw("ARM>>hist("+str(args.nbins)+",-"+str(0.5)+","+str(0.5)+")")
     ARM_Dist = ROOT.gDirectory.Get("hist")
     ## Define Lorentzian to fit to ARM.
-    func = ROOT.TF1("Lorentzian",lorentzian,-90,90,3)
+    func = ROOT.TF1("Lorentzian",lorentzian,-pi,pi,3)
     ## Set up fitting code by setting default parameters
     func.SetParameters(ARM_Dist.GetBinContent(ARM_Dist.GetMaximumBin()),ARM_Dist.GetMean(),ARM_Dist.GetRMS())
     func.SetParNames ("Constant","Mean_value","Gamma")
