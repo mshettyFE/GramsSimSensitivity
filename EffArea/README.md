@@ -2,15 +2,13 @@
 Contains the code needed to calculate the effective area of the detector.
 
 Once you run cmake and make, you end up with the following in this directory (ignoring all the cmake and make leftovers):
-
-* AggregateEffArea
+* CalcEffArea.py 
+* Commands.txt 
+* EffAreaPlt.py
 * CommandsSphere.txt
-* Commands.txt
-* CommandsUnique.txt
+* CommandsUnique.txt 
 * GenCondorScripts.py
-* libGramsSensitivityCalcEffAreaFuncs.so
-* options.xml
-* SenseJob/
+*  SenseJob/
 
 # Running Condor Jobs
 To calculate the effective area, you first need to run GenCondorScripts.py. This script takes in a output directory, condor job name, and .txt file and does the following:
