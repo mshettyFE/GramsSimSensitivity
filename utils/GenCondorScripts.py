@@ -22,8 +22,8 @@ if __name__=="__main__":
     parser.add_argument("-dsk","--DiskUsageRequested", default=3000000, type=int, help="Amount of disk usage requested in kB per job")
     # Specify if you want a folder of macro files. Useful if you want each job to have a a different energy
     # Used in EffArea calculation
-    parser.add_argument('-m',"--macros", action="store_true", help="Denotes that SenseJob/mac/batch will be filled with a series of macro files. For when gramssky is not enough.")
-    parser.add_argument("--BatchMacroName", default="REPLACE_ME_", help="Default batch macro file name. Please, give it a better name when you actually run this script")
+    parser.add_argument('-m',"--macros", action="store_true", help="Denotes that SenseJob/mac/batch will be filled with a series of macro files. Used in effective area calculation")
+    parser.add_argument("--BatchMacroName", default="REPLACE_ME_", help="Default batch macro file name.")
     parser.add_argument("--minE",default = 0.1, type=float, help="Minimum energy assigned via macrofile")
     parser.add_argument("--maxE",default = 10, type=float, help="Maximum energy assigned via macrofile")
     # A bit of a hack, since I probably shoud read this value from the .gdml file. This is easier. Just need to make sure this value is consistent with detector
