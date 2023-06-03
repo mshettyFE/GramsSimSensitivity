@@ -92,9 +92,9 @@
     </Extract>
 
     <Reconstruct>
-        <option name="Input" value="ExtractedSource.root" short='i' type="string" desc="Input root file from Extract.cpp program"></option>
+        <option name="Input" value="ExtractedSource.root" short='i' type="string" desc="Input root file from Extract program"></option>
         <!-- 'Iso' is used for EffArea and Background. 'Point' is used for Point sources-->
-        <option name="SourceType" value="Iso" type="string" desc="Type of input source. Either 'Iso' or 'Point'"></option>
+        <option name="SourceType" value="Point" type="string" desc="Type of input source. Either 'Iso' or 'Point'"></option>
         <option name="SourceLoc" value="(0,90)" type="vector" desc="Right Ascension and Altitude coordinates of source. See options.xml for details"></option>
         <!-- Right Ascension (RA) refers to the angle you make with the x axis in a CCW manner.
          Altitude (ALT) refers to the angle you make moving up from the equator to your point.

@@ -58,6 +58,20 @@ int main(int argc, char** argv){
     return -1;
   }
 
+  // Read in Source Type
+  std::string SourceType;
+  bool CheckSourceType = options->GetOption("SourceType",SourceType);
+  if(!CheckSourceType){
+    std::cerr << "Couldn't parse Source Type" << std::endl;
+    return -1;
+  }
+  else{
+    if(!((SourceType=="Iso") || (SourceType=="Point"))){
+      std::cerr << "Invalid Source Type. Needs to be either 'Iso' or 'Point'" << std::endl;
+      return -1;
+    }
+  }
+
   // Read In Source Location in spherical coordinates and convert to cartesian
   std::vector<double> TempVector;
   bool CheckSourceLoc = options->GetOption("SourceLoc",TempVector);
@@ -75,7 +89,7 @@ int main(int argc, char** argv){
   TTree* tree;
   tree = new TTree("Cones","Compton Cones");
   // Fill tree with Reconstructed Cone Data
-  Reconstruction(Series,tree,truthLoc);
+  Reconstruction(Series,tree,truthLoc,SourceType);
   // Write TTree to File
   tree->Write();
   // Clean Up
