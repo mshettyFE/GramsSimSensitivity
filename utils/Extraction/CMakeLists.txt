@@ -1,10 +1,11 @@
-# Create Extract Executable to be used in Effective  Area Calculation, BackgroundRecon and SourceRecon
+## Create Extract Executable to be used in Effective  Area Calculation, BackgroundRecon and SourceRecon
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
 
 # Set Program name to account for compilation on mac OS
 set (EXTRACTPROG "Extract${EXE}")
 add_executable(${EXTRACTPROG} Extract.cpp)
+
 # Specify location of linked libraries
 target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}Extract )

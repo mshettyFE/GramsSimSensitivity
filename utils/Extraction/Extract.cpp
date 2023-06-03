@@ -3,6 +3,7 @@
 #include "ReadRootFiles.h"
 
 #include <iostream>
+#include <filesystem>
 
 
 int main(int argc, char** argv){
@@ -17,7 +18,6 @@ int main(int argc, char** argv){
                 << std::endl 
                 << "Aborting job due to failure to parse options"
                 << std::endl;
-        exit(EXIT_FAILURE);
         return -1;
     }
 
@@ -26,7 +26,6 @@ int main(int argc, char** argv){
   options->GetOption("help",help);
   if (help) {
     options->PrintHelp();
-    exit(EXIT_SUCCESS);
       return 0;
   }
 
@@ -43,8 +42,17 @@ int main(int argc, char** argv){
 
     if (!(successG4 && successGDetSim && successOutput)){
       std::cerr << "Invalid Arguments" << std::endl;
-      exit(EXIT_FAILURE);
       return -1;
+    }
+    else{
+      if(!std::filesystem::exists(G4Name)){
+        std::cerr << G4Name << "doesn't exists" << std::endl;
+        return -1;
+      }
+      if(!std::filesystem::exists(DetSimName)){
+        std::cerr << DetSimName << "doesn't exists" << std::endl;
+        return -1;
+      }
     }
 
   // Read in Length Unit and assign an appropriate scale factor to convert all values to units of cm.
@@ -78,11 +86,11 @@ int main(int argc, char** argv){
   }
   // Sanity check that Dimensions has a physical meaning (ie. strictly positive)
   if ((Dimensions[0]<=0.0) || (Dimensions[1] <= 0.0) || (Dimensions[2] <= 0.0) ){
-    std::cerr << "Dimensions need to be positive" << std::endl;
+    std::cerr << "Dimensions need to be strictly positive" << std::endl;
     return -1;
   }
   else{
-  // Scale all the Dimensions by the scaling factor
+  // Scale all the Dimensions by the scaling factor so that they are in cm
     for(int dim=0; dim<3; ++dim){
       Dimensions[dim] *= scaling;
     }
@@ -95,7 +103,7 @@ int main(int argc, char** argv){
   if ( TempBinnings.size() != 3 ) {
      std::cerr << "Binnings needs exactly three values!" << std::endl;
      return -1;
-  }     
+  }
 
   // Make sure that Number of Binnings along each dimension are strictly greater than 1
   if ((TempBinnings[0]<1.0) || (TempBinnings[1]<1.0) || (TempBinnings[2]<1.0) ){
@@ -112,7 +120,16 @@ int main(int argc, char** argv){
   // Grab Seperation for possibility that Filter=Sphere
   double Seperation;
   bool sep = options->GetOption("Seperation",Seperation);
-  if(sep){
+  if(!sep){
+    std::cerr << "Couldn't parser seperation" << std::endl;
+    return -1;
+  }
+  else{
+    // Check for negative/zero seperation
+    if(sep<=0){
+      std::cerr << "Seperation needs to be strictly positive" << std::endl;
+      return -1;
+    }
   }
 
   // Grab filter type

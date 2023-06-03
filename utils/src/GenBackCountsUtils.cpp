@@ -187,79 +187,6 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
   return SkyMap;
 }
 
-TH2D MultipleConesToSkyMapWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int RA_Bins, int ALT_Bins, int NPts,
-TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, double exposure_time,long NEvents,
-double sphere_rad,std::string title){
-  // Define pi
-  double pi = acos(-1);
-  // Calculate the exposure weight
-  double exposure_weight = reweight_duration(EffArea,EnergyDepFlux, exposure_time,NEvents);
-  // Need to normalize Energy DepFlux and ReferenceFlux before calculating energy weight
-  EnergyDepFlux->Scale(1./EnergyDepFlux->Integral());
-  ReferenceFlux->Scale(1./ReferenceFlux->Integral());
-  // placeholder for final weight
-  double weight=0.0;
-  // Create empty skymap with correct binning
-  TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
-  // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
-  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
-    double TEnergy = std::get<7>(Cone->second);
-    // Calculate the energy dependent weight
-    double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
-    weight = energy_weight*exposure_weight;
-  //    std::cout << TEnergy << '\t' <<  weight << std::endl;
-    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
-    Seed.Add(&AddOn);
-  }
-  return Seed;
-}
-
-TH2D MultipleConesToSkyMapUnweighted(
-std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, 
-int RA_Bins, int ALT_Bins, int NPts,double sphere_rad,std::string title){
-    // Define pi
-  double pi = acos(-1);
-  // Create empty skymap with correct binning
-  TH2D Seed = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
-  // For each cone in Cone data, calculate the sky map for that cone and add it into the Seed TH2D
-  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
-    double weight = 1.0;
-    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, sphere_rad, title);
-    Seed.Add(&AddOn);
-  }
-  return Seed;
-}
-
-void ConesToCountsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData, int NPts,
-TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask, TH1D* OutputHist,
-double exposure_time, long NEvents, double proj_sphere_rad){
-  // Define pi
-  double pi = acos(-1);
-  int RA_Bins = Mask->GetNbinsX();
-  int ALT_Bins = Mask->GetNbinsY();
-  // Calculate the exposure weight
-  double exposure_weight = reweight_duration(EffArea,EnergyDepFlux, exposure_time,NEvents);
-  // Need to normalize Energy DepFlux and ReferenceFlux before calculating energy weight
-  EnergyDepFlux->Scale(1./EnergyDepFlux->Integral());
-  ReferenceFlux->Scale(1./ReferenceFlux->Integral());
-  // placeholder for final weight
-  double weight = 0.0;
-  // For each cone in Cone data, calculate the sky map for that cone
-  for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
-    double TEnergy = std::get<7>(Cone->second);
-    // Calculate the energy dependent weight
-    double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
-    weight = energy_weight*exposure_weight;
-    //    std::cout << TEnergy << '\t' <<  weight << std::endl;
-    std::string title =  "Tmp";
-    TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
-    AddOn.Multiply(Mask);
-    if(AddOn.Integral() >0){
-      OutputHist->Fill(TEnergy,weight);
-    }
-  }
-}
-
 void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
  int NPts,
  TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask,double exposure_time, long NEvents, 
@@ -284,8 +211,11 @@ void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,d
     weight = energy_weight*exposure_weight;
     //    std::cout << TEnergy << '\t' <<  weight << std::endl;
     TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
+    //Apply mask to new cone
     AddOn.Multiply(Mask);
+    // Add generated sky map to aggregate output
     OutputSkyMap->Add(&AddOn);
+    // If there is anything inside the mask, then AddOn.Integral is greater than 0. If so, fill output at TEnergy with weight
     if(AddOn.Integral() >0){
       OutputHist->Fill(TEnergy,weight);
     }
@@ -305,8 +235,10 @@ void CountsHistsUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double
   for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
     double TEnergy = std::get<7>(Cone->second);
     TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
+    // Apply mask
     AddOn.Multiply(Mask);
     OutputSkyMap->Add(&AddOn);
+    // Check if anything within neighborhood of background and fill if there is
     if(AddOn.Integral() >0){
       OutputHist->Fill(TEnergy,weight);
     }

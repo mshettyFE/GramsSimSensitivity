@@ -7,28 +7,31 @@
 #include<tuple>
 #include<cmath>
 
+#include "UsefulTypeDefs.h"
+
 // Return distances between adjacent scatters. Ignore first event b/c it is assumed to be a gamma ray
-std::vector<std::tuple<double,double,double>> Distances(
-std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> &Series);
+std::vector<R3> Distances(
+std::vector<ExtractEntry> &Series);
 
 // Extract Kinetic Energies from Series
-std::vector<double> KineticEnergies(std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> &Series, 
+std::vector<double> KineticEnergies(std::vector<ExtractEntry> &Series, 
 double e_mass = .51099895);
 
 // Calculate Reconstructed angle for a given scatter series
-bool RecoAngle(std::vector<std::tuple<double,double,double>> Dist, std::vector<double> KEs, double &ReconAngle, bool escape = false, double e_mass = .51099895);
+bool RecoAngle(std::vector<R3> Dist, std::vector<double> KEs, double &ReconAngle, bool escape = false, double e_mass = .51099895);
 
 // Convert tuple of spherical coordinates RA,ALT to a tuple of cartesian coordinates x,y,z
-std::tuple<double,double,double> SphereToCart(std::tuple<double,double> Spherical);
+R3 SphereToCart(SkyMapLoc Spherical);
 
 // Calculate dot product between two 3D tuples
-double dot(std::tuple<double,double,double> A, std::tuple<double,double,double> B);
+double dot(R3 A, R3 B);
 
 // Calculate ARM. Returns 2*pi if Source type is Iso.
-bool ARM(double RecoAngle, std::vector<std::tuple<double,double,double>> Dist, std::tuple<double,double,double> SourceLoc, double &ARM_val, std::string SourceType="Point");
+bool ARM(double RecoAngle, std::vector<R3> Dist, R3 SourceLoc, double &ARM_val, std::string SourceType="Point");
 
+// 
 void Reconstruction(
-  std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > &ScatterSeries,
- TTree* tree,std::tuple<double,double,double> truthLoc,std::string SourceType="Point");
+  std::map<std::tuple<int,int>, std::vector<ExtractEntry> > &ScatterSeries,
+ TTree* tree,R3 truthLoc,std::string SourceType="Point");
 
 #endif

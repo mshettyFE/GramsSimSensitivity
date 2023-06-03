@@ -10,7 +10,10 @@
 #include <cstring>
 #include <iostream>
 
-void print_G4map(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > mapping){
+#include "UsefulTypeDefs.h"
+
+void print_G4map(std::map<std::tuple<int,int>, std::vector<G4Entry> > mapping){
+  // Utility function to print contents of GramsG4
   for ( auto i = mapping.begin(); i != mapping.end(); ++i ){
     auto key = (*i).first;
     auto value = (*i).second;
@@ -33,26 +36,10 @@ void print_G4map(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,in
 }
 
 
-std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > ReadGramsG4(std::string GramsG4FileName, bool verbose){
-  // Leaves of TrackInfo NTuple
-  // Run             int
-  // Event           int
-  // TrackID         int
-  // ParentID        int
-  // PDGCode         int
-  // ProcessName     string
-  // t               = double
-  // x               = float
-  // y               = float
-  // z               = float
-  // Etot            = double
-  // px              = float
-  // py              = float
-  // pz              = float
-  // identifier      = int
-  // Format of map
-  // <Run, Event> : [<TrackID,ParentID,PDGCode,ProcessName,t,x,y,z,Etot,identifier>,...]
-    std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > mapping;
+std::map<std::tuple<int,int>, std::vector<G4Entry> > ReadGramsG4(std::string GramsG4FileName, bool verbose){
+  // See type defs for G4Entry
+  // Uses <run,event> as key, and a list of interactions as the value
+    std::map<std::tuple<int,int>, std::vector<G4Entry> > mapping;
 
   // Open Input data
   ROOT::RDataFrame trackInfo( "TrackInfo", GramsG4FileName, {"Run", "Event", "TrackID","ParentID","PDGCode","ProcessName","t",
@@ -72,11 +59,11 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,dou
   // Create key and value pair
       std::tuple<int,int> key = std::make_tuple(run,event);
   // Only read the first value of the vectors, since that is where the interaction occurred at
-      std::tuple<int,int,int,std::string,double,float,float,float,double,int> hit = std::make_tuple(trackID,ParentID,PDGCode,processName,
+      G4Entry hit = std::make_tuple(trackID,ParentID,PDGCode,processName,
       t[0],x[0],y[0],z[0],Etot[0],identifier[0]);
   // Check if key exists. If it doesn't, create a new series and add to map
       if(mapping.count(key) == 0){
-        std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series;
+        std::vector<G4Entry> series;
         series.push_back(hit);
         mapping[key] = series;
      }
@@ -93,7 +80,8 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,dou
     return mapping;
 }
 
-void print_DetSimMap(  std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > DetMapping){
+void print_DetSimMap(  std::map<std::tuple<int,int,int>, std::vector<DetSimEntry> > DetMapping){
+    // Utility function to print contents of GramsDetSim
   for ( auto i = DetMapping.begin(); i != DetMapping.end(); ++i ){
     auto key = (*i).first;
     auto value = (*i).second;
@@ -110,9 +98,8 @@ void print_DetSimMap(  std::map<std::tuple<int,int,int>, std::vector<std::tuple<
   }
 }
 
-void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > Mapping){
-  // Format of map
-  // <Run,Event>, < <energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet>,  ...>
+void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<ExtractEntry> > Mapping){
+  // Utility function to print contents of Extract output
   for ( auto i = Mapping.begin(); i != Mapping.end(); ++i ){
     auto key = (*i).first;
     auto value = (*i).second;
@@ -136,8 +123,8 @@ void print_ExtractMap(std::map<std::tuple<int,int>, std::vector<std::tuple<doubl
 
 }
 
-void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double> > Mapping){
-  // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle>,  ...>
+void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, ReconstructEntry > Mapping){
+  // Utility function to print contents of Reconstruct output
   for ( auto i = Mapping.begin(); i != Mapping.end(); ++i ){
     auto key = (*i).first;
     auto event = (*i).second;
@@ -155,30 +142,13 @@ void print_ReconstructDataFromSkyMap(std::map<std::tuple<int,int>, std::tuple<do
   }
 }
 
-std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > ReadGramsDetSim(std::string GramsDetSimFileName,bool verbose){
-  // DetSim Leafs
-  /*
-  *Br    0 :Run       : Run/I                                                  *
-  *Br    1 :Event     : Event/I                                                *
-  *Br    2 :TrackID   : TrackID/I                                              *
-  *Br    3 :PDGCode   : PDGCode/I                                              *
-  *Br    4 :numPhotons : numPhotons/I                                 *
-  *Br    5 :energy    : vector<double>                                         *
-  *Br    6 :numElectrons : vector<double>                                      *
-  *Br    7 :x         : vector<double>                                         *
-  *Br    8 :y         : vector<double>                                         *
-  *Br    9 :z         : vector<double>                                         *
-  *Br   10 :timeAtAnode : vector<double>                                       *
-  *Br   11 :identifier : identifier/I                                          *
-  */
-
+std::map<std::tuple<int,int,int>, std::vector<DetSimEntry> > ReadGramsDetSim(std::string GramsDetSimFileName,bool verbose){
   // Open Relevant DetSim data
   // Format of DetSimMap
   ROOT::RDataFrame DetSim( "DetSim", GramsDetSimFileName, {"Run", "Event", "TrackID","energy",
     "x","y","z","timeAtAnode"} );
 
-  // <Run, Event,TrackID> : [<energy,x,y,z,timeAtAnode>,...]
-  std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > DetMapping;
+  std::map<std::tuple<int,int,int>, std::vector<DetSimEntry> > DetMapping;
 
   // Lambda expression to extract variables from detSim
   DetSim.Foreach(
@@ -189,10 +159,10 @@ std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,d
   // Create key and value pair
       std::tuple<int,int,int> key = std::make_tuple(run,event,trackID);
   // Only read the first value of the vectors, since that is where the interaction occurred at
-      std::tuple<double,double, double,double,double> hit = std::make_tuple(energy[0],x[0],y[0],z[0],t[0]);
+      DetSimEntry hit = std::make_tuple(energy[0],x[0],y[0],z[0],t[0]);
   // Check if key exists. If it doesn't, create a new series and add to map
       if(DetMapping.count(key) == 0){
-      std::vector<std::tuple<double,double, double,double,double>> series;
+      std::vector<DetSimEntry> series;
         series.push_back(hit);
         DetMapping[key] = series;
      }
@@ -209,11 +179,11 @@ std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,d
   return DetMapping;
 }
 
-void push_to_map(std::tuple<int,int> &key, std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> &values, 
-  std::map< std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > &Series){
+void push_to_map(std::tuple<int,int> &key, ExtractEntry &values, 
+  std::map< std::tuple<int,int>, std::vector<ExtractEntry> > &Series){
   // Push key,value pair to map
     if(Series.count(key)==0){
-        std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> Events;
+        std::vector<ExtractEntry> Events;
         Events.push_back(values);
         Series[key] = Events;
     }
@@ -222,14 +192,12 @@ void push_to_map(std::tuple<int,int> &key, std::tuple<double,double,double,doubl
     }
 }
 
-std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > ReadExtract(std::string ExtractFileName,bool verbose){
-  // Format of Extracted output
-  // <Run,Event>, < <energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet,SeriesType(str)>,  ...>
-
+std::map<std::tuple<int,int>, std::vector<ExtractEntry> > ReadExtract(std::string ExtractFileName,bool verbose){
+  // Read in output of Extract executable
   ROOT::RDataFrame Series( "FilteredSeries", ExtractFileName, {"Run", "Event", "energy","t",
     "x","y","z","tDet","xDet","yDet","zDet", "DetEnergy","SeriesType"} );
   
-  std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double,double,double,double,double,double,double,std::string>> > Output;
+  std::map<std::tuple<int,int>, std::vector<ExtractEntry> > Output;
 
   Series.Foreach(
   // Shove data into map depending on series type
@@ -237,7 +205,7 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double
   double tDet, double xDet, double yDet, double zDet, double DetEnergy, std::string SeriesType)
   {
     std::tuple<int,int> key = std::make_tuple(run,event);
-    std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> observables;
+    ExtractEntry observables;
     std::string EventType;
     for ( auto i = SeriesType.begin(); i != SeriesType.end() && (*i) != 0; ++i ){
       EventType.push_back(*i);
@@ -252,17 +220,15 @@ std::map<std::tuple<int,int>, std::vector<std::tuple<double,double,double,double
   return Output;
 }
 
-std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose){
-  // Format of Extracted output
-  // <Run,Event>, < <xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle,TruthEnergy>,  ...>
-
+std::map<std::tuple<int,int>, ReconstructEntry> ReadReconstructFromSkyMap(std::string ReconstructName, bool verbose){
+  // Read on output of Reconstruct exe
   ROOT::RDataFrame Series( "Cones", ReconstructName, {"Run", "Event","EventType",
    "xDir","yDir","zDir",
    "xTip","yTip","zTip",
    "RecoAngle","ARM","RecoEnergy","TruthEnergy"
    } );
 
-  std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> Output;
+  std::map<std::tuple<int,int>, ReconstructEntry> Output;
 
   Series.Foreach(
   // Shove data into map depending on series type
@@ -270,7 +236,7 @@ std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,doub
   double xTip, double yTip, double zTip, double RecoAngle, double ARM, double RecoEnergy, double TruthEnergy)
   {
     std::tuple<int,int> key = std::make_tuple(run,event);
-    std::tuple<double,double,double,double,double,double,double,double> observables;
+    ReconstructEntry observables;
     observables = std::make_tuple(xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle,TruthEnergy);
     auto pair = std::make_pair(key,observables);
     Output.insert(pair);

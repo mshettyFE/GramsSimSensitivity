@@ -1,30 +1,18 @@
+// standard libraries
 #include <iostream>
 #include <filesystem>
-#include <stdexcept>
 #include <chrono>
 
+// ROOT libraries
 #include "TChain.h"
 #include "TH2D.h"
 #include "TFile.h"
 #include "TCanvas.h"
 
+// util libraries
 #include "Options.h"
 #include "CalcSenseUtils.h"
 #include "GenBackCountsUtils.h"
-
-/*
-## Plan: Read in all background histograms as TChain into a single summed background
-## Apply Mask to background.
-## Convert 2d skymap to 1D std::vector consisting of only non-zero values
-## Extract mean and std. dev from std::vector. Get 3 sigma 5 sigma threshold
-## Read in all the reconstructed cones of the Source into another TChain
-## Iteratively reconstruct Source cones to histograms.
-## Iteratively apply mask onto Source histograms. If you are non-zero, count the cone
-## Continue until you get enough cones to hit 3 and 5 sigma thresholds
-## Once you hit 5 sigma threshold, break out
-## Convert number of cones needed to number of photons needed
-## Convert number of photons needed to sensitivity by dividing by photon energy, effective area at that energy, and exposure time
-*/
 
 int main(int argc, char** argv){
 // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
@@ -38,7 +26,6 @@ int main(int argc, char** argv){
                 << std::endl 
                 << "Aborting job due to failure to parse options"
                 << std::endl;
-        exit(EXIT_FAILURE);
         return -1;
     }
 
@@ -47,7 +34,6 @@ int main(int argc, char** argv){
   options->GetOption("help",help);
   if (help) {
     options->PrintHelp();
-    exit(EXIT_SUCCESS);
       return 0;
   }
 
@@ -58,19 +44,19 @@ int main(int argc, char** argv){
   std::string BackgroundPath;
   std::string BackgroundBase;
   std::string AbsBackRootName;
-  bool BackPathCheck = options->GetOption("BackgroundBaseName", BackgroundPath);
-  bool BackBaseCheck  = options->GetOption("BackgroundCountFolder", BackgroundBase);
+  bool BackPathCheck = options->GetOption("BackgroundCountFolder", BackgroundPath);
+  bool BackBaseCheck  = options->GetOption("BackgroundBaseName", BackgroundBase);
   if(BackBaseCheck && BackBaseCheck){
-    if((BackgroundPath.length()>0) || (BackgroundBase.length()>0)){
-      AbsBackRootName = BackgroundPath+"/"+BackgroundBase;
-    }
-    else{
-    std::cerr << "Empty background path or base name" << std::endl;
-    return -1;
+    // Sanity check that this file format works (doesn't mean it's the correct file but that is a pebkac)
+    AbsBackRootName = BackgroundPath+"/"+BackgroundBase;
+    // Check if the 0.root file exists
+    if(!std::filesystem::exists(AbsBackRootName+"0.root")){
+      std::cerr << AbsBackRootName+"0.root" << " doesn't exist" << std::endl;
+      return -1;
     }
   }
   else{
-    std::cerr << "Invalid background path or background basename" << std::endl;
+    std::cerr << "Invalid background folder or background basename" << std::endl;
     return -1;
   }
 
@@ -78,47 +64,43 @@ int main(int argc, char** argv){
   std::string SourcePath;
   std::string SourceBase;
   std::string AbsSourceRootName;
-  bool SourcePathCheck = options->GetOption("SourceConesBaseName", SourcePath);
-  bool SourceBaseCheck  = options->GetOption("SourceConesFolder", SourceBase);
+  bool SourcePathCheck = options->GetOption("SourceConesFolder", SourcePath);
+  bool SourceBaseCheck  = options->GetOption("SourceConesBaseName", SourceBase);
   if(SourceBaseCheck && SourceBaseCheck){
-    if((SourcePath.length()>0) || (SourceBase.length()>0)){
-      AbsSourceRootName = SourcePath+"/"+SourceBase;
-    }
-    else{
-    std::cerr << "Empty Source path or base name" << std::endl;
-    return -1;
+    // Sanity check that file exists (doesn't mean it's the correct file but that is a pebkac)
+    AbsSourceRootName = SourcePath+"/"+SourceBase;
+    if(!std::filesystem::exists(AbsSourceRootName+"0.root")){
+      std::cerr << AbsSourceRootName+"0.root" << " doesn't exist" << std::endl;
+      return -1;
     }
   }
   else{
-    std::cerr << "Invalid Source path or Source basename" << std::endl;
+    std::cerr << "Invalid Source folder or Source basename" << std::endl;
     return -1;
   }
 
-  // Read in NPts
+  // Read in NPts to generate per Compton cone
     int NPts;
     bool successN = options->GetOption("NPts",NPts);
     if (!(successN)){
       std::cerr << "Invalid Number of Points per cone" << std::endl;
-      exit(EXIT_FAILURE);
       return -1;
     }
     else{
       if( (NPts <= 0)){
         std::cerr << "Invalid Number of points per cone" << std::endl;
-        exit(EXIT_FAILURE);
         return -1;
       }
     }
 
     // Determine number of events per batch job of source.
-    // This is a workaround of parsing a string and fact checking that it can be a positive long
+    // This is a workaround consisting of parsing a string and fact checking that it can be a positive long
     // I really didn't want to try and template Options.h
     std::string TempNEvents;
     long SourceEventsPerJob;
     bool successNEvents = options->GetOption("SourceEventsPerJob",TempNEvents);
     if (!(successNEvents)){
       std::cerr << "Invalid Number of total events" << std::endl;
-      exit(EXIT_FAILURE);
       return -1;
     }
     else{
@@ -133,7 +115,6 @@ int main(int argc, char** argv){
     // We need SourceEventsPerJob to be strictly positive
       if(SourceEventsPerJob<=0){
         std::cerr << "Number of total events needs be positive and non-zero" << std::endl;
-        exit(EXIT_FAILURE);
         return -1;
       }
     }
@@ -166,34 +147,6 @@ int main(int argc, char** argv){
         return -1;
     }
 
-  // Open up Mask histogram
-  std::string MaskPath;
-  bool MaskPathCheck = options->GetOption("MaskLocation", MaskPath);
-  if(MaskPathCheck){
-    if(std::filesystem::exists(MaskPath)){
-      try{
-        // Make sure we can read file
-        std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
-        TH2D* Mask= (TH2D*)MaskFile->Get("Mask");
-        if(Mask==NULL){
-          throw 1;
-        }
-      }
-      catch(...){
-        std::cerr << "Couldn't open Mask root file "  << std::endl;
-        return -1;
-      }
-    }
-    else{
-    std::cerr << "Invalid Mask Path" << std::endl;
-    return -1;
-    }
-  }
-  else{
-    std::cerr << "Invalid Mask Path" << std::endl;
-    return -1;
-  }
-
   // Open up Effective Area histogram
   std::string EffectiveAreaPath;
   bool EffAPathCheck = options->GetOption("EffectiveAreaRoot", EffectiveAreaPath);
@@ -208,7 +161,7 @@ int main(int argc, char** argv){
         }
       }
       catch(...){
-        std::cerr << "Couldn't open Effective Area root file "  << std::endl;
+        std::cerr << "Couldn't open Effective Area histogram "  << std::endl;
         return -1;
       }
     }
@@ -222,7 +175,7 @@ int main(int argc, char** argv){
     return -1;
   }
 
-    // Read in total number of batches
+  // Read in total number of batches
   int batches;
   bool CheckBatch = options->GetOption("Batches",batches);
   if(CheckBatch){
@@ -238,103 +191,104 @@ int main(int argc, char** argv){
 
     std::cout << "Reading in Background..." << std::endl;
 
-    // Load in skeleton of BackgroundCounts from the first background count histogram
-    TH1D* AggBackCounts;
-    std::string seed = AbsBackRootName+"0.root";
-    if(!std::filesystem::exists(seed)){
-      std::cerr << seed << " could not be found " << std::endl;
-      return -1;
-    }
+  // Load in skeleton of BackgroundCounts from the first background count histogram
+  TH1D* AggCounts;
+  std::string seed = AbsBackRootName+"0.root";
 
   std::unique_ptr<TFile> Seed(TFile::Open(seed.c_str(), "READ"));
-  AggBackCounts = (TH1D*)Seed->Get("BackgroundCounts");
-  AggBackCounts->Reset();
+  AggCounts = (TH1D*)Seed->Get("Counts");
+  if(AggCounts==NULL){
+    std::cerr << "Couldn't read Counts histogram in " << seed << std::endl;
+    return -1;
+  }
+  // Create histogram. We now have the correct binnings.
+  AggCounts->Reset();
 
   // Get bin number of region of background we are comparing against
-  int TargetBin = ExtractBinNum(SourceEnergy, AggBackCounts);
+  int TargetBin = ExtractBinNum(SourceEnergy, AggCounts);
 
   // Aggregate all the sky maps that exist
-  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggBackCounts);
+  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggCounts,verbose);
 
-  std::unique_ptr<TFile> MaskFile(TFile::Open(MaskPath.c_str(), "READ"));
-  TH2D* Mask = (TH2D*)MaskFile->Get("Mask");
-
-  double mu = AggBackCounts->GetBinContent(TargetBin);
-  double sigma = AggBackCounts->GetBinError(TargetBin);
+  // Calculate mean and std. dev. assuming Poisson stats
+  double mu = AggCounts->GetBinContent(TargetBin);
+  double sigma = AggCounts->GetBinError(TargetBin);
+  // Calculates 3 and 5 sigma thresholds
   double ThreeSigmaThreshold = mu+3*sigma;
   double FiveSigmaThreshold = mu+5*sigma;
 
   std::cout << "Mean: " << mu << '\t' << "Sigma: " << sigma << std::endl;
- 
-  int RA_Bins = Mask->GetNbinsX();
-  int ALT_Bins = Mask->GetNbinsY(); 
 
-  std::cout << "Reading Source Cones..." << std::endl;
-  TChain SourceCones("Cones");
-  ReadConeData(AbsSourceRootName,  batches, SourceCones);
-  Long64_t TotalCones = SourceCones.GetEntries();
-  double xDir, yDir, zDir,xTip, yTip, zTip, RecoAngle;
-  SourceCones.SetBranchAddress("xDir", &xDir);
-  SourceCones.SetBranchAddress("yDir", &yDir);
-  SourceCones.SetBranchAddress("zDir", &zDir);
-  SourceCones.SetBranchAddress("xTip", &xDir);
-  SourceCones.SetBranchAddress("yTip", &yDir);
-  SourceCones.SetBranchAddress("zTip", &zDir);
-  SourceCones.SetBranchAddress("RecoAngle",&RecoAngle);
-
-  double Tally = 0.0;
-  Long64_t ThreeSigmaCount;
+  // Place holder variables
+  Long64_t TotalRecordedPhotons = 0.0;
+  Long64_t ThreeSigmaRecordedPhotons = 0.0;
+  Long64_t FiveSigmaRecordedPhotons = 0.0;
+  double TotalCounts = 0.0;
+  // Flags to make sure that I only write the number of photons at each threshold only once
   bool ThreeSigmaFlag = false;
-  Long64_t FiveSigmaCount;
   bool FiveSigmaFlag = false;
-  Long64_t count = 0;
-  std::cout << "Calculating Sensitivity..." << std::endl;
-  for(Long64_t i=0; i<TotalCones; ++i){
-    SourceCones.GetEntry(i);
-    TH2D SourceHist = ConeToSkyMap( xDir,  yDir,  zDir,  xTip,  yTip,  zTip, RecoAngle, 
-     RA_Bins,  ALT_Bins,NPts);
-     SourceHist.Multiply(Mask);
-    double inside_count = SourceHist.Integral();
-    if(inside_count > 0){
-      count += 1;
+
+  std::cout << "Calculating Sensitivity" << std::endl;
+  for(int i=0; i< batches; ++i){
+    // Try and read in source file
+    std::string id = std::to_string(i);
+    std::string path = AbsSourceRootName+id+".root";
+    if(!std::filesystem::exists(path)){
+      if(verbose){
+          std::cerr << path << " could not be found " << std::endl;
+      }
+      continue;
     }
-    if((count>= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
-      ThreeSigmaFlag = true;
-      ThreeSigmaCount = count;
+    // Get the number of cones that lie within the mask
+    std::unique_ptr<TFile> Current(TFile::Open(path.c_str(), "READ"));
+    TH1D* CurrentCounts = (TH1D*)Current->Get("Counts");
+    if(CurrentCounts==NULL){
+      std::cerr << "Couldn't read Counts histogram in" << path << std::endl;
+      continue;
     }
-    if((count>= FiveSigmaThreshold) && !(FiveSigmaFlag)){
-      FiveSigmaFlag = true;
-      FiveSigmaCount = count;
-      break;
-    }
+    TotalCounts += CurrentCounts->GetBinContent(CurrentCounts->FindBin(SourceEnergy));
+    // Keep a running tally of how many photons you need to observe TotalCounts number of cones
+    TotalRecordedPhotons += SourceEventsPerJob;
     if(verbose){
-      std::cout << " Thresholds: " << ThreeSigmaThreshold << "\t" << FiveSigmaThreshold <<
-      " Current count" << count << "Current Cone" << i << std::endl;
+      std::cout << "FileNum: "<< i  << " Counts: " << TotalCounts << " Thresholds: " << ThreeSigmaThreshold << '\t' << FiveSigmaThreshold << std::endl;
+    }
+    // If you hit the 3 sigma threshold, you save how many photons where needed to generate the current TotalCounts number of cones
+    if((TotalCounts >= ThreeSigmaThreshold) && !(ThreeSigmaFlag)){
+      ThreeSigmaFlag = true;
+      ThreeSigmaRecordedPhotons = TotalRecordedPhotons;
+    }
+    // Ditto with 5 sigma, but now you break out of loop since 5 sigma is good enough
+    if((TotalCounts >= FiveSigmaThreshold) && !(FiveSigmaFlag)){
+      FiveSigmaFlag = true;
+      FiveSigmaRecordedPhotons = TotalRecordedPhotons;
+      break;
     }
   }
 
+  // We assume that the number of photons is proportional to the number of cones generated
+  // The proportionality constant might be different for each energy, but we only consider 1 energy at a time, so it's OK
+  // as an example: NPhotonsThreeSigma/FiveSigmaRecordedPhotons = ThreeSigmaThresholdCones/TotalCones. Rearrange for NPhotonsThreeSigma
+  double NPhotonsThreeSigma = (ThreeSigmaThreshold)/(TotalCounts)*((double) FiveSigmaRecordedPhotons);
+  double NPhotonsFiveSigma = (FiveSigmaThreshold)/(TotalCounts)*((double) FiveSigmaRecordedPhotons);
 
-  std::tuple<long,long> Used3Sigma = CalculateUsedPhotons(AbsSourceRootName,batches,  SourceEventsPerJob, ThreeSigmaCount);
-  std::tuple<long,long> Used5Sigma = CalculateUsedPhotons(AbsSourceRootName, batches, SourceEventsPerJob, FiveSigmaCount);
-
-  // Fix this. Total cones to cones read in files
-  double NPhotonsThreeSigma = ((ThreeSigmaCount)/((double)(std::get<1>(Used3Sigma)))) * ((double) std::get<0>(Used3Sigma));
-  double NPhotonsFiveSigma = ((FiveSigmaCount)/((double)(std::get<1>(Used5Sigma)))) * ((double) std::get<0>(Used5Sigma));
-
+  // Get the effective area at this energy
   std::unique_ptr<TFile> EffAFile(TFile::Open(EffectiveAreaPath.c_str(), "READ"));
   TH1D* EffA= (TH1D*) EffAFile->Get("EffArea");
 
   double SourceEffA = ExtractEffArea(SourceEnergy, EffA);
 
+  // Conversion rate of MeV to ergs because astronomers still user ergs
+  const double MeVtoErgs = 1.60218E-6;
 
-  double MeVtoErgs = 1.60218E-6;
-
+  // Convert number of photons to sensitivity (units of ergs/(cm^2*s))
+  // Multiply number of photons by source energy, convert to ergs, and divide by effective area nd exposure time
   double ThreeSigmaDiffSensitivity = NPhotonsThreeSigma*SourceEnergy*MeVtoErgs/(SourceEffA*ExposureTime);
   double FiveSigmaDiffSensitivity = NPhotonsFiveSigma*SourceEnergy*MeVtoErgs/(SourceEffA*ExposureTime);
+  // Another way of representing sensitivity is photons/cm^2/s.
   double ThreeSigmaPhotonSensitivity = NPhotonsThreeSigma/(SourceEffA*ExposureTime);
   double FiveSigmaPhotonSensitivity = NPhotonsFiveSigma/(SourceEffA*ExposureTime);
 
-
+  // Printing to console
   std::cout << "At a source energy of "<< SourceEnergy << " MeV and exposure time of " << ExposureTime << " seconds , the sensitivity is (in ergs*cm^-2*s^-1):" << std::endl;
   std::cout << "\tThree Sigma: " << ThreeSigmaDiffSensitivity << std::endl;
   std::cout << "\tFive Sigma: " << FiveSigmaDiffSensitivity << std::endl;

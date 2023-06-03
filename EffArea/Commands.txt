@@ -1,7 +1,12 @@
+# Generate an isotropic background that encompasses the entire detector and centered on detector. Spectrum is monoenergetic as defined in GenCondorScripts.py
 ./gramsg4 -g ThinGrams.gdml -s ${process} -r ${process} -o EffA_${process} -m mac/batch/Mono${process}.mac
+# unused gramsdetsim call (Don't know experimental parameters)
 ./gramsdetsim -i EffA_${process}.root -s ${process} -o EffA_Det_${process}.root
+# Extract the Compton series with the minimum filter criteria
 ./Extract --GramsG4Name EffA_${process}.root --GramsDetSimName EffA_Det_${process}.root -o EffA_Extracted_${process}.root
+# Generate Compton cones
 ./Reconstruct -i EffA_Extracted_${process}.root -o EffA_Reco_${process}.root --SourceType Iso 
+# Move final output to 1 folder up and change directory to said folder.
+# Condor automatically transfers only the output
 cp EffA_Reco_${process}.root ..
 cd ..
-rm -rf SenseJob
