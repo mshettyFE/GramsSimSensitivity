@@ -132,9 +132,9 @@
         <!-- Base folder containing background count root files (ie. output from ./GenCountsHists)-->
         <option name="BackgroundCountFolder" type="string" value="" desc="Folder containing background counts"></option>
         <!-- preappended name of root files. For instance, if ${Preappend}{$id}.root, you use ${Preappend}-->
-        <option name="BackgroundBaseName" type="string" value="" desc="Base name of count histograms. For example, Back_0.root => Back_"></option>
-        <option name="SourceConesFolder" type="string" value="" desc="Folder containing reconstructed source cones"></option>
-        <option name="SourceConesBaseName" type="string" value="" desc="Base name of cones file. For example, Reconstruct_0.root => Reconstruct_"></option>
+        <option name="BackgroundBaseName" type="string" value="" desc="Base name of background count histograms. For example, Back_0.root => Back_"></option>
+        <option name="SourceCountsFolder" type="string" value="" desc="Folder containing source count root files"></option>
+        <option name="SourceCountsBaseName" type="string" value="" desc="Base name of source count root file. For example, Reconstruct_0.root => Reconstruct_"></option>
         <!-- Energy of source. Should be consistent with .sh file that generated cones-->
         <option name="SourceEnergy" type="double" value="-1" desc="Energy of source cones"></option>
         <!-- Effective area root file. Used to caclulate final sensitivity at the end-->
@@ -143,11 +143,8 @@
         <option name="SourceEventsPerJob" type="string" value="" desc="Number of source events generated per job initially"></option>
         <!-- The number of batches for both source and background. You might want to uncouple these, but I found that it doesn't really matter-->
         <option name="Batches" type="integer" value="-1" desc="Number of source/background cone files"></option>
-        <!-- Needed to calculate sensitivity at the end-->
+        <!-- Needed to calculate sensitivity at the end. Amount of time associated with background-->
         <option name="ExposureTime" type="double" value="-1" desc="Total exposure time"></option>
-        <!-- The number of points generated per cone. Increasing these linearly increases the execution time.-->
-        <!-- You need enough points such that you get continous sky circles. 1000 is good enough, unless you have a really big scattering angle-->
-        <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
     </Sensitivity>
 
   <gramssky>

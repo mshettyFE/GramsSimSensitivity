@@ -64,8 +64,8 @@ int main(int argc, char** argv){
   std::string SourcePath;
   std::string SourceBase;
   std::string AbsSourceRootName;
-  bool SourcePathCheck = options->GetOption("SourceConesFolder", SourcePath);
-  bool SourceBaseCheck  = options->GetOption("SourceConesBaseName", SourceBase);
+  bool SourcePathCheck = options->GetOption("SourceCountsFolder", SourcePath);
+  bool SourceBaseCheck  = options->GetOption("SourceCountsBaseName", SourceBase);
   if(SourceBaseCheck && SourceBaseCheck){
     // Sanity check that file exists (doesn't mean it's the correct file but that is a pebkac)
     AbsSourceRootName = SourcePath+"/"+SourceBase;
@@ -78,20 +78,6 @@ int main(int argc, char** argv){
     std::cerr << "Invalid Source folder or Source basename" << std::endl;
     return -1;
   }
-
-  // Read in NPts to generate per Compton cone
-    int NPts;
-    bool successN = options->GetOption("NPts",NPts);
-    if (!(successN)){
-      std::cerr << "Invalid Number of Points per cone" << std::endl;
-      return -1;
-    }
-    else{
-      if( (NPts <= 0)){
-        std::cerr << "Invalid Number of points per cone" << std::endl;
-        return -1;
-      }
-    }
 
     // Determine number of events per batch job of source.
     // This is a workaround consisting of parsing a string and fact checking that it can be a positive long

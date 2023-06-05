@@ -16,6 +16,7 @@ The workflow for the analysis is as follows:
 6. Assuming Poisson statistics, we calculate the number of source cones needed to have a 3/5 sigma threshold above the background at the source energy. (CalcSensitivity.cpp in [SourceRecon](./SourceRecon/))
     * Once we have the number of Compton cones from the source, we can then convert this number to to the number of photons needed to generate said Compton cones. Finally, we convert the number of photons needed to a sensitvitity, taking into account the effective area, exposure time, and energy of the photon
 
+If you want to try and reproduce my results from scratch, start at [EffArea](./EffArea/).
 # Files and Folders
 Each folder contains a different aspect of calculating the sensitivity. For more information on a particular aspect of the simulation, please read the associated README.md in each folder.
 * [BackgroundRecon](BackgroundRecon) contains the scripts necessary to set up a condor jobs for two purposes:
