@@ -70,6 +70,10 @@ file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_D
 #Copy over options.xml to SourceRecon
 file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
+# Copy over RemoveClutter.sh
+
+file( COPY ${CMAKE_SOURCE_DIR}/RemoveClutter.sh DESTINATION ${CMAKE_BINARY_DIR})
+
 add_subdirectory(utils)
 add_subdirectory(EffArea)
 add_subdirectory(SourceRecon)

@@ -53,11 +53,40 @@ A similar command works with the Source reconstruction.
 
 As another example, say that you want to run the effective area calculation. Suppose that you want to save the root files in ${Output}. 
 
-You want energies ranging from 0.1 to 10 MeV, with 1000 data points. Utilizing no additional filters, you use the [Commands.txt](../EffArea/Commands.txt) in EffArea. cd to build EffArea and run:
+You want energies ranging from 0.1 to 10 MeV, with 1000 data points. Utilizing no additional filters, you use the [Commands.txt](../EffArea/Commands.txt) in EffArea. cd to the build EffArea directory and run:
 
 ```
 python GenCondorScripts.py ${Output}  EffArea Commands.txt  -nb 1000 -ne 20000000 -m --minE 0.1 --maxE 10
 ```
+
+# Defining Neighborhood to Source (ie. GenMask)
+The way that GenMask works is that it read in the ARM value from each Cone and puts them all into a histogram bounded between -0.5 and 0.5 radians (these are arbitrary values, but I found that there are very few values outside these points, you get a better $\chi^{2}/dof$, and you get around the same ARM as the full $-\pi$ to $\pi$). 
+
+It then fits a Lorentzian, defines as
+$A\frac{\frac{\Gamma}{2}}{(\frac{\Gamma}{2})^{2}+(x-x_{0})^{2}}$ where A, ${\Gamma} and ${ x_{0} } are the fit parameters. A is a normalization constant. $x_{0}$ is the center of the distribution, and $\Gamma$ is the FWHM, or in the content of Compton cameras, the ARM. Once the fitting is done, $\Gamma$ is taken as the ARM of the distribution.
+
+After calculating the ARM, GenSky then takes the center of each bin the output skymap and computes the angle w.r.t. the true source location. If this angle is smaller than the ARM, then you set that bin to 1 (ie. we should include this bin in the final map). After interating, it output the mask to a root file as a TH2D.
+
+GenMask has the following required arguments:
+* SourcePath: the output folder  where the cone data for your source lies at
+* ReconstructionBase: the file name format of the source Cone data root files
+* RA_loc: The true RA location where your source was generate
+* ALT_loc: the true ALT location where your source was generate
+* Output: the name of the output root file
+
+Optional arguments:
+* RABins: Number of bins along RA axis. Defaults to 500
+* ALTBins: Number of bins along ALT axis. Defaults to 500
+* --draw: Flag to indicate that you want to draw the ARM distribution and the final masked sky map as .jpegs
+    * NOTE: ROOT doesn't properly display the sky map if you set counts to 1. You can see the actual map better if you set the counts to 1000 instead of 1 (although for the rest of the pipeline, it should be set to 1 to be properly interpreted as a binary mask)
+* --nbins: the number of bins used when fitting the ARM distribution. Defaults to 50,000
+
+As an example usage:
+```
+python GenMask.py \${Input} Source_Reco_ 0 0 Mask.root -d
+```
+
+takes in cone data from ${Input} with the base name of "Source_Reco_". The true source location is at 0 0. The output file is called Mask.root. We draw the intermediate fit and final sky map as .jpgs.
 
 # Generating Sky Maps and Counts
 In analogous manner to GenCondorScripts.py, GenCondorCountsHistsScripts.py generates the counts histogram and skymaps fron a series of cones.
@@ -98,10 +127,30 @@ We then multiply by $4\pi$ steradians and by the exposure time to get the projec
 
 If we didn't do this, then we would need to first calculate the number of photons given our exposure time, effective area, and physical flux, and re-simulate all of the background gammas.
 
-To deal with a variable background flux, we now utilize the RefFlux and PhysicalFlux root files. We normalize both distributions so that they becomes probability distributions (Denoted as $P_{ref}(E)$ an $P_{phys}(E)$).
+To deal with a variable background flux, we now utilize the RefFlux and PhysicalFlux root files. We normalize both distributions so that they becomes probability distributions (Denoted as $P_{ref}(E)$ an $P_{phys}(E)$ ).
 
 Suppose that we have a compton cone that came from a gamma ray of energy E. We assign the weight $\frac{P_{phys}(E)}{P_{ref}(E)}$.
 
 If we didn't do this, we would need to re-simulate the background whenever we wanted to test out a different flux.
 
 To combine both effects, we simply multiply the weight together on a per cone basis.
+
+## Example Usage of GenCondorCountsHistsScripts.py
+
+First, you create a directory where you want to store the output counts and skymaps of the background. Call this directory \${Output}. Let's say that you want the output files to have the preappended string "LocalBack".
+
+Suppose that your background reconstruction files are located in the folder \${Input} and all share the preappended name "Background_Reco_". You generated 10,000 batches with a total number of events of 200000000.
+
+Suppose that you have a folder in the same directory and GenCondorCountsHistsScripts.py with the name \${Folder}. Inside the folder is the effective are file \${EffA}, the mask file \${Mask}, the reference flux file \${Ref}, the physical flux file \${Phys}, the GenCountsHists executable and the associated options.xml file.
+
+Suppose that you assigned an exposure time of \${ExtTime}, you would run the following command in the directory containing \${Folder} and GenCondorCountsHistsScripts.py:
+```
+python GenCondorCountsHistsScripts.py ${Input} Background_Reco_ ${Output} LocalBack 10000 ${Folder} ${EffA} ${Mask} -w --RefFlux ${Ref}  --PhysicalFlux ${Phys}--ExposureTime 86400 --TotalEvents 200000000
+```
+
+NOTE: you might get an error message along the lines of a potential memory leak from adding histograms. This is OK. There is no memory leak. What is happening the aggregation process to the final sky map.
+
+Similarly, if you wanted to do source counts and skymaps, you would only need the effective area file and mask file in ${Folder}. You also wouldn't need TotalEvents or ExposureTime:
+```
+python GenCondorCountsHistsScripts.py ${Input} Background_Reco_ ${Output} LocalBack 10000 ${Folder} ${EffA} ${Mask}
+```
