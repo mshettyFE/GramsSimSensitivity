@@ -5,7 +5,7 @@ Ignoring the cmake and make files, once you build the project with cmake, you ge
 * CalcSensi: program that takes in count histograms from the background and source and generates the sensitivity
 * CalculateSensitivity.cpp: source file of CalcSensi
 * Commands100KeV.txt: shell commands that are inserted by GenCondorScripts.py which generate 0.1 MeV photons at RA=0, ALT=0 (frankly, this energy is too low for GRAMS, so any sensitivity you get here is pretty terrible)
-* Commands10MeV.txt: Same as above, but 10 MeV (haven't full rand the pipeline on these)
+* Commands10MeV.txt: Same as above, but 10 MeV (haven't full ran the pipeline on these)
 * Commands1MeV.txt: Ditto, but 1 MeV (full ran pipeline on these gammas)
 * GenCondorCountsHistsScripts.py: see [utils](../utils/README.md/#generating-sky-maps-and-counts)
 * GenCondorScripts.py: see [utils](../utils/README.md/#running-condor-jobs-to-generate-cones)
@@ -17,7 +17,7 @@ Ignoring the cmake and make files, once you build the project with cmake, you ge
 # Source Generation Workflow
 * You should first run the code in [EffArea](../EffArea/).
 * Create two directories (  \${Cones} and \${Counts}) to store the cone data and the count data for your source respectively.
-* Run [GenCondorScripts](../utils/README.md/#running-condor-jobs-to-generate-cones) following the bottom, test and submit condor jobs
+* Run [GenCondorScripts](../utils/README.md/#running-condor-jobs-to-generate-cones) following the bottom example, then test and submit condor jobs
 * Run [GenMask](../utils/GenMask.py) to define your local neighborhood
 * Make sure the effective area histogram is copied over to SourceCountHist
 * Run [GenCondorCountsHistsScripts](../utils/README.md/#generating-sky-maps-and-counts) without any reweighting

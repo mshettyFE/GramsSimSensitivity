@@ -4,22 +4,33 @@
 
 # Pipeline
 The workflow for the analysis is as follows:
-1. Calculate the effective area of GRAMS as a function of energy (GenCondorScripts.py in [EffArea](./EffArea))
+1. Calculate the effective area of GRAMS as a function of energy (GenCondorScripts.py and CalcEffArea.py in [EffArea](./EffArea))
 2. Generate the background
     * Generate a "reference flux" and a "physical flux" of the background (ie. experimental data) to enable energy reweighting ([GenEnergySpectrum](./BackgroundRecon/GenEnergySpectrum.py))
     * Generate the background Compton Cones from the reference flux (GenCondorScripts.py in [BackgroundRecon](./BackgroundRecon))
 3. Generate Compton cones from a monoenergetic, point-like source at some right ascension (RA) and altitude (ALT) location on the sky (NOTE: use radians) (GenCondorScripts.py in [SourceRecon](./SourceRecon/))
 4. Define a "neighborhood" around the true source location based on the ARM (GenMask.py in [SourceRecon](./SourceRecon/))
 5. For both the source and the background, calculate the number of Comptons cones that lie within the neighborhood of the source
-    * For the background, we use the effective area and physical flux to reweight the data generated in step 2. This allows us to test variable exposure times and different physical background fluxes (GenCondorCountsHistsScripts.py in [utils](./utils/) which gets copied over on build)
+    * For the background, we use the effective area and physical flux to [reweight](./utils/README.md/#aside-reweighting) the data generated in step 2. This allows us to test variable exposure times and different physical background fluxes (GenCondorCountsHistsScripts.py in [utils](./utils/) which gets copied over on build)
     * For the source, we don't use any reweighting (same script as background case)
-6. Assuming Poisson statistics, we calculate the number of source cones needed to have a 3/5 sigma threshold above the background at the source energy. (CalcSensitivity.cpp in [SourceRecon](./SourceRecon/))
-    * Once we have the number of Compton cones from the source, we can then convert this number to to the number of photons needed to generate said Compton cones. Finally, we convert the number of photons needed to a sensitvitity, taking into account the effective area, exposure time, and energy of the photon
+6. Assuming Poisson statistics, we calculate the number of source cones needed to have a 3/5 sigma threshold above the background at the source energy. Once we have the number of Compton cones from the source, we can then convert this number to to the number of photons needed to generate said Compton cones. Finally, we convert the number of photons needed to a sensitvitity, taking into account the effective area, exposure time, and energy of the photon (CalcSensitivity.cpp in [SourceRecon](./SourceRecon/))
 
-If you want to try and reproduce my results from scratch, start at [EffArea](./EffArea/).
+If you want to start from scratch, start at [EffArea](./EffArea/).
+
+If you don't want to start from scratch, then on the nevis neutrino cluster you can find:
+*   The background dataset I generated can be found at ```/nevis/riverside/data/ms6556/Background```. 10000 batches each with 20000 events generated for each batch
+*   1 MeV source photons generated along the x-axis ($<RA,ALT> = <0,0>$) can be found at ```/nevis/riverside/data/ms6556/Background```. 10000 batches with 20000 events generated for each batch (this was gross overkill, which I didn't know at the time)
+
+Feel free to use and modify as you like, or generate your own data set (it takes around 12 hours to generate 2 billion events via condor if you properly divy up the work)
+
+# Useful Links
+* [Nevis Condor Guide](https://www.nevis.columbia.edu/~seligman/root-class/html/appendix/batch/index.html) is useful to get up to speed on how to get started with condor
+* [GramsSim](https://github.com/wgseligman/GramsSim) is the repository that this is based on
+* [ROOT Class Documentation](https://root.cern.ch/doc/master/) will tell you the signatures of all the classes and functions you will ever need
+
 # Files and Folders
 Each folder contains a different aspect of calculating the sensitivity. For more information on a particular aspect of the simulation, please read the associated README.md in each folder.
-* [BackgroundRecon](BackgroundRecon) contains the scripts necessary to set up a condor jobs for two purposes:
+* [BackgroundRecon](BackgroundRecon) contains the scripts necessary to set up condor jobs for two purposes:
     1. Calculating the Compton cones generated from an isotropic MeV gamma ray source.
     2. Generating AllSkyMaps and Count histograms from said Compton Cones in a neighborhood around a source location
 * [cmake](cmake/) contains the .cmake modules needed to build the project (taken directly from [here](https://github.com/wgseligman/GramsSim/tree/master/cmake))
@@ -77,13 +88,9 @@ While GramsSim does have tools to model these uncertainties like [GramsElecSim](
 
 The second is that the optical photon simulation of GramsSim has yet to be completed. Whether sucessive scatters are optically isolated has a great impact on the effective area of the detector, as well as the reconstruction of the z coordinate of each scatter. Hence, this code will eventually need to be reworked to include the optical simulation results.
 
-# Dataset
-* On the nevis neutrino cluster:
-    *   The background dataset I generated can be found at ```/nevis/riverside/data/ms6556/Background```. 10000 batches each with 20000 events generated for each batch
-    *   1 MeV source photons generated along the x-ais ($<RA,ALT> = <0,0>$) can be found at ```/nevis/riverside/data/ms6556/Background```. 10000 batches with 20000 events generated for each batch (this was gross overkill, which I didn't know at the time)
-    * Feel free to use and modify as you like, or generate your own data set (it takes anywhere between 12-24 hours to generate 2 billion events via condor)
-
 # TODO
 * Add in uncertainty programs to pipeline (electronics noise, detsim, pixel readout, optical simulation)
 * Add minimum signal to noise background ratio and minimum count thresholds like [CTAO](https://www.cta-observatory.org/science/ctao-performance/#1472563157332-1ef9e83d-426c)
-* Run analysis for more than a single energy (a good starting point would be to mimic the COMPTEL energy ranges and energy binnings)
+* Run analysis for more than a single energy
+    * A good starting point would be to mimic the COMPTEL energy ranges and energy binnings
+    * As a part of that process, it would be good to change Source generation to draw from a uniform energy distribution with width the size of your logarithmic binning

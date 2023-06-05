@@ -3,14 +3,14 @@ This folder contains all the code to generate the libraries and executables used
 # Folders and Files
 * [Extraction](./Extraction/) creates the executable that extracts the Compton scatter data from the outputs of GramsG4 and GramsDetSim and pushes them into a single TTree in a ROOT file.
 * [Reconstruction](./Reconstruction/) creates the executable that takes in the output of Extraction, groups all the Compton scatters that belong to the same series, and constructs the associated Compton cone for each series
-* [GenCountsHists](./GenCountsHists/) takes in the output of Reconstruction (ie. Compton Cones) as well as a binary mask root file (which defines the neighborhood of the source) and generates all-sky maps in right ascension and declination with the mask applied. It also tabulates the energy distribution of the Compton cones within the neighborhood defined by the binary mask file.
+* [GenCountsHists](./GenCountsHists/) takes in the output of Reconstruction (ie. Compton Cones) as well as a binary mask root file (which defines the neighborhood of the source) and generates all-sky maps in right ascension (RA) and altitude (ALT) with the mask applied. It also tabulates the energy distribution of the Compton cones within the neighborhood defined by the binary mask file.
 * [include](./include/) contains the header files for all the libraries
 * [src](./src) contains the associted source files for the libraries
-* GenCondorScripts.py sets up the skeleton of the requirements to run a condor job on the nevis batch cluster for the purpose of generating a data set
-* GenCondorCountsHistsScripts.py takes in the output directory folder from the condor job created by GenCondorScripts.py and then calculates the count histogram and sky map in the locality around the true source location
-* GenMask.py takes in the output directory folder where the source cone files are stored and create a binary mask which defines the neighborhood around the source that is the "local background" (ie. only events within this region are considered)
+* [GenCondorScripts.py](#running-condor-jobs-to-generate-cones) sets up the skeleton of the requirements to run a condor job on the nevis batch cluster for the purpose of generating a data set
+* [GenCondorCountsHistsScripts.py](#example-usage-of-gencondorcountshistsscriptspy) takes in the output directory folder from the condor job created by GenCondorScripts.py and then calculates the count histogram and sky map in the locality around the true source location
+* [GenMask.py](#defining-neighborhood-to-source-ie-genmask) takes in the output directory folder where the source cone files are stored and create a binary mask which defines the neighborhood around the source that is the "neighborhood" (ie. only events within this region are considered). 
 
-GenCondorScripts.py and GenCondorCountsHistsScripts.py are seperate since I though that for other GRAMS work, you don't necessarily want the Counts and SkyMap; you just want the scatter series data and cone data.
+GenCondorScripts.py and GenCondorCountsHistsScripts.py are seperate since I though that for other GRAMS work, you don't necessarily want the Counts and SkyMap; you just want the scatter series data and cone data. Feel free to combine them if you want to.
 
 # Running Condor Jobs to Generate Cones
 In order to generate Compton cones, you first need to run GenCondorScripts.py. This script takes in a output directory for condor, condor job name, and .txt file (which contains shell commands) and does the following:
@@ -47,7 +47,7 @@ python GenCondorScripts.py ${Output}  Background Commands.txt  -nb 10000 -ne 200
 
 Background is the preappended name assigned to the default output of condor. 
 
-This writes series data to \${Output} with file name of the format Background_Extracted_${process}.root and Background_Reco_${process}.root, where ${process} ranges from 0 to number of Batches -1. Each job simulates 20,000 gamma rays.
+This writes series data to Background_Extracted_${process}.root in \${Output} and cone data to Background_Reco_${process}.root in \${Output}, where ${process} ranges from 0 to number of Batches -1. Each job simulates 20,000 gamma rays.
 
 A similar command works with the Source reconstruction.
 
@@ -63,9 +63,11 @@ python GenCondorScripts.py ${Output}  EffArea Commands.txt  -nb 1000 -ne 2000000
 The way that GenMask works is that it read in the ARM value from each Cone and puts them all into a histogram bounded between -0.5 and 0.5 radians (these are arbitrary values, but I found that there are very few values outside these points, you get a better $\chi^{2}/dof$, and you get around the same ARM as the full $-\pi$ to $\pi$). 
 
 It then fits a Lorentzian, defines as
-$A\frac{\frac{\Gamma}{2}}{(\frac{\Gamma}{2})^{2}+(x-x_{0})^{2}}$ where A, ${\Gamma} and ${ x_{0} } are the fit parameters. A is a normalization constant. $x_{0}$ is the center of the distribution, and $\Gamma$ is the FWHM, or in the content of Compton cameras, the ARM. Once the fitting is done, $\Gamma$ is taken as the ARM of the distribution.
+$A\frac{\frac{\Gamma}{2}}{(\frac{\Gamma}{2})^{2}+(x-x_{0})^{2}}$ where A, $\Gamma$ and $ x_{0}$ are the fit parameters. 
 
-After calculating the ARM, GenSky then takes the center of each bin the output skymap and computes the angle w.r.t. the true source location. If this angle is smaller than the ARM, then you set that bin to 1 (ie. we should include this bin in the final map). After interating, it output the mask to a root file as a TH2D.
+A is a normalization constant. $x_{0}$ is the center of the distribution, and $\Gamma$ is the FWHM, or in the content of Compton cameras, the ARM. Once the fitting is done, $\Gamma$ is taken as the ARM of the source.
+
+After calculating the ARM, GenSky then takes the center of each bin the output skymap and computes the angle w.r.t. the true source location. If this angle is smaller than the ARM, then you set that bin to 1 (ie. we should include this bin in the final map). After interating through all the bins, it output the mask to a root file as a TH2D.
 
 GenMask has the following required arguments:
 * SourcePath: the output folder  where the cone data for your source lies at
@@ -86,10 +88,10 @@ As an example usage:
 python GenMask.py \${Input} Source_Reco_ 0 0 Mask.root -d
 ```
 
-takes in cone data from ${Input} with the base name of "Source_Reco_". The true source location is at 0 0. The output file is called Mask.root. We draw the intermediate fit and final sky map as .jpgs.
+takes in cone data from ${Input} with the base name of "Source_Reco_". The true source location is at RA=0  and ALT=0. The output file is called Mask.root. We draw the intermediate fit and final sky map as .jpgs.
 
 # Generating Sky Maps and Counts
-In analogous manner to GenCondorScripts.py, GenCondorCountsHistsScripts.py generates the counts histogram and skymaps fron a series of cones.
+In an analogous manner to GenCondorScripts.py, GenCondorCountsHistsScripts.py generates the counts histogram and skymaps fron a series of cones.
 
 For illustrative purposes, suppose that you want to calculate the local background to a source. You have already ran GenCondorScripts.py and stored the cone data in \${Input}.
 
@@ -125,9 +127,9 @@ To deal with variable exposure times, we take the PhysicalFlux file (I(E)) and t
 
 We then multiply by $4\pi$ steradians and by the exposure time to get the projected number of photons $N_{proj}$. We then assign all the Cones in the input with a weight of $\frac{N_{proj}}{N_{generated}}$.
 
-If we didn't do this, then we would need to first calculate the number of photons given our exposure time, effective area, and physical flux, and re-simulate all of the background gammas.
+If we didn't do this, then we would need to first calculate the number of photons given our exposure time, effective area, and physical flux, and only use that number of photons. If we had to few phhotons, we would need to generate more. There is also the problem where you might not be able to evenly divide the projected number of photons amoungst all the batches. Reweighting solves both of these issues.
 
-To deal with a variable background flux, we now utilize the RefFlux and PhysicalFlux root files. We normalize both distributions so that they becomes probability distributions (Denoted as $P_{ref}(E)$ an $P_{phys}(E)$ ).
+To deal with a variable background flux, we now utilize the RefFlux and PhysicalFlux root files. We normalize both distributions so that they becomes probability distributions (Denoted as $P_{ref}(E)$ and $P_{phys}(E)$ ).
 
 Suppose that we have a compton cone that came from a gamma ray of energy E. We assign the weight $\frac{P_{phys}(E)}{P_{ref}(E)}$.
 
@@ -148,9 +150,9 @@ Suppose that you assigned an exposure time of \${ExtTime}, you would run the fol
 python GenCondorCountsHistsScripts.py ${Input} Background_Reco_ ${Output} LocalBack 10000 ${Folder} ${EffA} ${Mask} -w --RefFlux ${Ref}  --PhysicalFlux ${Phys}--ExposureTime 86400 --TotalEvents 200000000
 ```
 
-NOTE: you might get an error message along the lines of a potential memory leak from adding histograms. This is OK. There is no memory leak. What is happening the aggregation process to the final sky map.
+NOTE: you might get an error message along the lines of a potential memory leak from adding histograms. This is OK. There is no memory leak (at least, I'm pretty sure there isn't). What is happening the aggregation process to the final sky map.
 
 Similarly, if you wanted to do source counts and skymaps, you would only need the effective area file and mask file in ${Folder}. You also wouldn't need TotalEvents or ExposureTime:
 ```
-python GenCondorCountsHistsScripts.py ${Input} Background_Reco_ ${Output} LocalBack 10000 ${Folder} ${EffA} ${Mask}
+python GenCondorCountsHistsScripts.py ${Input} Source_Reco_ ${Output} LocalSource 10000 ${Folder} ${EffA} ${Mask}
 ```
