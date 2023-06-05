@@ -12,4 +12,4 @@ The idea behind the cube is that you will have a more uniform response from all 
 
 For MeV gamma ray detection, we default to a cubic structure.
 
-The options.xml contains all the parameters used by the cpp executables (since C++ doesn't come with an equivalent to argparse natively). Look inside for details. If you want a through explaination for how to use/modify the .xml file, see [here](https://github.com/wgseligman/GramsSim/tree/master/util).
+The options.xml contains all the parameters used by the cpp executables (since C++ doesn't come with an equivalent to Python's [argparse](https://docs.python.org/3/library/argparse.html) natively). Look inside for details. If you want a through explaination for how to use/modify the .xml file, see [here](https://github.com/wgseligman/GramsSim/tree/master/util).

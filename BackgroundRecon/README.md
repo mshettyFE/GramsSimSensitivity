@@ -19,7 +19,7 @@ Once you run cmake in your build directory, you get the following in this folder
     * NOTE: it is useful to try out your jobs for a small number of batches, where each batch has the same number of events that the full run would assign to each job. This allows you to catch typos and resource issues before swinging for the fences and submitting the production run.
     * the syntax looks like ```condor_submit BackCones.cmd```
         * You can add an additional ```-batch-name``` argument to the command to give your job a more descriptive name
-* You can monitor progress with condor_q
+* You can monitor progress with ```condor_q```
 * Once the jobs are done running, make sure that there are no significant errors/ everything went OK. Then run [RemoveClutter.sh](../RemoveClutter.sh) in the ${Counts} directory to remove the condor output files
 * You should copy over the mask file produced in [SourceRecon](../SourceRecon/) and the effective area root file from [EffArea](../EffArea/) to your BackgroundCountHist folder to be consistent
 * Run GenEnergySpectrum.py to produce the reference and physical flux files (see below). Then move the flux files to BackgroundCountHists
@@ -30,6 +30,6 @@ Once you run cmake in your build directory, you get the following in this folder
 Once your jobs are done, move over to [here](../SourceRecon/README.md/#sensitivity-calculation) to finally calculate the sensitivity for your source.
 
 # GenEnergySpectrum.py
-* Creates log-uniform reference flux file that background is generated from, as well as physical flux file that is used for reweighting
+* Creates a log-uniform reference flux file that background is generated from, as well as a physical flux file that is used for reweighting
 * The only required parameter is the effective area root file. This is so that we have the same energy binnings across all files
 * The optional parameters only serve to rename the outputs. The default reference flux file is "ReferenceFlux.root" and the default physical flux file is "BackgroundFlux.root"
