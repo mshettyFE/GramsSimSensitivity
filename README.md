@@ -1,4 +1,4 @@
- This repository contains the various scripts and tools used to calculate the sensitivity of the GRAMS detector to MeV gamma rays. Based on the Geant4 simulation [GramsSim](https://github.com/wgseligman/GramsSim).
+This repository contains the various scripts and tools used to calculate the sensitivity of the GRAMS detector to MeV gamma rays. Based on the Geant4 simulation [GramsSim](https://github.com/wgseligman/GramsSim).
 
  NOTE: if you aren't planning on building and running this on the nevis cluster, you need to do a good amount of leg work to download the required libraries and modify the condor generation scripts to work for your system's condor enviornment. You have been forewarned.
 
