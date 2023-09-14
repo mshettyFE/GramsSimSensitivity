@@ -41,11 +41,11 @@ link_directories(${Eigen_INCLUDE_DIRS})
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/SenseJob/mac/batch)
+file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/GramsWork/mac/batch)
 
-# Copy over SenseJob containing compiled GramsSim programs to  BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over GramsWork containing compiled GramsSim programs to  BackgroundRecon and SourceRecon
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 # Copy over BackgroundRecon
 file(GLOB BACKGROUND_RECON_FILES "${CMAKE_SOURCE_DIR}/BackgroundRecon/*")
@@ -59,16 +59,16 @@ file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
 
 # Copy over options.xml to BackgroundCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
 
 # Create SourceCountHist zip directory
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
 
 # Copy over options.xml to SourceCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
 
 #Copy over options.xml to SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
 
 # Copy over RemoveClutter.sh
 
