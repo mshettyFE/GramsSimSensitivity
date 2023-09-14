@@ -21,7 +21,7 @@ Ignoring the cmake and make files, once you build the project with cmake, you ge
 * Run [GenMask](../utils/GenMask.py) to define your local neighborhood
 * Make sure the effective area histogram is copied over to SourceCountHist
 * Run [GenCondorCountsHistsScripts](../utils/README.md/#generating-sky-maps-and-counts) without any reweighting
-* Go to [BackgroundRecon](../BackgroundRecon/) to do a similar procedure with the background
+* Go to [Background](../Background/) to do a similar procedure with the background
 
 # Sensitivity Calculation
 * This is the last step of the pipeline

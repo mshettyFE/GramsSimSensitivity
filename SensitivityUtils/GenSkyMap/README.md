@@ -34,7 +34,7 @@ Just like [Extract](../Extraction/), some of these options do nothing (see Extra
 * EffAreaFile (REQUIRED): the name of the effective area root histogram. Created from [CalcEffArea.py](../../EffArea/CalcEffArea.py)
 * NPts: The number of points to generate per Compton cone. Defaults to 1000
 * weighted: Flag to state wheather the reweighting scheme is being used. NOTE: If set, requires ReferenceFluxFile, PhysicalFluxFile, ExposureTime and TotalEvents to be set
-* ReferenceFluxFile: A root histogram plotting a log-uniform distribution. Generated from [GenEnergySpectrum.py](../../BackgroundRecon/GenEnergySpectrum.py)
-* PhysicalFluxFile: a root histogram plotting the physical background flux. Generated from [GenEnergySpectrum.py](../../BackgroundRecon/GenEnergySpectrum.py). Currently set to spectrum found on pg. 7 from [this paper](https://arxiv.org/abs/2212.05713). Feel free to change if needed.
+* ReferenceFluxFile: A root histogram plotting a log-uniform distribution. Generated from [GenEnergySpectrum.py](../../Background/GenEnergySpectrum.py)
+* PhysicalFluxFile: a root histogram plotting the physical background flux. Generated from [GenEnergySpectrum.py](../../Background/GenEnergySpectrum.py). Currently set to spectrum found on pg. 7 from [this paper](https://arxiv.org/abs/2212.05713). Feel free to change if needed.
 * ExposureTime: How long the generated background gamma rays correspond to in seconds
 * TotalEvents: The total number of gamma rays generated to produce the background dataset (the set that I make has  10,000 batches * 20,000 photons per batch)

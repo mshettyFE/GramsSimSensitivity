@@ -43,37 +43,37 @@ set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/GramsWork/mac/batch)
 
-# Copy over GramsWork containing compiled GramsSim programs to  BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over GramsWork containing compiled GramsSim programs to  Background and Source
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
-# Copy over BackgroundRecon
-file(GLOB BACKGROUND_RECON_FILES "${CMAKE_SOURCE_DIR}/BackgroundRecon/*")
-file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+# Copy over Background
+file(GLOB BACKGROUND_RECON_FILES "${CMAKE_SOURCE_DIR}/Background/*")
+file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Background)
 
-# Copy over SourceRecon
-file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/SourceRecon/*")
-file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over Source
+file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/Source/*")
+file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
 # Create BackgroundCountHist zip directory
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/Background/BackgroundCountHist)
 
 # Copy over options.xml to BackgroundCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Background/BackgroundCountHist)
 
 # Create SourceCountHist zip directory
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/Source/SourceCountHist)
 
 # Copy over options.xml to SourceCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Source/SourceCountHist)
 
-#Copy over options.xml to SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+#Copy over options.xml to Source
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
 # Copy over RemoveClutter.sh
 
 file( COPY ${CMAKE_SOURCE_DIR}/RemoveClutter.sh DESTINATION ${CMAKE_BINARY_DIR})
 
-add_subdirectory(utils)
+add_subdirectory(SensitivityUtils)
 add_subdirectory(EffArea)
-add_subdirectory(SourceRecon)
+add_subdirectory(Source)

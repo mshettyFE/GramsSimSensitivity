@@ -1,4 +1,8 @@
 # Create CalcSensitivity executable
+
+# Copy over GenMask.py to Source
+file( COPY ${CMAKE_SOURCE_DIR}/Source/GenMask.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
+
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
 

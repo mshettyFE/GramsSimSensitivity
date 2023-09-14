@@ -46,4 +46,4 @@ python ${Input} EffArea_ EffAreaAgg.root -b 10000 -n 20000
 ```
 
 # Next Steps
-Once you generate a .root file via CalcEffArea.py, you need to copy it over to "BackgroundCountHist" in BackgroundRecon and "SourceCountHist" in SourceRecon. You should then proceed to [SourceRecon](../SourceRecon/).
+Once you generate a .root file via CalcEffArea.py, you need to copy it over to "BackgroundCountHist" in Background and "SourceCountHist" in Source. You should then proceed to [Source](../Source/).

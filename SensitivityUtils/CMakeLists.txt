@@ -1,6 +1,6 @@
 # The source code to compile for options
 file(GLOB UtilSrc src/Options.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/Options.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/Options.cpp
     )
 
 # The library's name will be lib(project)SenseUtilities and will
@@ -19,7 +19,7 @@ target_include_directories (${CMAKE_PROJECT_NAME}SenseUtilities PUBLIC ${CMAKE_C
 
 # Create Extraction Utilities
 file(GLOB ExtractSrc src/ExtractUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/ExtractUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/ExtractUtils.cpp
     )
 
 set(ExtractLibName ${CMAKE_PROJECT_NAME}Extract)
@@ -30,7 +30,7 @@ target_include_directories (${CMAKE_PROJECT_NAME}Extract PUBLIC ${CMAKE_CURRENT_
 
 # Create ReadRootFiles library
 file(GLOB ReadRootSrc src/ReadRootFiles.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/ReadRootFiles.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/ReadRootFiles.cpp
     )
 
 set(ReadRootLib ${CMAKE_PROJECT_NAME}ReadRoot)
@@ -41,7 +41,7 @@ target_include_directories (${CMAKE_PROJECT_NAME}ReadRoot PUBLIC ${CMAKE_CURRENT
 
 # Create ReconstructUtils library
 file(GLOB ReconstructSrc src/ReconstructUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/ReconstructUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/ReconstructUtils.cpp
     )
 
 set(ReconstructLib ${CMAKE_PROJECT_NAME}ReconstructUtils)
@@ -52,7 +52,7 @@ target_include_directories (${CMAKE_PROJECT_NAME}ReconstructUtils PUBLIC ${CMAKE
 
 # Create GenBackCountsUtils library
 file(GLOB GenBackCountsSrc src/GenBackCountsUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/GenBackCountsUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/GenBackCountsUtils.cpp
     )
 
 set(GenBackLib ${CMAKE_PROJECT_NAME}GenBackCountsUtils)
@@ -66,7 +66,7 @@ target_include_directories (${CMAKE_PROJECT_NAME}GenBackCountsUtils PUBLIC ${CMA
 
 # Create CalcSenseUtils library
 file(GLOB CalcSenseSrc src/CalcSenseUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/util/src/CalcSenseUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/CalcSenseUtils.cpp
     )
 
 set(CalcSenseLib ${CMAKE_PROJECT_NAME}CalcSenseUtils)
@@ -75,19 +75,15 @@ add_library (${CalcSenseLib} STATIC ${CalcSenseSrc})
 target_link_libraries(${CalcSenseLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}CalcSenseUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Copy over GenCondorScripts.py to BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over GenCondorScripts.py to Background and Source
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
-# Copy over GenCondorCountsHistsScripts.py to BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
-
-# Copy over GenMask.py to BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenMask.py DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/utils/GenMask.py DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over GenCondorCountsHistsScripts.py to Background and Source
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
 # Create Extract, Reconstruct and GenCountsHists helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
-add_subdirectory(GenCountsHists)
+add_subdirectory(GenSkyMap)

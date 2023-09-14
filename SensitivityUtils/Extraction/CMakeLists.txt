@@ -1,4 +1,4 @@
-## Create Extract Executable to be used in Effective  Area Calculation, BackgroundRecon and SourceRecon
+## Create Extract Executable to be used in Effective  Area Calculation, Background and Source
 # Search for header files in utils
 include_directories(include ${PROJECT_SOURCE_DIR}/utils/include)
 
@@ -12,15 +12,15 @@ target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}Extract )
 target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 
-# Copy over Extraction executable to BackgroundRecon, SourceRecon
+# Copy over Extraction executable to Background, Source
 
 add_custom_command(TARGET ${EXTRACTPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/BackgroundRecon/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/Background/SenseJob)
 
 add_custom_command(TARGET ${EXTRACTPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/SourceRecon/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/Source/SenseJob)
 
 add_custom_command(TARGET ${EXTRACTPROG} 
                    POST_BUILD

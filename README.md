@@ -6,14 +6,14 @@
 The workflow for the analysis is as follows:
 1. Calculate the effective area of GRAMS as a function of energy (GenCondorScripts.py and CalcEffArea.py in [EffArea](./EffArea))
 2. Generate the background
-    * Generate a "reference flux" and a "physical flux" of the background (ie. experimental data) to enable energy reweighting ([GenEnergySpectrum](./BackgroundRecon/GenEnergySpectrum.py))
-    * Generate the background Compton Cones from the reference flux (GenCondorScripts.py in [BackgroundRecon](./BackgroundRecon))
-3. Generate Compton cones from a monoenergetic, point-like source at some right ascension (RA) and altitude (ALT) location on the sky (NOTE: use radians) (GenCondorScripts.py in [SourceRecon](./SourceRecon/))
-4. Define a "neighborhood" around the true source location based on the ARM (GenMask.py in [SourceRecon](./SourceRecon/))
+    * Generate a "reference flux" and a "physical flux" of the background (ie. experimental data) to enable energy reweighting ([GenEnergySpectrum](./Background/GenEnergySpectrum.py))
+    * Generate the background Compton Cones from the reference flux (GenCondorScripts.py in [Background](./Background))
+3. Generate Compton cones from a monoenergetic, point-like source at some right ascension (RA) and altitude (ALT) location on the sky (NOTE: use radians) (GenCondorScripts.py in [Source](./Source/))
+4. Define a "neighborhood" around the true source location based on the ARM (GenMask.py in [Source](./Source/))
 5. For both the source and the background, calculate the number of Comptons cones that lie within the neighborhood of the source
     * For the background, we use the effective area and physical flux to [reweight](./utils/README.md/#aside-reweighting) the data generated in step 2. This allows us to test variable exposure times and different physical background fluxes (GenCondorCountsHistsScripts.py in [utils](./utils/) which gets copied over on build)
     * For the source, we don't use any reweighting (same script as background case)
-6. Assuming Poisson statistics, we calculate the number of source cones needed to have a 3/5 sigma threshold above the background at the source energy. Once we have the number of Compton cones from the source, we can then convert this number to to the number of photons needed to generate said Compton cones. Finally, we convert the number of photons needed to a sensitvitity, taking into account the effective area, exposure time, and energy of the photon (CalcSensitivity.cpp in [SourceRecon](./SourceRecon/))
+6. Assuming Poisson statistics, we calculate the number of source cones needed to have a 3/5 sigma threshold above the background at the source energy. Once we have the number of Compton cones from the source, we can then convert this number to to the number of photons needed to generate said Compton cones. Finally, we convert the number of photons needed to a sensitvitity, taking into account the effective area, exposure time, and energy of the photon (CalcSensitivity.cpp in [Source](./Source/))
 
 If you want to start from scratch, start at [EffArea](./EffArea/).
 
@@ -30,13 +30,13 @@ Feel free to use and modify as you like, or generate your own data set (it takes
 
 # Files and Folders
 Each folder contains a different aspect of calculating the sensitivity. For more information on a particular aspect of the simulation, please read the associated README.md in each folder.
-* [BackgroundRecon](BackgroundRecon) contains the scripts necessary to set up condor jobs for two purposes:
+* [Background](Background) contains the scripts necessary to set up condor jobs for two purposes:
     1. Calculating the Compton cones generated from an isotropic MeV gamma ray source.
     2. Generating AllSkyMaps and Count histograms from said Compton Cones in a neighborhood around a source location
 * [cmake](cmake/) contains the .cmake modules needed to build the project (taken directly from [here](https://github.com/wgseligman/GramsSim/tree/master/cmake))
 * [EffArea](EffArea/) contains the scripts necessary to calculate the effective area of the detector as a function of energy
 * [SenseJob](SenseJob/) contains the [GramsSim](https://github.com/wgseligman/GramsSim) executables/files with some modifications
-* [SourceRecon](SourceRecon/) is similar to BackgroundRecon in that it calculates the Compton Cones generated from a monoenergetic point source. It also, given the reconstructed background counts, background flux, effective area and exposure time, can calculate the sensitivity of GRAMS to a point source at a given energy.
+* [Source](Source/) is similar to Background in that it calculates the Compton Cones generated from a monoenergetic point source. It also, given the reconstructed background counts, background flux, effective area and exposure time, can calculate the sensitivity of GRAMS to a point source at a given energy.
 * [utils](utils/) contains a bunch of static libraries and programs that are used elsewhere
 * RemoveClutter.sh is used to clean up .out, .err and .log files generated by condor. If you don't need these output files, then remove them by copying RemoveClutter.sh to the condor output folder and running
 ```

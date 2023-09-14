@@ -39,7 +39,7 @@ For illustrative purposes, suppose that you want to generate 2,000,000,000 gamma
 
 You want 10,000 batches so that condor doesn't keep rejecting your jobs.
 
- Using the provided [Commands.txt](../BackgroundRecon/Commands.txt) file, you can run the following in the build directory version of BackgroundRecon:
+ Using the provided [Commands.txt](../Background/Commands.txt) file, you can run the following in the build directory version of Background:
 
 ```
 python GenCondorScripts.py ${Output}  Background Commands.txt  -nb 10000 -ne 200000000 
@@ -111,8 +111,8 @@ Required parameters of GenCondorCountsHistsScripts.py:
 
 Optional parameters include:
 * --Weighted: a flag that dictates if you are using a reweighting scheme. If this is set, you need to place more files into Folder
-* RefFlux: the name of the root file (not the path) containing 1/E reference flux (Log uniform). Required for reweighting. Generated from [GenEnergySpectrum.py](../BackgroundRecon/GenEnergySpectrum.py)
-* PhysicalFlux: the name of the root file (not the path) containing the physical flux of the gamma ray background. Required for reweighting. Generated from [GenEnergySpectrum.py](../BackgroundRecon/GenEnergySpectrum.py)
+* RefFlux: the name of the root file (not the path) containing 1/E reference flux (Log uniform). Required for reweighting. Generated from [GenEnergySpectrum.py](../Background/GenEnergySpectrum.py)
+* PhysicalFlux: the name of the root file (not the path) containing the physical flux of the gamma ray background. Required for reweighting. Generated from [GenEnergySpectrum.py](../Background/GenEnergySpectrum.py)
 * TotalEvents: the number of events generated across all the batch jobs. Required for reweighting.
 * ExposureTime: The exposure time assigned to the dataset. Required for reweighting.
 * mem: equivalent to GenCondorScripts.py version
