@@ -21,3 +21,4 @@ rm -rf utils
 rm -f CMakeCache.txt cmake_install.cmake Makefile
 cp ../ThinFlatGrams.gdml .
 cp ../ThinGrams.gdml .
+cp ../SensitivityOptions.xml .
