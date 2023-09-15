@@ -161,17 +161,29 @@ int main(int argc, char** argv){
     return -1;
   }
 
-  // Read in total number of batches
-  int batches;
-  bool CheckBatch = options->GetOption("Batches",batches);
-  if(CheckBatch){
-    if(batches < 0){
-      std::cerr << "Batches need to be a strictly positive number" << std::endl;
+  // Read in total number of source an background batches
+  int SourceBatches, BackgroundBatches;
+  bool CheckSourceBatch = options->GetOption("SourceBatches",SourceBatches);
+  if(CheckSourceBatch){
+    if(SourceBatches < 0){
+      std::cerr << "SourceBatches need to be a strictly positive number" << std::endl;
       return -1;
     }
   }
   else{
-    std::cerr << "Invalid number of batches" << std::endl;
+    std::cerr << "Invalid number of source batches" << std::endl;
+    return -1;
+  }
+
+  bool CheckBackBatch = options->GetOption("BackBatches",BackgroundBatches);
+  if(CheckBackBatch){
+    if(BackgroundBatches < 0){
+      std::cerr << "BackgroundBatches need to be a strictly positive number" << std::endl;
+      return -1;
+    }
+  }
+  else{
+    std::cerr << "Invalid number of background batches" << std::endl;
     return -1;
   }
 
@@ -194,7 +206,7 @@ int main(int argc, char** argv){
   int TargetBin = ExtractBinNum(SourceEnergy, AggCounts);
 
   // Aggregate all the sky maps that exist
-  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,batches,AggCounts,verbose);
+  bool CheckAgg = ReadBackgroundCounts(AbsBackRootName,BackgroundBatches,AggCounts,verbose);
 
   // Calculate mean and std. dev. assuming Poisson stats
   double mu = AggCounts->GetBinContent(TargetBin);
@@ -215,7 +227,7 @@ int main(int argc, char** argv){
   bool FiveSigmaFlag = false;
 
   std::cout << "Calculating Sensitivity" << std::endl;
-  for(int i=0; i< batches; ++i){
+  for(int i=0; i< SourceBatches; ++i){
     // Try and read in source file
     std::string id = std::to_string(i);
     std::string path = AbsSourceRootName+id+".root";
@@ -250,7 +262,7 @@ int main(int argc, char** argv){
       break;
     }
   }
-
+ 
   // We assume that the number of photons is proportional to the number of cones generated
   // The proportionality constant might be different for each energy, but we only consider 1 energy at a time, so it's OK
   // as an example: NPhotonsThreeSigma/FiveSigmaRecordedPhotons = ThreeSigmaThresholdCones/TotalCones. Rearrange for NPhotonsThreeSigma
