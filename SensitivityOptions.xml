@@ -1,0 +1,691 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+
+<parameters>
+    <!-- Directly from GramsSim-->  
+  <global>
+    <!-- The parameters in this section are meant to apply to all the
+         programs. However, you can override them within the
+         individual program blocks, though it's probably more useful
+         to override them on the command line. Be careful about what
+         you're overriding, especially the unit options. -->
+  
+    <!-- The following line does nothing! It's there for documentation:
+    the default value of the 'options' option is "options.xml" -->
+    <option name="options" value="options.xml" type="string" desc="XML file of options">
+        If you want to, you can include text like this within an option
+        tag. You can use this for additional documentation. The program
+        does not read or interpret it. 
+    </option>
+
+    <option name="verbose" short="v" type="flag" desc="display details"/>
+    <option name="debug" short="d" type="flag" />
+    <option name="help" short="h" type="flag" desc="show help then exit" />
+
+    <!-- Define a consistent set of units. Note that it's up to the
+         individual programs to access these parameters and write
+         their output in these units. (I'm looking at you, Geant4!).
+
+         Length unit: as of Jan-2022, the only valid values are "cm" and "mm".
+         Energy unit: as of Jan-2022, the only valid values are "MeV" and "GeV".
+         Time unit: as of Jan-2022, the only valid values are "ns", "ms", and "s".
+     
+         Note that this does not directly affect the GDML file and
+         Geant4 macro files, as any dimensioned quantities in those
+         files have units specified explicitly.
+	 -->
+    <option name="LengthUnit" type="string" value="cm" desc="length unit for program output" />
+    <option name="EnergyUnit" type="string" value="MeV" desc="energy unit for program output" />
+    <option name="TimeUnit"   type="string" value="ns" desc="time unit for program output" />
+
+    <option name="rngseed" short="s" value="-1" type="integer" desc="random number seed">
+        The random number seed for the simulation. Use 0 if you want the
+        program to start with a random value and you're not interested 
+        in recreating the run.
+    </option>
+
+    <!-- This is a "documentation option" as described in GramsSim/util/README.md.
+         It doesn't do anything within a program, If the programs use
+         Options::CopyInputNtuple and Options::WriteNtuple, this option will be
+         included. Its value can be used to identify the run of the analysis chain.
+    -->
+    <option name="comment" type="string" value="" desc="document purpose of run" />
+
+  </global>
+
+    <Extract>
+        <!-- Input GramsG4 file name-->
+        <option name="GramsG4Name" value="Source.root" type="string" desc="Name of Input GramsG4 File">
+        </option>
+        <!-- Input GramsDetSim file name-->
+        <option name="GramsDetSimName" value="SourceDet.root" type="string" desc="Name of input GramsDetSim file that was generated from GramsG4 file">
+        </option>
+        <!-- Name of output root file-->
+        <option name="ExtractOutput" short="o" value="ExtractedSource.root" type="string" desc="Output of Extract">
+        </option>
+        <!-- Filter criteria-->
+        <option name="Filter" short="f" value="Standard" type="string" desc="How to filter each event">
+            Possible values:
+                - Standard. Self explainatory. You do the standard selection criterion (at least 2 Compton scatters inside the TPC for all in, 3 for escape)
+                - UniqueCells. Add on the constraint that each scatter must occur in a unique cell.
+                - Sphere. Use constraint that each scatter must be at least x cm apart.
+        </option>
+        <!-- For all of these dimensionful variables, the units will be the same as specified in global. Defaults to cm.-->
+        <!-- Internally, converts all dimensions to cm (so if you specify "mm" as the length scale, all values are divided by 10)-->
+        <!-- I probably should have found a way to read the dimensions and the binnings from the .gdml file, but I couldn't find any simple way to do that-->
+        <option name="Dimensions" value="(70,70,80)" type="vector" desc="Dimensions of LArTPC (x,y,z)">
+            Holds the dimensions of the LArTPC. Used in the unique cell calculation of Filter. Kind of repeats information found in 
+            the .gdml file, but I didn't want to try to parse that file to extract the dimensions of the TPC. Please, make sure
+            that the values you input here are consistent with the values in your gdml file.
+        </option>
+        <option name="Binnings" value="(7,7,8)" type="vector" desc="Size of a cell in each direction">
+            The number of optically isolated cells along each dimension. The same caveat that held for Dimensions holds here.
+            (ie. make sure whatever you put here is consistent with the .gdml file).
+            For instance, if you have a seperation of 10 between each optical isolation sheet along each dimension,
+            and your dimensions are 70,70,80, then your binnings are 7,7,8.
+            Please make sure that you input integers for the binnings and that you're binnings for each dimension is greater than 1.
+            If you input floats, they will be floored down to an integer.
+        </option>
+        <option name="Seperation" value="10" type="double" desc="Seperation between adjacent scatters. Used in Sphere option of Filter">
+            Stipulated the minimum seperation between Compton scatters to be a valid series. Needs Filter to be set to Sphere
+            (since this seperation creates a sphere of exclusion around an interaction point).
+        </option>
+    </Extract>
+
+    <Reconstruct>
+        <option name="Input" value="ExtractedSource.root" short='i' type="string" desc="Input root file from Extract program"></option>
+        <!-- 'Iso' is used for EffArea and Background. 'Point' is used for Point sources-->
+        <option name="SourceType" value="Point" type="string" desc="Type of input source. Either 'Iso' or 'Point'"></option>
+        <option name="SourceLoc" value="(0,90)" type="vector" desc="Right Ascension and Altitude coordinates of source. See options.xml for details"></option>
+        <!-- Right Ascension (RA) refers to the angle you make with the x axis in a CCW manner.
+         Altitude (ALT) refers to the angle you make moving up from the equator to your point.
+         So for instance, you you wanted your source along the y-axis 45 degrees above the equator, you input (90,45).
+         Defaults to source directly from the zenith.-->
+        <option name="Output" value="ReconstructedSource.root" short='o' type="string" desc="Output Root file containing cone data and ARM. Defaults to 2*pi for isotropic"></option>
+        <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
+        This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the generated events were isotropic-->
+    </Reconstruct>
+    <GenSkyMap>
+        <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
+        <option name="Output" value="CountsHists.root" short='o' type="string" desc="Output root file containing Counts TH1D histogram and TH2D Sky Map"></option>
+        <!-- Something that confused me initially was that you assign the exposure time for a set of data AFTER you generate it-->
+        <!-- What this means is that, once you generate enough data to have good stats in all you energy binnings,-->
+        <!-- you can scale up or scale down the magnitude of each bin w.r.t. the exposure time-->
+        <option name="ExposureTime" value="-1" short='t' type="double" desc="The exposure time that the input events correspond to"></option>
+        <!-- If you are using the reweighting scheme, you MUST include:-->
+        <!-- ExposureTime, TotalEvents, ReferenceFluxFile, PhysicalFluxFile, EffAreaFile and MaskFile-->
+        <!-- If you are NOT using the reweighting scheme, you MUST include EffAreaFile and MaskFile-->
+        <option name="weighted" short="w" type="flag" desc="Specify if we are implementing reweighting scheme"/>
+        <!-- Hacky way of allowing total events to exceed range of int. Read as string, interpret as integer. I really didn't want to figure out how to template GetOptions -->
+        <option name="TotalEvents" value="-1" type="string" desc="The total number of events assigned to the batch job"></option>
+        <!-- Reference and Physical fluxes used in reweighting-->
+        <option name="ReferenceFluxFile" value="" type="string" desc="Reference energy flux that follows a Log Uniform distribution. From GenEnergySpectrum.py"></option>
+        <option name="PhysicalFluxFile" value="" type="string" desc="Physical energy flux that follows a user defined distribution. From GenEnergySpectrum.py"></option>
+        <!-- You need EffArea and MaskFile REGARDLESS of if you are reweighting or not. This is because the energy binnings and skymap binnings are based on these files-->
+        <option name="EffAreaFile" value="" type="string" desc="Effective Area histogram generated from CalcEffArea.py"></option>
+        <option name="MaskFile" value="" type="string" desc="Binary mask file. From GenMask.py"></option>
+        <!-- The number of points generated per cone. Increasing these linearly increases the execution time.-->
+        <!-- You need enough points such that you get continous sky circles. 1000 is good enough, unless you have a really big scattering angle-->
+        <option name="NPts" value="1000" short='N' type="integer" desc="Number of Points generated for each cone"></option>
+    </GenSkyMap>
+
+    <Sensitivity>
+        <!-- Base folder containing background count root files (ie. output from ./GenCountsHists)-->
+        <option name="BackgroundCountFolder" type="string" value="" desc="Folder containing background counts"></option>
+        <!-- preappended name of root files. For instance, if ${Preappend}{$id}.root, you use ${Preappend}-->
+        <option name="BackgroundBaseName" type="string" value="" desc="Base name of background count histograms. For example, Back_0.root => Back_"></option>
+        <option name="SourceCountsFolder" type="string" value="" desc="Folder containing source count root files"></option>
+        <option name="SourceCountsBaseName" type="string" value="" desc="Base name of source count root file. For example, Reconstruct_0.root => Reconstruct_"></option>
+        <!-- Energy of source. Should be consistent with .sh file that generated cones-->
+        <option name="SourceEnergy" type="double" value="-1" desc="Energy of source cones"></option>
+        <!-- Effective area root file. Used to caclulate final sensitivity at the end-->
+        <option name="EffectiveAreaRoot" type="string" value="" desc="Location of Effective Area root file"></option>
+        <!-- Hack to get around int size limitation/ Don't want to template options. Check for validity of option in program-->
+        <option name="SourceEventsPerJob" type="string" value="" desc="Number of source events generated per job initially"></option>
+        <!-- The number of batches for Source -->
+        <option name="SourceBatches" type="integer" value="-1" desc="Number of source cone files"></option>
+        <!-- The number of batches for Source -->
+        <option name="BackBatches" type="integer" value="-1" desc="Number of background cone files"></option>
+        <!-- Needed to calculate sensitivity at the end. Amount of time associated with background-->
+        <option name="ExposureTime" type="double" value="-1" desc="Total exposure time"></option>
+    </Sensitivity>
+
+  <gramssky>
+
+    <!-- Number of sky events to generate -->
+    <option name="events" short="n" value="1000" type="integer" desc="number of events" />
+
+    <!-- Run number stored in each event. If < 0, set to default (0) -->
+    <option name="run" short="r" value="-1" type="integer" desc="run number" />
+
+    <!-- Starting event number, incremented by 1 for each event. 
+	 If < 0, set to default (0) -->
+    <option name="startEvent" short="e" value="-1" type="integer" 
+	    desc="starting event number" />
+
+    <!-- Output HepMC3 file. If you omit an extension to this file
+         name, then the program will append ".hepmc3" to the end of
+         this parameter. -->
+    <option name="outputfile" short="o" value="gramssky.hepmc3" type="string" 
+        desc="output file"/>    
+
+    <!-- The PDG (Particle Data Group) code of the primary
+         particles. For a sky simulation, that will almost certainly
+         be 22 (photon). -->
+    <option name="PrimaryPDG" value="22" type="integer" desc="primary particle PDG code"/>    
+    
+    <!-- PositionGeneration = how to generate the primary particle
+         positions. The following are allowed values:
+
+	 "Point": Specify an (x,y,z) fixed position.
+	 "Iso": Generate particles isotropically on a (theta,phi) region of the celestial sphere.
+	 "MapPowerLaw": Use HEALPix maps to generate a power-law distribution for each pixel.
+	 "MapEnergyBands": Use HEALPix maps for different energy bands to generate 
+	                   energy and position. 
+
+         See the <global> section above for units.
+    -->
+
+    <option name="PositionGeneration" value="Point" type="string" 
+	    desc="how to generate primary positions"/> 
+
+    <!-- The option(s) for "Point" -->
+    <option name="PointSource" value="(0,0,200)" type="vector" 
+	    desc="(x,y,z) for Point generation"/>    
+
+    <!-- The option(s) for "Iso"; units are radians -->
+    <option name="ThetaMinMax" value="(0,1.571)" type="vector" 
+	    desc="theta (min,max) for Iso generation"/>    
+    <option name="PhiMinMax" value="(0,6.282)" type="vector" 
+	    desc="phi (min,max) for Iso generation"/>    
+    
+    <!-- How to generate the primary particle energies. The following
+         are defined:
+
+	 "Fixed": Specify a fixed energy.
+	 "Gaus": Generate energy according to gaussian distribution.
+	 "Flat": Uniformly generate energy between two limits.
+	 "BlackBody": Generate energy according to black-body distribution.
+	 "PowerLaw": Generate energy according to power-law distribution.
+	 "Hist": Generate energy according to a ROOT histogram. 
+
+         See the <global> section above for units.
+    -->
+
+    <option name="EnergyGeneration" value="Fixed" type="string" 
+	    desc="how to generate primary energies"/>    
+
+    <!-- Common to all energy and map distributions -->
+    <option name="EnergyMin" value="0.1" type="double" 
+	    desc="Minimum for energy distribution"/>
+    <option name="EnergyMax" value="2" type="double" 
+	    desc="Maximum for energy distribution"/>
+
+    <!-- Option(s) for "Fixed" energy distribution. -->
+    <option name="FixedEnergy" value="1" type="double" 
+	    desc="Energy for Fixed generation"/>    
+
+    <!-- Option(s) for "Gaus" energy distribution. -->
+    <option name="GausMean" value="2" type="double" 
+	    desc="Mean for gaussian energy distribution"/>
+    <option name="GausWidth" value="0.2" type="double" 
+	    desc="Width for gaussian energy distribution"/>
+
+    <!-- Option(s) for "Flat" energy distribution. -->
+    <option name="FlatMin" value="1" type="double" 
+	    desc="Minimum energy for flat distribution"/>
+    <option name="FlatMax" value="3" type="double" 
+	    desc="Maximum energy for flat distribution"/>
+
+    <!-- Option(s) for "BlackBody" energy distribution. -->
+    <option name="RadTemp" value="1" type="double" 
+	    desc="Radiation temperature (kT) for black-body distribution"/>
+
+    <!-- Option(s) for "PowerLaw" energy distribution. -->
+    <option name="PhotonIndex" value="2" type="double" 
+	    desc="Power-law exponent of the photon spectrum"/>
+
+    <!-- Option(s) for "Hist" energy distribution. -->
+    <!-- This can be a full or relative path to the file. -->
+    <option name="HistFile" value="example.root" type="string" 
+	    desc="Input file containing histogram"/>
+    <!-- This can be a path to the histogram within the file. -->
+    <option name="HistName" value="example" type="string" 
+	    desc="Name of histogram in input file"/>
+
+    <!-- The option(s) for "MapPowerLaw". Note that this method
+         generates both position and energy. -->
+    <option name="MapPowerLawFile" type="string"
+	    value="AliceSprings_Australia_2021_3_21_alt30000m_powerlaw_photon.fits"
+	    desc="FITS file with power-law HEALPix maps"/>    
+    <!--
+    HDU = "Header Data Unit". For more on what an HDU is, see
+    https://heasarc.gsfc.nasa.gov/docs/software/fitsio/user_f/node17.html
+    I found this value experimentally, and it may only apply to file
+    AliceSprings_Australia_2021_3_21_alt30000m_powerlaw_photon.fits
+    -->
+    <option name="MapPowerLawHDU" value="2" type="integer" 
+	    desc="Header Data Unit for power-law maps"/>
+    <!-- Within a header, the images are organized in columns. -->
+    <option name="MapPowerLawColumnNorm" value="1" type="integer" 
+	    desc="Column number of parameter N HEALPix map"/>    
+    <option name="MapPowerLawColumnIndex" value="2" type="integer" 
+	    desc="Column number of parameter alpha HEALPix map"/>    
+    <option name="MapPowerLawColumnEref" value="3" type="integer" 
+	    desc="Column number of parameter Eref HEALPix map"/>    
+
+    <!-- The option(s) for "MapEnergyBands". Note that this method
+         generates both position and energy. Also note that the energy
+         bands are limited to between EnergyMin and EnergyMax defined
+         above.-->
+    <option name="MapEnergyBandsFile" type="string"
+	    value="AliceSprings_Australia_2021_3_21_alt30000m_map_photon.fits"
+	    desc="FITS file with HEALPix energy maps"/>    
+    <!-- HDU for energy maps in the above file.  It may only apply to file
+         AliceSprings_Australia_2021_3_21_alt30000m_map_photon.fits
+    -->
+    <option name="MapEnergyBandsHDU" value="2" type="integer" 
+	    desc="Header Data Unit for energy-band maps"/>
+    <!-- Within a header, there is a map for different energy
+         bands. This is the header key for the number of maps. -->
+    <option name="MapNumberEnergyBandsKey" value="NMAP" type="string" 
+	    desc="The key for the number of maps in the HEALPix file"/>
+    <!-- The key for each map is formed by the following string,
+         suffixed by a number. For example, if MapNumberEnergyBandsKey
+         is "NMAP" and the following string is "ENE", the individual
+         maps have keys "ENEnn" where nn is 01 through NMAP. -->
+    <option name="MapEnergyBandsPrefix" value="ENE" type="string" 
+	    desc="The prefix string to the key for the individual maps"/>    
+
+    <!-- In GramsSky, we generate a particle coming from the celestial
+         sphere according to some energy/position
+         distribution. However, the simulation's sphere has some
+         finite radius within the world volume, while the actual
+         celestial sphere is actually at "infinity".
+	 
+	 To simulate this effect, we construct an imaginary disc
+	 tangent to the simulation sphere at the point of the
+	 particle's generation; see GramsSky/SkyDiagram.jpg and
+	 GramsSky/README.md for details. This routine randomly shifts
+	 the origin of the particle across the surface of that disc.
+
+         It also adjusts for the direction of the sphere with respect
+         to detector coordinates, and the center of the detector with
+         respect to the center of the sphere.
+
+         See the <global> section above for units. As of Jan-2022,
+         these are cm and MeV
+    -->
+
+    <!-- The radius of a sphere from which the particles will be
+         generated. The units should be the same as those in the GDML
+         file (centimeters as of Jan-2022). Make sure this sphere will
+         fit in the world volume as defined in the GDML file. -->
+    <option name="RadiusSphere" value="300" type="double" 
+        desc="radius of generated particles"/>    
+    
+    <!-- The radius of the tangent disc. If this is <= 0, then
+         RadiusSphere is used. -->
+    <option name="RadiusDisc" value="0.1" type="double" 
+        desc="radius of tangent disc"/> 
+
+    <!-- The center of the simulated sphere in detector
+         coordinates. 
+
+         Bear in mind that the origin of the coordinate system is
+         determined by the GRAMS GDML file, and as Jan-2022 it is
+         _not_ the center of the detector. As of Jan-2022, the center
+         of the LArTPC is (0,0,-14.783); the center of the overall
+         detector is at (0,0,45.217). -->
+    <option name="OriginSphere" value="(0,0,-15)" type="vector" 
+        desc="detector center in detector coords"/> 
+    
+    <!-- This is the direction of the "north pole" of the celestial
+         sphere in the detector coordinate system. Bear in mind that
+         imported celestial maps are usually aligned with the galactic
+         coordinate system, while the physical detector will have
+         typically have some other orientation for its z-axis.
+
+         If this vector has three elements, it's interpreted as
+         (x,y,z). If it has two elements (e.g., (0.707,0)) then it's
+         interpreted as (theta,phi).
+    -->
+    <option name="MapDirection" value="(0,0,1)" type="vector" 
+        desc="map 'north pole' in detector coords"/> 
+
+  </gramssky>
+
+  <gramsg4>
+
+    <!-- The file that contains the GDML description of the detector -->
+    <option name="gdmlfile" short="g" value="grams.gdml" type="string" 
+        desc="input GDML detector desc"/>    
+
+    <!-- If not blank, write a parsed version of the GDML input file.
+    This can be used as input to ROOT, since ROOT doesn't accept the
+    GDML <loop> tags. Note that prior to Geant4.10.7, a G4 application
+    (like gramsg4) will crash if it tries to write to a GDML file 
+    that already exists. -->
+    <option name="gdmlout" value="" type="string" 
+        desc="write parsed GDML to this file" />    
+
+    <!-- The file of Geant4 commands to be executed. If ui is on, this parameter
+    is ignored. Take a look at the mac/ directory for some ideas. -->
+    <option name="macrofile" short="m" value="mac/batch.mac" type="string" 
+        desc="G4 macro file"/>
+
+    <!-- If this flag is turned on, gramsg4 will start in an
+    interactive graphical mode. It will then execute the contents
+    of the Geant4 macro file specified by option 'uimacrofile' -->
+    <option name="ui" type="flag" desc="start UI session"/>
+    <option name="uimacrofile" value="mac/vis-menus.mac" type="string" desc="G4 macro file for UI"/>
+
+    <!-- The name of an input file containing events from some external
+    event generator. If this option is present, this file will override
+    any particle-generation commands in the macrofile. The file must be in
+    HepMC3 format (https://gitlab.cern.ch/hepmc/HepMC3). The internal format
+    of the file is determined from its extension (the part after the final "."):
+
+    .hepmc2 = HepMC2 text format
+    .hepmc3 = HepMC3 text format
+    .hep    = HEPEVT text format (https://cdcvs.fnal.gov/redmine/projects/minos-sim/wiki/HEPEVT_files)
+    .root   = HepMC3 ROOT format
+    .roottree = HepMC3 TTree ROOT format
+    .lhef     = LHEF format (arXiv:hep-ph/0609017)
+
+    Some of these formats do not provide a way to specify the (x,y,z,t) vertex
+    of an event (e.g., HEPEVT, LHEF). In those cases the vertex of the event will be
+    [TODO: Fill in an appropriate action.]
+
+    See GramsSim/GramsG4/README.md for a more detailed description.
+    -->
+    <option name="inputgen" short="i" value="" type="string" desc="input generator events"/>
+
+    <!-- Run number stored in each event. If < 0, set to default
+         (0). Note that if this is set to default _and_ there's an
+         HepMC3 file used for input (see above), then the value in the
+         HepMC3 file takes precedence. Otherwise, the value below
+         overrides the value in the HepMC3 file. -->
+    <option name="run" short="r" value="-1" type="integer" desc="run number" />
+
+    <!-- Starting event number, incremented by 1 for each event.  If <
+         0, set to default (0). Note that if this is set to default
+         _and_ there's an HepMC3 file used for input (see above), then
+         the values in the events in the HepMC3 file take
+         precedence. Otherwise, the value below overrides the values
+         in the HepMC3 file. -->
+    <option name="startEvent" short="e" value="-1" type="integer" 
+	    desc="starting event number" />
+
+    <!-- The name of the output file. The G4 Analysis Manager will automatically
+    append '.root' to this name if it's omitted. -->
+    <option name="outputfile" short="o" value="gramsg4.root" type="string" desc="output file"/>
+
+    <!-- The physics list to be used by the detector simulation. --> 
+    <option name="physicslist" short= "p" value="FTFP_BERT_LIV+OPTICAL+STEPLIMIT" type="string" 
+        desc="physics list">
+        Here are few options. There are many, many others. Note that to simulate
+        voxels/pixels, you want to include +STEPLIMIT; to include scintillation
+        photons you want to include +OPTICAL. 
+        "FTFP_BERT" - typical for HEP applications
+        "QGSP_BIC_HP" - typical medical applications
+        "QGSP_BIC_HP_LIV+OPTICAL+STEPLIMIT" - Gave this a try. Needs review.
+        See README.md for references.
+    </option>
+
+    <!-- Do we want to turn on this optical physics? Note that if you don't include
+    OPTICAL (or G4OpticalPhysics) in the physics list above, these processes
+    won't happen anyway. -->
+    <option name="scint" value="true" type="boolean" 
+	    desc="turn on/off scintillation" /> 
+
+    <!-- Display available physics lists. --> 
+    <option name="showphysicslists" short="l" type="flag" 
+        desc="show physics lists then exit" />
+
+    <option name="larstepsize" value="0.02" type="double" 
+        desc="LAr TPC step size" >
+      This is the step size for charged particles in the LAr TPC.
+      It has no effect until the step-limit physics is turned on
+      ("G4StepLimiterPhysics" or simply STEPLIMIT) in the physicslist
+      option above. 
+
+      A first approximation of this value might be 1/10th the size of
+      the voxels or pixels in the readout.
+
+      Units are set in LengthUnit above.
+
+      If this is commented out, the program will use the step size
+      in the GDML file for "volTPCActive".
+    </option>
+
+    <!-- If # threads > 0, enable multi-threaded execution. 
+    Note that this does not magically make your program thread-safe.
+    While the current version of gramsg4 is thread-safe, turning this
+    option on means the order of rows in the output ntuples can't be
+    predicted. -->
+    <option name="nthreads" short = "t" value="0" type="integer" desc="number of threads"/>
+
+    <!-- Variables that have to do with Random Number Generation (RNG).
+    You can leave these alone until you want to re-create a particular
+    Monte Carlo event. -->
+    <option name="rngdir" value="" type="string" desc="rng save/restore directory">
+        The directory to save/restore the state of the random-number generation
+        engine. If this is blank (value=""), do not save/restore the RNG state.
+    </option>
+    <option name="rngperevent" value="0" type="integer" desc="rng save per event">
+        value="0" - Save only the per-run RNG state in 'rngdir'.
+        value="1" - Save RNG state before primary-particle generation.
+        value="2" - Save RNG state before event processing (after primary generation)
+        value="3" - Both are stored.
+    </option>
+    <option name="rngrestorefile" value="" type="string" desc="restore rng from file">
+        Restore the RNG at the start of the job from this file within 'rngdir'. 
+        Use the value of 'rngseed' if this is blank; otherwise get the state from
+        'rngdir/rngrestorefile'. 
+    </option>
+    
+  </gramsg4>
+
+  <gramsdetsim>
+
+    <!-- Input ROOT file from GramsG4 (or at least contains a LArHits-compatible ntuple -->
+    <option name="inputfile" short="i" value="gramsg4.root" type="string" 
+        desc="input file"/>    
+
+    <!-- Name of ntuple in the input file that contains the hit information. -->
+    <option name="inputntuple" value="LArHits" type="string" desc="input ntuple"/>
+
+    <!-- Output ROOT file -->
+    <option name="outputfile" short="o" value="gramsdetsim.root" type="string" 
+        desc="output file"/>    
+
+    <!-- Name of ntuple in the output file that contains the
+         detector-response information. This ntuple will be a
+         row-for-row match with the input ntuple, and can therefore be
+         used as a "friend ntuple" with the input intuple (see "friend
+         TTrees" in the ROOT documentation.  -->
+    <option name="outputntuple" value="DetSim" type="string" desc="output ntuple"/>
+
+    <!-- Physics-model options. 
+
+         IMPORTANT: Note that the units associated with these
+         constants should be consistent with the "TimeUnit",
+         "LengthUnit", and "EnergyUnit" options defined above.
+    -->
+
+    <!-- The location of the readout plane in the detector coordinate
+         system. -->
+    <option name="ReadoutPlaneCoord" value="0" type="double"
+        desc="location of readout plane"/>
+
+    <!-- Options associated with modeling recombination effects. -->
+
+    Reference: "A study of electron recombination using highly
+    ionizing particles in the ArgoNeuT Liquid Argon TPC",
+    arXiv:1306.1712
+
+    <option name="recombination" value="true" type="boolean" 
+	    desc="model recombination effects"/>
+
+    Electric field in the LArTPC, which affects the cloud of ionized
+    particles. This varies with position due to space charge, which we
+    don't have a model for yet.
+    <option name="ElectricField"  value="1.0" type="double"
+	    desc="electric field [kV/cm]"/>
+
+    Choice of recombination model:
+    0 = Modified Box Model
+    1 = Birk's Model
+    <option name="RecombinationModel" value="0" type="integer"
+        desc="recombination model" />
+
+    Average of the alpha value for 20 to 90 degrees angle bins for proton
+    sample detection in ArgoNeuT, unitless value.
+    <option name="box_alpha" value="0.930" type="double"
+	    desc="recombination constant"/>
+
+    Average of the beta value for 20 to 90 degrees angle bins for proton
+    sample detection in ArgoNeuT, units of (kV*g)/(MeV*cm^3)
+    <option name="box_beta" value="0.212" type="double"
+	    desc="recombination constant [(kV*g)/(MeV*cm^3)]"/>
+
+    Density of liquid argon, from Brookhaven LAr page, units of (g/cm^3)
+    <option name="LArDensity" value="1.3973" type="double"
+	    desc="LAr density [g/cm^3]"/>
+
+    Birk's model parameters from the ArgoNeut paper referenced above. 
+    <option name="birks_AB" value="0.806" type="double"
+        desc="factor for Birk's model"/>
+
+    <option name="birks_kB" value="0.052" type="double"
+        desc="factor for Birk's model [(kV/cm)(g/cm^2)/MeV]"/>
+
+    Options associated with the absorption model. As of Sep-2022, all
+    these values are preliminary.
+
+    <option name="absorption" value="true" type="boolean" 
+	    desc="model absorption effects"/>
+
+    <option name="ElectronLifeTimeCorr" value="50000.0" type="double"
+        desc="mean life of electrons (ns)"/>
+
+    <option name="ElectronDriftVelocity" value="0.01" type="double"
+        desc="drift velocity (cm/ns)"/>
+
+    Options associated with the diffusion model. These values come
+    from MicroBooNE:
+    https://github.com/LArSoft/larsim/blob/develop/larsim/Simulation/simulationservices.fcl
+    https://github.com/MicroBooNE/uboonecode/blob/develop/uboone/Simulation/simulationservices_microboone.fcl
+
+    <option name="diffusion" value="true" type="boolean"
+        desc="model diffusion effects"/>
+
+    <option name="MeVToElectrons" value="4.237e4" type="double"
+        desc="the number of generated electrons per 1MeV"/>
+
+    <option name="LongitudinalDiffusion" value="6.2e-9" type="double"
+        desc="[cm^2/ns]"/>
+
+    <option name="TransverseDiffusion" value="16.3e-9" type="double"
+        desc="[cm^2/ns]"/>
+
+    The number of electrons in a cluster. The clusters are drifted in
+    the LAr, as opposed to drifting each electron individually.
+    <option name="ElectronClusterSize" value="200" type="int"
+        desc="number of electrons in a cluster"/>
+
+    <option name="MinNumberOfElCluster" value="0" type="integer"
+        desc="minimum number of clusters per hit"/>
+
+    The direction of the electron drift (x, y, or z).
+    x:0 y:1 z:2
+    <option name="DriftCoordinate" value="2" type="int"
+        desc="direction of electron drift"/>
+
+  </gramsdetsim>
+
+
+  <gramsreadoutsim>
+
+    <!-- Input ROOT file from GramsDetSim (or at least contains a DetSim-compatible ntuple -->
+    <option name="inputfile" short="i" value="gramsdetsim.root" type="string" 
+        desc="input file"/>    
+
+    <!-- Name of ntuple in the input file that contains the electron-cluster information. -->
+    <option name="inputntuple" value="DetSim" type="string" desc="input ntuple"/>
+
+    <!-- Output ROOT file -->
+    <option name="outputfile" short="o" value="gramsreadoutsim.root" type="string"
+        desc="output file"/>
+
+    <!-- Name of ntuple in the output file that contains the
+         readout information. 
+    -->
+    <option name="outputntuple" value="ReadoutSim" type="string" desc="output ntuple"/>
+
+    <!-- The pixel readout geometry parameters. Units are given by "LengthUnit" in 
+    the <global> section above. -->
+    <option name="readout_centerx"  value="0.0" type="double" desc="x coordinate of the readout plane" />
+    <option name="readout_centery"  value="0.0" type="double" desc="y coordinate of the readout plane" />
+    <option name="pixel_sizex" value="3.2" type="double" desc="pixel size x" />
+    <option name="pixel_sizey" value="3.2" type="double" desc="pixel size y" />
+
+  </gramsreadoutsim>
+
+  <gramselecsim>
+
+    <!-- Input ROOT file from GramsReadoutSim (or at least contains 
+	 a ReadoutSim-compatible ntuple -->
+    <option name="inputfile" short="i" value="gramsreadoutsim.root" type="string" 
+        desc="input file"/>    
+
+    <!-- Name of ntuple in the input file that contains the readout information. -->
+    <option name="inputntuple" value="ReadoutSim" type="string" desc="input ntuple"/>
+
+    <!-- Output ROOT file -->
+    <option name="outputfile" short="o" value="gramselecsim.root" type="string"
+        desc="output file"/>
+    <option name="outputntuple"         value="ElecSim" type="string" desc="output ntuple"/>
+ 
+    <!-- 
+         IMPORTANT: Note that the units associated with these
+         constants should be consistent with the "TimeUnit",
+         "LengthUnit", and "EnergyUnit" options defined above.
+    -->
+
+    <!-- general information -->
+    <option name="timebin_width"        value="10.0"    type="double" desc="time bin width in this framework"/>
+    <option name="time_window"          value="60000.0" type="double" desc="sampling width"/>
+
+    <!-- Preamp -->
+    <!-- Valid values of preamp_func are:
+    0 = Gaussian normalized to unit probability
+    1 = Gaussian
+    2 = Log of normalized gaussian
+    3 = Log of gaussian
+    4 = Double exponential
+    -->
+    <option name="preamp_func"          value="4"       type="int"    desc="curve type of preamp output"/>
+    <option name="preamp_prior_time"    value="200.0"   type="double" desc="rise time"/>
+    <option name="preamp_post_time"     value="3000.0"  type="double" desc="decay time"/>
+    <option name="peak_delay"           value="0.0"     type="double" desc="delay time from e-"/>
+    <option name="preamp_mu"            value="1500.0"  type="double" desc="sampling width"/>
+    <option name="preamp_sigma"         value="400.0"   type="double" desc="sampling width"/>
+    <option name="preamp_tau1"          value="100.0"   type="double" desc="tau1 in two exp model"/>
+    <option name="preamp_tau2"          value="500.0"   type="double" desc="tau2 in two exp model"/>
+    <option name="preamp_gain"          value="1.0"     type="double" desc="gain [mV/fC]"/>
+
+    <!-- add noise -->
+    <option name="noise_param0"     value="0.0"     type="double" desc="0th order"/>
+    <option name="noise_param1"     value="0.0"     type="double" desc="1st order"/>
+    <option name="noise_param2"     value="0.0"     type="double" desc="2nd order"/>
+
+    <!-- AD converter -->
+    <option name="bit_resolution"   value="10"      type="int"      desc="resolution of ADC [bit]"/>
+    <option name="input_min"        value="0.0"     type="double"   desc="minimum input of ADC [mV]"/>
+    <option name="input_max"        value="1000.0"  type="double"   desc="maximum input of ADC [mV]"/>
+    <option name="sample_freq"      value="50.0"    type="double"   desc="sampling frequency of an ADC [MHz]"/>
+
+  </gramselecsim>
+
+</parameters>
