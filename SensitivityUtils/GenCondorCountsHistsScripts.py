@@ -112,7 +112,7 @@ if __name__=="__main__":
             f.write(" -t "+str(args.ExposureTime)+" --TotalEvents " +str(args.TotalEvents))
             f.write(" --EffAreaFile "+args.EffectiveArea+" --PhysicalFluxFile "+args.PhysicalFlux+" --ReferenceFluxFile "+args.RefFlux+" --MaskFile "+ args.MaskFile+"\n")
         else:
-            # Run weighted calculation
+            # Run unweighted calculation
             f.write("./GenCountsHists -i "+ShellReconstructedDataFileName+" -o "+OutputFileName+" --MaskFile "+ args.MaskFile+" --EffAreaFile "+args.EffectiveArea+"\n")
         # move output back up 1 directory and cd up. Condor automatically transfers output
         f.write("mv "+OutputFileName+" ..\n")

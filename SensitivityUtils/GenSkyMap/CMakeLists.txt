@@ -8,7 +8,7 @@ add_executable(${GEN_COUNT_HIST_PROG} GenSkyMap.cpp)
 
 # Specify location of linked libraries
 target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
-target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}GenBackCountsUtils )
+target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}GenSkyMapUtils )
 target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 

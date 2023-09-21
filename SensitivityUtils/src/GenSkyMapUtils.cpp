@@ -6,7 +6,7 @@
 #include<iostream>
 
 // The Eigen Import
-#include "eigen3/Eigen/Dense"
+#include <eigen3/Eigen/Dense>
 
 Eigen::Vector3d CalcPerp(Eigen::Vector3d Axis){
       // Somewhat convoluted method to create a perpendicular vector to the axis vector

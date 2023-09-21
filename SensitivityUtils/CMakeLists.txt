@@ -50,19 +50,19 @@ add_library (${ReconstructLib} STATIC ${ReconstructSrc})
 target_link_libraries(${ReconstructLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}ReconstructUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Create GenBackCountsUtils library
-file(GLOB GenBackCountsSrc src/GenBackCountsUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/GenBackCountsUtils.cpp
+# Create GenSkyMapUtils library
+file(GLOB GenBackCountsSrc src/GenSkyMapUtils.cpp
+                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/GenSkyMapUtils.cpp
     )
 
-set(GenBackLib ${CMAKE_PROJECT_NAME}GenBackCountsUtils)
+set(GenBackLib ${CMAKE_PROJECT_NAME}GenSkyMapUtils)
 add_library (${GenBackLib} STATIC ${GenBackCountsSrc})
 
 target_link_libraries(${GenBackLib} ${ROOT_LIBRARIES} )
 # We need to link Eigen as well because writing your own matrix library is always a terrible idea
 # And something I have done more than I care to admit...
 target_link_libraries(${GenBackLib} ${Eigen_LIBRARIES} )
-target_include_directories (${CMAKE_PROJECT_NAME}GenBackCountsUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create CalcSenseUtils library
 file(GLOB CalcSenseSrc src/CalcSenseUtils.cpp

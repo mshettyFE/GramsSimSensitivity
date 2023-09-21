@@ -35,7 +35,7 @@ find_package (XercesC REQUIRED)
 
 # Find Eigen library for GenSkyMapUtils
 find_package(Eigen3 REQUIRED)
-link_directories(${Eigen_INCLUDE_DIRS})
+link_directories(${EIGEN_INCLUDE_DIRS})
 
 # Set the rpath so that the executables can find the libraries
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)

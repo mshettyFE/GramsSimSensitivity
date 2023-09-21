@@ -3,7 +3,7 @@
 
 #include "TH2D.h"
 
-#include "eigen3/Eigen/Dense"
+#include <eigen3/Eigen/Dense>
 
 // Generate a vector that is perpendicular to the input
 Eigen::Vector3d CalcPerp(Eigen::Vector3d Axis);

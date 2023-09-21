@@ -12,7 +12,7 @@
 // util libraries
 #include "Options.h"
 #include "CalcSenseUtils.h"
-#include "GenBackCountsUtils.h"
+#include "GenSkyMapUtils.h"
 
 int main(int argc, char** argv){
 // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
