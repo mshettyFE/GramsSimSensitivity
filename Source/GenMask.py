@@ -1,12 +1,23 @@
 # Program to generate Mask based on source reconstruction
 # Also defines binnings of sky maps
 
+draw = True
+temp = []
+
 import numpy as np
 import ROOT
-import os,sys
+import sys
+import os
+import random
 import argparse
-import glob
-from matplotlib import pyplot as plt
+import tomllib
+import subprocess
+
+def write_file(OutputName,mask):
+    # Write to file
+    OutFile = ROOT.TFile.Open(OutputName, "RECREATE")
+    OutFile.WriteObject(mask, "Mask")
+    OutFile.Close()
 
 def lorentzian(x,params):
 ## ARM follows a Lorentzian distribution (technically a Voigt function, but fitting to that gave we poorer results)
@@ -57,47 +68,104 @@ def create_mask(HistogramBlank,truth_RA_loc,truth_ALT_loc,ARMAngle):
 if __name__=="__main__":
     ## Parse command line
     parser = argparse.ArgumentParser(
-                        prog='ProgramName',
-                        description='What the program does')
-    parser.add_argument("SourcePath", help="Location where all the reconstruction files of the source are at")
-    parser.add_argument("ReconstructionBase", help="The base name of the source files (ie. drop the ${num}.root part)")
-    parser.add_argument("RA_loc", type=float, help="Right ascension Location of source")
-    parser.add_argument("ALT_loc", type=float, help="Altitude location of source")
-    parser.add_argument("Output",help="Output root file name")
-    parser.add_argument("--RABins",type=int, default=500, help="Number of bins along RA axis")
-    parser.add_argument("--ALTBins",type=int, default=500, help="Number of bins along ALT axis")
-    parser.add_argument("-d","--draw",action="store_true", help="Wheather you want to save the ARM distribution and final map to jpgs")
-    parser.add_argument("--nbins",type=int, default=50000, help="Number of binnings to create in ARM distribution")
+                        prog='GenMask',
+                        description='Generates a mask to define a neighborhood on the sky')
+    parser.add_argument("config", help="Path to .toml file")
     args = parser.parse_args()
+    with open(args.config, "rb") as f:
+        data = tomllib.load(f)
+# Read in relavent parameters
+    RA_binning = data["General"]["RABinnings"]
+    ALT_binning = data["General"]["ALTBinnings"]
+    geo = data["General"]["Geometry"].lower()
+    if(geo != "flat" and geo != "cube"):
+        sys.exit(-1)
+    SourceEnergy = data["Source"]["SourceEnergy"]
+# Convert to degrees
+    RA_loc = data["Source"]["RASourceLoc"]*np.pi/180
+    ALT_loc = data["Source"]["ALTSourceLoc"]*np.pi/180
+    n_events = data["Source"]["SourceEventsPerJob"]
+    nbins = data["Mask"]["nbins"]
+    OutputName = data["Mask"]["MaskOutput"]+".root"
+    EffAreaFile = data["Mask"]["EffArea"]+".root"
+    Cart_loc = SphereToCart(RA_loc,ALT_loc)
+
+# Generate Source events
+
+## gramssky
+    os.chdir("GramsWork")
+    command = ["./gramssky"]
+    command +=  ["--options","SensitivityOptions.xml"]
+    command +=  ["--RadiusSphere", "300"]
+    if(geo == "cube"):
+        command += [" --OriginSphere", "\"(0,0,-40.0 )\" "]
+    elif(geo == "flat"):
+        command += [" --OriginSphere", "\"(0,0,-10.0 )\" "]
+    command +=  ["--PositionGeneration", "Point"]
+    command += [" --PointSource", "\"(" + str(Cart_loc[0]) + ","+ str(Cart_loc[1]) + ","+ str(Cart_loc[2])+")\" "]
+    command += ["-n", str(n_events)]
+    command += [" -s ", str(random.randint(1,100))]
+    command +=   ["--EnergyGeneration","Fixed"]
+    command += ["  --FixedEnergy " ,str(SourceEnergy)]
+#    print(' '.join(command))
+    temp.append(' '.join(command))
+    subprocess.run(command)
+    with open("gramssky_mac.mac",'w') as f:
+        f.write("/run/initialize\n")
+        f.write("/run/beamOn "+str(n_events)+'\n')
+
+## gramsg4
+    command = ["./gramsg4", "--options","SensitivityOptions.xml"]
+    command += [ "-i", "gramssky.hepmc3", "-m", "gramssky_mac.mac"]
+    command += [" -s ", str(random.randint(1,100))]
+    if(geo=="flat"):
+        command += ["-g","ThinFlatGrams.gdml"]
+    if(geo=="cube"):
+        command += ["-g","ThinGrams.gdml"]
+#    print(' '.join(command))
+    temp.append(' '.join(command))
+    subprocess.run(command)
+
+## gramsdetsim
+    command = ["./gramsdetsim" ,"--options","SensitivityOptions.xml" ]
+    command += ["-s", str(random.randint(1,100))]
+#    print(' '.join(command))
+    temp.append(' '.join(command))
+    subprocess.run(command)
+
+## Extract
+    command = ["./Extract","--options","SensitivityOptions.xml"]
+    command += [ "--GramsG4Name", "gramsg4.root","--GramsDetSimName", "gramsdetsim.root", "-o", "Extracted.root"]
+    temp.append(' '.join(command))
+    subprocess.run(command)
+
+## Reconstruct
+    command = ["./Reconstruct","--options","SensitivityOptions.xml"]
+    command += ["-i", "Extracted.root", "-o", "Reco.root", "--SourceType", "Point", " --SourceLoc"]
+    command += ["\"("+str(RA_loc) +","+str(ALT_loc)+")\""]    
+    temp.append(' '.join(command))
+    subprocess.run(command)
+
+##############
+
     ## Set batch mode on so that canvas doesn't keep opening
     ROOT.gROOT.SetBatch(1)
     ## Create blank sky map
-    blankHist = ROOT.TH2D("Mask","Binary Mask",args.RABins,-np.pi,np.pi,args.ALTBins,-np.pi/2.0, np.pi/2.0)
+    blankHist = ROOT.TH2D("Mask","Binary Mask",RA_binning,-np.pi,np.pi,ALT_binning,-np.pi/2.0, np.pi/2.0)
     blankHist.Reset()
-    ## glob magic to identify the reconstruction files
-    ## https://docs.python.org/3/library/glob.html
-    query = os.path.join(args.SourcePath,args.ReconstructionBase)+"*root"
-    ## Get files and sanity check
-    files = glob.glob(query)
-    if len(files)==0:
-        print("Couldn't find files. Check that the path and basename are correct")
-        sys.exit()
     ## Attach all files to TChain
     Cones = ROOT.TChain("Cones")
-    for file in files:
-        Cones.Add(file)
+    Cones.Add("Reco.root")
     ## Set up drawing canvas if needed
-    if(args.draw):
+    if(draw):
         c1 = ROOT.TCanvas()
         pic_name = "ARM_Dist.jpg"
         ROOT.gStyle.SetOptFit(111)
-    ## Create histogram of ARM
-    pi = np.pi
     ## We don't go out past 0.5 radians on either side since there are very few events past this ARM value
-    Cones.Draw("ARM>>hist("+str(args.nbins)+",-"+str(0.5)+","+str(0.5)+")")
+    Cones.Draw("ARM>>hist("+str(nbins)+",-"+str(-1)+","+str(1)+")")
     ARM_Dist = ROOT.gDirectory.Get("hist")
     ## Define Lorentzian to fit to ARM.
-    func = ROOT.TF1("Lorentzian",lorentzian,-pi,pi,3)
+    func = ROOT.TF1("Lorentzian",lorentzian,-np.pi,np.pi,3)
     ## Set up fitting code by setting default parameters
     func.SetParameters(ARM_Dist.GetBinContent(ARM_Dist.GetMaximumBin()),ARM_Dist.GetMean(),ARM_Dist.GetRMS())
     func.SetParNames ("Constant","Mean_value","Gamma")
@@ -106,18 +174,25 @@ if __name__=="__main__":
     ARM = abs(func.GetParameter(2))
     print("ARM: ",ARM)
     ## Draw ARM distribution
-    if(args.draw):
+    if(draw):
         ARM_Dist.Draw()
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
-    mask = create_mask(blankHist,args.RA_loc,args.ALT_loc,ARM)
+#    mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
+    mask = create_mask(blankHist,RA_loc,ALT_loc,3.14)
     # Draw mask if needed
-    if(args.draw):
+    if(draw):
         c2 = ROOT.TCanvas()
         pic_name = "Mask.jpg"
         mask.SetStats(0)
         mask.Draw("colz")
         c2.SaveAs(pic_name)
-    # Write to file
-    OutFile = ROOT.TFile.Open(args.Output, "RECREATE")
-    OutFile.WriteObject(mask, "Mask")
+    write_file(OutputName,mask)
+
+## SkyMap
+#    command = ["./GenSkyMap","--options","SensitivityOptions.xml"]
+#    command += ["-i", "Reco.root","-o", "TempMap.root", "--EffAreaFile", "../"+EffAreaFile]
+#    command += ["--MaskFile", OutputName]
+#    temp.append(' '.join(command))
+#    [print(i) for i in temp]
+#    subprocess.run(command)

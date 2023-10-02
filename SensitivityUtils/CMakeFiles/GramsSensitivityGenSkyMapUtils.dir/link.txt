@@ -1,0 +1,2 @@
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ar qc libGramsSensitivityGenSkyMapUtils.a CMakeFiles/GramsSensitivityGenSkyMapUtils.dir/src/GenSkyMapUtils.cpp.o
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ranlib libGramsSensitivityGenSkyMapUtils.a

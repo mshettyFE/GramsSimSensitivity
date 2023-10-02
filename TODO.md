@@ -1,8 +1,4 @@
-Write up TOML config file
-    Have a shared header where shared arguments reside
-    Each program has its own header, with arguments unique to it underneath
-    Have the option to add and remove programs to shell script and cmd at will
-    Seperate Area, Source, Background and have GenCondor.py script choose what to do
+Seperate Area, Source, Background and have GenCondor.py script choose what to do
 Refactor GenEffArea, GenCondorScripts, GenCondorCountsHists into 1 script
     Have script take in either Area, Source, Background. Then generate associate files
     Have Reco, Extracted, and SkyMap all be generated in one condor job and have the option to skip over generating a certain output file

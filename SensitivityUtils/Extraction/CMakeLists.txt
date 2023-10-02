@@ -11,22 +11,14 @@ target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}Extract )
 target_link_libraries(${EXTRACTPROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
-
-# Copy over Extraction executable to Background, Source
+add_custom_command(TARGET ${EXTRACTPROG} 
+                   POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/Source/GramsWork)
 
 add_custom_command(TARGET ${EXTRACTPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/Background/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/Background/GramsWork)
 
 add_custom_command(TARGET ${EXTRACTPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/Source/SenseJob)
-
-add_custom_command(TARGET ${EXTRACTPROG} 
-                   POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/EffArea/SenseJob)
-
-# Remove Reconstruction executable from current directory
-add_custom_command(TARGET ${EXTRACTPROG}
-                    POST_BUILD 
-                    COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE:${EXTRACTPROG}>)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${EXTRACTPROG}> ${CMAKE_BINARY_DIR}/EffArea/GramsWork)

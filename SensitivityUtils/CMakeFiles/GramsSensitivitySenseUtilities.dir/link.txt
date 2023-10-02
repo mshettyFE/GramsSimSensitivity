@@ -1,0 +1,2 @@
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ar qc libGramsSensitivitySenseUtilities.a CMakeFiles/GramsSensitivitySenseUtilities.dir/src/Options.cpp.o
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ranlib libGramsSensitivitySenseUtilities.a

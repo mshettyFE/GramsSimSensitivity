@@ -1,0 +1,2 @@
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ar qc libGramsSensitivityReconstructUtils.a CMakeFiles/GramsSensitivityReconstructUtils.dir/src/ReconstructUtils.cpp.o
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ranlib libGramsSensitivityReconstructUtils.a

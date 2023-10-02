@@ -16,14 +16,12 @@ target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/Source/SourceCountHist)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/Source/GramsWork)
 
-# Copy over executable to Background/BackgroundCountHist
 add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/Background/BackgroundCountHist)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/Background/GramsWork)
 
-# Remove executable from current directory
-add_custom_command(TARGET ${GEN_COUNT_HIST_PROG}
-                    POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE:${GEN_COUNT_HIST_PROG}>)
+add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
+                   POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/EffArea/GramsWork)

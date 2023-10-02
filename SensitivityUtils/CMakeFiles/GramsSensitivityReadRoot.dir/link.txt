@@ -1,0 +1,2 @@
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ar qc libGramsSensitivityReadRoot.a CMakeFiles/GramsSensitivityReadRoot.dir/src/ReadRootFiles.cpp.o
+/nevis/amsterdam/share/seligman/conda/grams/bin/x86_64-conda-linux-gnu-ranlib libGramsSensitivityReadRoot.a

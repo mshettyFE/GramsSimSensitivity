@@ -11,17 +11,12 @@ target_link_libraries(${RECONPROG} ${CMAKE_PROJECT_NAME}ReconstructUtils )
 # Copy over Reconstruction executable to Background, Source, and EffArea
 add_custom_command(TARGET ${RECONPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/Background/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/Source/GramsWork)
 
 add_custom_command(TARGET ${RECONPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/Source/SenseJob)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/Background/GramsWork)
 
 add_custom_command(TARGET ${RECONPROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/EffArea/SenseJob)
-
-# Remove Reconstruction executable from current directory
-add_custom_command(TARGET ${RECONPROG}
-                    POST_BUILD 
-                    COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE:${RECONPROG}>)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${RECONPROG}> ${CMAKE_BINARY_DIR}/EffArea/GramsWork)
