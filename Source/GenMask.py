@@ -1,7 +1,6 @@
 # Program to generate Mask based on source reconstruction
 # Also defines binnings of sky maps
 
-draw = True
 temp = []
 
 import numpy as np
@@ -74,6 +73,11 @@ if __name__=="__main__":
     args = parser.parse_args()
     with open(args.config, "rb") as f:
         data = tomllib.load(f)
+# draw
+    if(data["Mask"]["draw"] == True):
+        draw=True
+    else:
+        draw = False
 # Read in relavent parameters
     RA_binning = data["General"]["RABinnings"]
     ALT_binning = data["General"]["ALTBinnings"]
@@ -84,7 +88,7 @@ if __name__=="__main__":
 # Convert to degrees
     RA_loc = data["Source"]["RASourceLoc"]*np.pi/180
     ALT_loc = data["Source"]["ALTSourceLoc"]*np.pi/180
-    n_events = data["Source"]["SourceEventsPerJob"]
+    n_events = data["Mask"]["nevents"]
     nbins = data["Mask"]["nbins"]
     OutputName = data["Mask"]["MaskOutput"]+".root"
     EffAreaFile = data["Mask"]["EffArea"]+".root"
@@ -97,6 +101,7 @@ if __name__=="__main__":
     command = ["./gramssky"]
     command +=  ["--options","SensitivityOptions.xml"]
     command +=  ["--RadiusSphere", "300"]
+    command +=  ["--RadiusDisc", "1"]
     if(geo == "cube"):
         command += [" --OriginSphere", "\"(0,0,-40.0 )\" "]
     elif(geo == "flat"):
@@ -147,7 +152,6 @@ if __name__=="__main__":
     subprocess.run(command)
 
 ##############
-
     ## Set batch mode on so that canvas doesn't keep opening
     ROOT.gROOT.SetBatch(1)
     ## Create blank sky map
@@ -174,11 +178,17 @@ if __name__=="__main__":
     ARM = abs(func.GetParameter(2))
     print("ARM: ",ARM)
     ## Draw ARM distribution
+    print(os.getcwd())
     if(draw):
         ARM_Dist.Draw()
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
+
+
 #    mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
+
+# Temporary hack to display all the sky
+
     mask = create_mask(blankHist,RA_loc,ALT_loc,3.14)
     # Draw mask if needed
     if(draw):
@@ -188,11 +198,11 @@ if __name__=="__main__":
         mask.Draw("colz")
         c2.SaveAs(pic_name)
     write_file(OutputName,mask)
-
 ## SkyMap
-#    command = ["./GenSkyMap","--options","SensitivityOptions.xml"]
-#    command += ["-i", "Reco.root","-o", "TempMap.root", "--EffAreaFile", "../"+EffAreaFile]
-#    command += ["--MaskFile", OutputName]
-#    temp.append(' '.join(command))
-#    [print(i) for i in temp]
-#    subprocess.run(command)
+    command = ["./GenSkyMap","--options","SensitivityOptions.xml"]
+    command += ["-i", "Reco.root","-o", "TempMap.root", "--EffAreaFile", "../"+EffAreaFile]
+    command += ["--MaskFile", OutputName]
+    temp.append(' '.join(command))
+    subprocess.run(command)
+    print("\n\n\n")
+    [print(i) for i in temp]
