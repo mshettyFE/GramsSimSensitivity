@@ -12,7 +12,7 @@ target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}GenSkyMapUtils
 target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 
-# Copy over executable to Source/SourceCountHist
+# Copy over executable to Source, Background, EffArea
 
 add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
                    POST_BUILD

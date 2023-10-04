@@ -206,3 +206,11 @@ if __name__=="__main__":
     subprocess.run(command)
     print("\n\n\n")
     [print(i) for i in temp]
+
+
+# ./gramssky --options SensitivityOptions.xml --RadiusSphere 300 --RadiusDisc 1  --OriginSphere "(0,0,-40.0 )"  --PositionGeneration Point  --PointSource "(1.0,0.0,0.0)"  -n 10000  -s  88 --EnergyGeneration Fixed   --FixedEnergy  1.0
+# ./gramsg4 --options SensitivityOptions.xml -i gramssky.hepmc3 -m gramssky_mac.mac  -s  6 -g ThinGrams.gdml
+# ./gramsdetsim --options SensitivityOptions.xml -s 38
+# ./Extract --options SensitivityOptions.xml --GramsG4Name gramsg4.root --GramsDetSimName gramsdetsim.root -o Extracted.root
+# ./Reconstruct --options SensitivityOptions.xml -i Extracted.root -o Reco.root --SourceType Point  --SourceLoc "(0.0,0.0)"
+# ./GenSkyMap --options SensitivityOptions.xml -i Reco.root -o TempMap.root --EffAreaFile ../EffAreaFixed.root --MaskFile BinaryMask.root

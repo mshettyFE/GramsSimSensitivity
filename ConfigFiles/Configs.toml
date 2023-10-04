@@ -9,14 +9,14 @@
 
 # Defaults. These shouldn't be changed by user.
 # -o gramssky.hepmc3
-#  RadiusSphere = 300
-#  RadiusDisc = 200 
 # PositionGeneration Iso
 # --PhiMinMax \"(-3.14159,3.14159)\" --ThetaMinMax \"(0,3.14159265)\"
 # --OriginSphere depends on Geometry. Cube is \"(0,0,-40.0 )\". Flat is  --OriginSphere \"(0,0,-10.0 )\"
+    RadiusSphere = 300
+    RadiusDisc = 200 
     minE = 0.1 # Minimum energy to test
     maxE = 10 # Maximum energy to test
-    energy_bins = 10 # Number of energy bins
+    energy_bins = 100 # Number of energy bins
     nparticles = 20000 # Number of particles to generate at each energy
 
 [EffectiveArea.gramsg4]
@@ -85,10 +85,11 @@
 #  Input is output of Reconstruct
 # EffAreaFile from CalcEffArea.py
 # Mask from mask
+    SkyMapInputBaseName = "*_Reco_"
     SkyMapOutput = "SkyMapSource"
 
 [Background]
-  BackgroundEventsPerJob = 10000 # Number of Source events per job
+  BackgroundEventsPerJob = 10000 # Number of Background events per job
   BackgroundBatches = 10000 # Number of jobs to generate with source
 
 [Background.gramssky]
@@ -123,14 +124,10 @@
 # SourceType is Iso
 
 [Background.SkyMap]
-#  Input is output of Reconstruct
-# -t is ExposureTime
-# --TotalEvents from Source
 # EffAreaFile from CalcEffArea.py
-# Mask from mask
 # Flux files created with GenEnergySpectrum
     SkyMapOutput = "SkyMapBackground"
-
+    ExposureTime = 86400 # In seconds
 [Mask]
 # Defaults
 # RA and ALT locations from Source
@@ -140,11 +137,16 @@
   nevents = 10000 # Number of Source events per job
   nbins =  1000 # Number of binnings in ARM distribution
   EffArea = "EffAreaFixed"
-  MaskOutput = "BinaryMask"
+  MaskOutput = "BinaryMask.root"
   draw = false
 
 [CalcEffArea]
 # Get parameters from EffArea
-
+  BaseRecoName = "PLACEHOLDER"
+  OutputFileName = "EffectiveArea.root"
+  verbose = true
+  
 [Sensitivity]
+  BackgroundBaseName = "PLACEHOLDER"
+  SourceBaseName = "PLACEHOLDER"
   TimeScaling = 1.0 # How much to scale up/down the exposure time
