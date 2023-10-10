@@ -3,6 +3,7 @@
 
 temp = []
 
+import shlex
 import numpy as np
 import ROOT
 import sys
@@ -108,17 +109,19 @@ if __name__=="__main__":
         command += [" --OriginSphere", "\"(0,0,-10.0 )\" "]
     command +=  ["--PositionGeneration", "Point"]
     command += [" --PointSource", "\"(" + str(Cart_loc[0]) + ","+ str(Cart_loc[1]) + ","+ str(Cart_loc[2])+")\" "]
+    command += [" --PhiMinMax", "\"(" + str(-np.pi) + " , "+ str(np.pi)+ ")\" " ]
+    command += [" --ThetaMinMax", "\"(" + str(-np.pi/2.0) + " , "+ str(np.pi/2.0)+ ")\" " ]
     command += ["-n", str(n_events)]
     command += [" -s ", str(random.randint(1,100))]
     command +=   ["--EnergyGeneration","Fixed"]
     command += ["  --FixedEnergy " ,str(SourceEnergy)]
-#    print(' '.join(command))
-    temp.append(' '.join(command))
-    subprocess.run(command)
+    command = shlex.split(' '.join(command))
+    temp.append(command)
+    proc = subprocess.run(command)
+# Debugging of subprocess output
     with open("gramssky_mac.mac",'w') as f:
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(n_events)+'\n')
-
 ## gramsg4
     command = ["./gramsg4", "--options","SensitivityOptions.xml"]
     command += [ "-i", "gramssky.hepmc3", "-m", "gramssky_mac.mac"]
@@ -129,6 +132,7 @@ if __name__=="__main__":
         command += ["-g","ThinGrams.gdml"]
 #    print(' '.join(command))
     temp.append(' '.join(command))
+    command = shlex.split(' '.join(command))
     subprocess.run(command)
 
 ## gramsdetsim
@@ -136,12 +140,14 @@ if __name__=="__main__":
     command += ["-s", str(random.randint(1,100))]
 #    print(' '.join(command))
     temp.append(' '.join(command))
+    command = shlex.split(' '.join(command))
     subprocess.run(command)
 
 ## Extract
     command = ["./Extract","--options","SensitivityOptions.xml"]
     command += [ "--GramsG4Name", "gramsg4.root","--GramsDetSimName", "gramsdetsim.root", "-o", "Extracted.root"]
     temp.append(' '.join(command))
+    command = shlex.split(' '.join(command))
     subprocess.run(command)
 
 ## Reconstruct
@@ -149,6 +155,7 @@ if __name__=="__main__":
     command += ["-i", "Extracted.root", "-o", "Reco.root", "--SourceType", "Point", " --SourceLoc"]
     command += ["\"("+str(RA_loc) +","+str(ALT_loc)+")\""]    
     temp.append(' '.join(command))
+    command = shlex.split(' '.join(command))
     subprocess.run(command)
 
 ##############
@@ -200,9 +207,10 @@ if __name__=="__main__":
     write_file(OutputName,mask)
 ## SkyMap
     command = ["./GenSkyMap","--options","SensitivityOptions.xml"]
-    command += ["-i", "Reco.root","-o", "TempMap.root", "--EffAreaFile", "../"+EffAreaFile]
+    command += ["-i", "Reco.root","-o", "TempMap.root", "--EffAreaFile", EffAreaFile]
     command += ["--MaskFile", OutputName]
     temp.append(' '.join(command))
+    command = shlex.split(' '.join(command))
     subprocess.run(command)
     print("\n\n\n")
     [print(i) for i in temp]
