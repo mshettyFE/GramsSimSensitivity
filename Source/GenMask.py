@@ -91,8 +91,8 @@ if __name__=="__main__":
     ALT_loc = data["Source"]["ALTSourceLoc"]*np.pi/180
     n_events = data["Mask"]["nevents"]
     nbins = data["Mask"]["nbins"]
-    OutputName = data["Mask"]["MaskOutput"]+".root"
-    EffAreaFile = data["Mask"]["EffArea"]+".root"
+    OutputName = data["Mask"]["MaskOutput"]
+    EffAreaFile = data["Mask"]["EffArea"]
     Cart_loc = SphereToCart(RA_loc,ALT_loc)
 
 # Generate Source events
@@ -190,7 +190,9 @@ if __name__=="__main__":
         ARM_Dist.Draw()
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
-    mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
+#    mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
+    ## Hack to display entire sky
+    mask = create_mask(blankHist,RA_loc,ALT_loc,3.14)
     # Draw mask if needed
     if(draw):
         c2 = ROOT.TCanvas()
@@ -201,10 +203,6 @@ if __name__=="__main__":
     write_file(OutputName,mask)
     # clean up
     args = ["rm", "-f", "gramssky.hepmc3", "gramssky_mac.mac", "gramsg4.root", "gramsdetsim.root", "Extracted.root", "Reco.root"]
-    command = ' '.join(args)
-    args = shlex.split(command)
-    proc = subprocess.run(args)
-    args = ["mv", OutputName, ".."]
     command = ' '.join(args)
     args = shlex.split(command)
     proc = subprocess.run(args)

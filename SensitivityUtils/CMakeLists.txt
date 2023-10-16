@@ -75,14 +75,6 @@ add_library (${CalcSenseLib} STATIC ${CalcSenseSrc})
 target_link_libraries(${CalcSenseLib} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}CalcSenseUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Copy over GenCondorScripts.py to Background and Source
-file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
-file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
-
-# Copy over GenCondorCountsHistsScripts.py to Background and Source
-file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
-file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorCountsHistsScripts.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
-
 # Create Extract, Reconstruct and GenCountsHists helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)

@@ -5,14 +5,15 @@ import datetime
 import numpy as np
 import subprocess
 import shlex
+import ROOT
 
 ## Flux function must have the form func(E,**kwargs)
 ## Please make sure that you sanitize your inputs like below when you write your own
 ## Also, physical fluxes should have units of 1/(MeV cm^2 s sr) to be consistent with the rest of the programs
 
 def BrokenPowerLaw(E,**kwargs):
-## Broken power law spectrum. 
-# Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
+    ## Broken power law spectrum. 
+    # Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
     try:
     ## Constant before flux function has units of 1/(MeV cm^2 s sr)
         A = kwargs["A"]
@@ -43,10 +44,10 @@ def BrokenPowerLaw(E,**kwargs):
         return A*np.power((1/Eref)*E,-Gamma2)
 
 def LogUniform(E,**kwargs):
-## Suppose that you treat this function as a probability distribution.
-## If you draw enough points and set energy to a log scale, then you get a uniform distribution
-## This is desirable for sensitivity studies since energies span a wide range of orders of magnitude
-## This is the Reference energy-dependent flux used in GenSkyMap, hence the units don't really matter for this one
+    ## Suppose that you treat this function as a probability distribution.
+    ## If you draw enough points and set energy to a log scale, then you get a uniform distribution
+    ## This is desirable for sensitivity studies since energies span a wide range of orders of magnitude
+    ## This is the Reference energy-dependent flux used in GenSkyMap, hence the units don't really matter for this one
     try:
         a = kwargs["a"]
     except:
@@ -61,44 +62,47 @@ def LogUniform(E,**kwargs):
     return np.power(E,-1)/scaling
 
 def GenFluxes(EffectiveAreaFile  ,PhysicalFluxName , ReferenceFluxName ):
+    home = os.getcwd()
+    os.chdir(os.path.join(home,"GramsWork"))
     args = parser.parse_args()
-    EffAreaFile = ROOT.TFile(EffectiveAreaFilePath, "READ")
+    EffAreaFile = ROOT.TFile(EffectiveAreaFile, "READ")
     EffAreaHist = EffAreaFile.EffArea
     BackgroundFile = ROOT.TFile(PhysicalFluxName ,"RECREATE")
-## NOTE: When using Clone(), the title doesn't get changed. Make sure that you are aware of this
-## You can change this if you want to with SetNameTitle(), but I didnt' care enough to do so
+    ## NOTE: When using Clone(), the title doesn't get changed. Make sure that you are aware of this
+    ## You can change this if you want to with SetNameTitle(), but I didnt' care enough to do so
     BackgroundEnergyHist = EffAreaHist.Clone("BackgroundFlux")
     BackgroundEnergyHist.Reset()
-## Get centers of bins. Use these bin centers as the x axis values
+    ## Get centers of bins. Use these bin centers as the x axis values
     EnergyCenters = [BackgroundEnergyHist.GetBinCenter(i) for i in range(BackgroundEnergyHist.GetNbinsX())]
-## Need to modify the following line if you have a different background flux
-# Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
+    ## Need to modify the following line if you have a different background flux
+    # Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
     BackOutput = [BrokenPowerLaw(energy,A=2.2E-4,Eref=3,Gamma1=3.3,Gamma2=2) for energy in EnergyCenters]
-## Fills output histogram with flux function by filling each bin weighted by the function
+    ## Fills output histogram with flux function by filling each bin weighted by the function
     for bin in range(0,BackgroundEnergyHist.GetNbinsX()):
         BackgroundEnergyHist.SetBinContent(bin,BackOutput[bin])
-## Save to disk
+    ## Save to disk
     BackgroundFile.WriteObject(BackgroundEnergyHist, "PhysicalFlux")
-## Create reference file
-    ReferenceFile = ROOT.TFile(ReferenceFileName ,"RECREATE")
+    ## Create reference file
+    ReferenceFile = ROOT.TFile(ReferenceFluxName ,"RECREATE")
     ReferenceEnergyHist = EffAreaHist.Clone("ReferenceFlux")
     ReferenceEnergyHist.Reset()
     EnergyCenters = [ReferenceEnergyHist.GetBinCenter(i) for i in range(ReferenceEnergyHist.GetNbinsX())]
-# Standard LogUniform distribution (ie. equal probabilities amoungst log bins)
-# Bottom and top edge are the min and max energies of EffArea (normally 0.1 to 10 MeV)
+    # Standard LogUniform distribution (ie. equal probabilities amoungst log bins)
+    # Bottom and top edge are the min and max energies of EffArea (normally 0.1 to 10 MeV)
     bottom_edge = EffAreaHist.GetBinLowEdge(0)
     center_of_top =  ReferenceEnergyHist.GetBinCenter(ReferenceEnergyHist.GetNbinsX())
-# Have to do some weird stuff to get the top edge since ROOT excludes the upper limit from the histogram
+    # Have to do some weird stuff to get the top edge since ROOT excludes the upper limit from the histogram
     top_edge = (center_of_top-ReferenceEnergyHist.GetBinLowEdge(ReferenceEnergyHist.GetNbinsX()))+center_of_top
     RefOutput = [LogUniform(energy,a=bottom_edge,b=top_edge) for energy in EnergyCenters]
-## Fills output histogram with flux function by filling each bin weighted by the function
+    ## Fills output histogram with flux function by filling each bin weighted by the function
     for bin in range(0,ReferenceEnergyHist.GetNbinsX()):
         ReferenceEnergyHist.SetBinContent(bin,RefOutput[bin])
-## Save to disk
+    ## Save to disk
     ReferenceFile.WriteObject(ReferenceEnergyHist,"ReferenceFlux")
+    os.chdir(home)
 
 def SphereToCart(Azi,Alt):
-## Takes in Azi and Alt as radians and calculates x,y,z direction
+    ## Takes in Azi and Alt as radians and calculates x,y,z direction
     x_truth = np.cos(Azi)*np.cos(Alt)
     y_truth = np.sin(Azi)*np.cos(Alt)
     z_truth = np.sin(Alt)
@@ -107,35 +111,44 @@ def SphereToCart(Azi,Alt):
 def shell_script_preamble(shell_name, tar_file_name):
     with open(shell_name, 'w') as f:
         f.write("#!/bin/bash -l\n")
-#        f.write("source /usr/nevis/adm/nevis-init.sh\n")
+    #        f.write("source /usr/nevis/adm/nevis-init.sh\n")
         f.write("conda activate /nevis/amsterdam/share/seligman/conda/grams\n")
         f.write("process=$1\n")
-## Extract folder and cd to directory to run GramsSim code
+    ## Extract folder and cd to directory to run GramsSim code
         f.write("tar -xzf "+tar_file_name+"\n")
         f.write("cd GramsWork\n")
 
 def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell_name,tar_name, nbatches):
-# Create absolute paths to location of shell script, tar file and name temporary files
+    # Create absolute paths to location of shell script, tar file and name temporary files
     home = os.getcwd()
     shell_path = os.path.join(home,shell_name)
     tar_path = os.path.join(home,tar_name)
     condor_output = "temp-$(Process).out"
     condor_log = "temp-$(Process).log"
     condor_err = "temp-$(Process).err"
-## Make sure that output folder exists.
+    ## Make sure that output folder exists.
     if not (os.path.exists(output_directory_base_path)):
-        print(output_directory_base_path + "doesn't exist")
+        print(output_directory_base_path + " doesn't exist")
         sys.exit()
     output_dir = os.path.join(output_directory_base_path,Job)
     try:
         os.makedirs(output_dir)
-## If the directory already exists, then keep going
+    ## If the directory already exists, then keep going
     except FileExistsError as err:
         pass
     except  Exception as err:
         print("couldn't create "+output_dir)
         sys.exit()
-## Write cmd file for condor
+    output_dir = os.path.join(output_directory_base_path,Job,"Cones")
+    try:
+        os.makedirs(output_dir)
+    ## If the directory already exists, then keep going
+    except FileExistsError as err:
+        pass
+    except  Exception as err:
+        print("couldn't create "+output_dir)
+        sys.exit()
+    ## Write cmd file for condor
     with open(cmd_name, 'w') as f:
         f.write("executable = "+shell_path +"\n")
         f.write("transfer_input_files = "+tar_path+"\n")
@@ -152,38 +165,38 @@ def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell
         f.write("queue "+str(nbatches)+"\n")
 
 def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Job, cmd_name, shell_name,tar_name, nbatches):
-# Create absolute paths to location of shell script, tar file and name temporary files
+    # Create absolute paths to location of shell script, tar file and name temporary files
     home = os.getcwd()
     shell_path = os.path.join(home,shell_name)
     tar_path = os.path.join(home,tar_name)
     condor_output = "temp-$(Process).out"
     condor_log = "temp-$(Process).log"
     condor_err = "temp-$(Process).err"
-## Make sure that output folder exists.
+    ## Make sure that output folder exists.
     if not (os.path.exists(output_directory_base_path)):
-        print(output_directory_base_path + "doesn't exist")
+        print(output_directory_base_path + " doesn't exist")
         sys.exit()
     output_dir = os.path.join(output_directory_base_path,Job,"SkyMap")
     try:
         os.makedirs(output_dir)
-## If the directory already exists, then keep going
+    ## If the directory already exists, then keep going
     except FileExistsError as err:
         pass
     except  Exception as err:
         print("couldn't create "+output_dir)
         sys.exit()
-## Check that the input cone files are present in the correct directory
+    ## Check that the input cone files are present in the correct directory
     input_file_pattern = base_input_name+"*.root"
     data_dir = os.path.join(output_directory_base_path,Job,"Cones")
     if not (os.path.exists(data_dir)):
-        print(data_dir + "doesn't exist")
+        print(data_dir + " doesn't exist")
         sys.exit()
-## glob magic checks if any files have the correct naming scheme
+    ## glob magic checks if any files have the correct naming scheme
     if len(glob.glob(os.path.join(data_dir,input_file_pattern))) == 0:
-        print(data_dir + "doesn't contain cone files")
+        print(data_dir + " doesn't contain cone files")
         sys.exit()
-    input_data_file = os.path.join(data_dir, input_file_pattern+"$(Process).root")
-## Write cmd file for sky map generation
+    input_data_file = os.path.join(data_dir, base_input_name+"$(Process).root")
+    ## Write cmd file for sky map generation
     with open(cmd_name, 'w') as f:
         f.write("executable = "+shell_path +"\n")
         f.write("arguments = $(Process)\n")
@@ -209,7 +222,7 @@ def EffectiveAreaGeneration(configuration):
     generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
     Geo = configuration["General"]["Geometry"].lower()
     output_directory_base_path = config["General"]["output_directory"]
-## Constants
+    ## Constants
     PositionGeneration  = "Iso"
     PhiMinMax = "\"(-3.14159,3.14159)\""
     ThetaMinMax = "\"(-1.57079,1.57079)\""
@@ -220,26 +233,26 @@ def EffectiveAreaGeneration(configuration):
     minE = float(configuration["EffectiveArea"]["gramssky"]["minE"])
     maxE = float(configuration["EffectiveArea"]["gramssky"]["maxE"])
     energy_bins = int(configuration["EffectiveArea"]["gramssky"]["energy_bins"])
-## cmd generation
+    ## cmd generation
     cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
     output_shell_file,tar_file, energy_bins)
-## Generate energies for each job
+    ## Generate energies for each job
     energies = np.logspace(math.log10(minE),math.log10(maxE),num=energy_bins)
     energy_str = "energies=( "
     for e in energies:
         energy_str = energy_str + ' \"'+str(e)+'\" '
     energy_str += ")\n"
-# Start shell script construction
+    # Start shell script construction
     shell_script_preamble(output_shell_file,tar_file)
-## Start shell script
+    ## Start shell script
     with open(output_shell_file,"a") as f:
         f.write(energy_str)
-### Create .mac file to process gramssky output
+    ### Create .mac file to process gramssky output
     nparticles = configuration["EffectiveArea"]["gramssky"]["nparticles"]
     with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(nparticles)+"\n")
-## Finish GramsSky command
+    ## Finish GramsSky command
     RadiusSphere = configuration["EffectiveArea"]["gramssky"]["RadiusSphere"]
     RadiusDisc = configuration["EffectiveArea"]["gramssky"]["RadiusDisc"]
     values = ["./gramssky","--options", "SensitivityOptions.xml"] 
@@ -253,7 +266,7 @@ def EffectiveAreaGeneration(configuration):
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
-# ## GramsG4
+    # ## GramsG4
     values = []
     values += ["./gramsg4","--options", "SensitivityOptions.xml", '-g']
     if (Geo=="cube"):
@@ -266,7 +279,7 @@ def EffectiveAreaGeneration(configuration):
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
-# ## GramsDetSim
+    # ## GramsDetSim
     values = []
     values = ["./gramsdetsim","--options", "SensitivityOptions.xml", "-i", "EffArea_${process}.root", "-s", "${process}"]
     values += ["-o" , "EffAreaDet_${process}.root"]
@@ -274,14 +287,14 @@ def EffectiveAreaGeneration(configuration):
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
-# ## Extract
+    # ## Extract
     values = ["./Extract", "--options", "SensitivityOptions.xml", "--GramsG4Name", "EffArea_${process}.root"]
     values += ["--GramsDetSimName" ,"EffAreaDet_${process}.root", "-o", "EffAreaExtract_${process}.root"]
     values += ['\n']
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
-# ## Reconstruct 
+    # ## Reconstruct 
     values = []
     values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i", "EffAreaExtract_${process}.root"]
     values += ["-o","EffArea_Reco${process}.root"]
@@ -289,7 +302,7 @@ def EffectiveAreaGeneration(configuration):
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
-# ## Clean up
+    # ## Clean up
     with open(output_shell_file,'a') as f:
         f.write("cp EffArea_Reco${process}.root ..\n")
         f.write("cd ..")
@@ -305,7 +318,6 @@ def SourceGeneration(configuration, JobType):
         print("Invalid Job type")
         sys.exit()
     base_name = base_name.replace(":",".")
-
     if(JobType=="Cones"):
         output_extract_name = base_name+"_Extract_${process}.root"
         output_cone_name = base_name+"_Reco_${process}.root"
@@ -322,21 +334,21 @@ def SourceGeneration(configuration, JobType):
         ALTSourceLoc = configuration["Source"]["ALTSourceLoc"]*np.pi/180
         output_directory_base_path = config["General"]["output_directory"]
         SourceLoc = SphereToCart(RASourceLoc,ALTSourceLoc)
-        PointLoc = "\"("+SourceLoc[0]+","+SourceLoc[1]+","+SourceLoc[2]+","+")\""
-        PointLocSpherical = "\"("+RASourceLoc+","+ALTSourceLoc+")\""
+        PointLoc = "\"("+str(SourceLoc[0])+","+str(SourceLoc[1])+","+str(SourceLoc[2])+")\""
+        PointLocSpherical = "\"("+str(RASourceLoc)+","+str(ALTSourceLoc)+")\""
         RadiusSphere = 300
         RadiusDisc = 200
-        cmd_script_generation_cones(output_directory_base_path, "Source", JobType, output_cmd_file,
-            output_shell_file,tar_file, SourceBatchs)
+        cmd_script_generation_cones(output_directory_base_path, "Source", output_cmd_file, output_shell_file,tar_file, SourceBatchs)
     # Create .mac file to process gramssky
         nparticles = configuration["Source"]["SourceEventsPerJob"]
         with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
             f.write("/run/initialize\n")
             f.write("/run/beamOn "+str(nparticles)+"\n")
-## Gramssky part
-        values = ["./gramssky", "-o","Events.hepmc3", "--RadiusSphere", RadiusSphere]
+    ## Gramssky part
+        values = ["./gramssky", "--options", "SensitivityOptions.xml", "-o","Events.hepmc3", "--RadiusSphere", RadiusSphere]
         values += ["--RadiusDisc", RadiusDisc]
         values += ["--PositionGeneration", "Point", "-n", SourceEventsPerJob]
+        values += ["--PointSource ", PointLoc]
         values += ["-s", "${process}","-r", "${process}"]
         if (Geo=="cube"):
             OriginSphere = "\"(0,0,-40.0)\""
@@ -351,9 +363,9 @@ def SourceGeneration(configuration, JobType):
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-# GramsG4
+    # GramsG4
         values = []
-        values += ["./gramsg4"]
+        values += ["./gramsg4","--options", "SensitivityOptions.xml"]
         if(Geo=="cube"):
             values += ["-g","ThinGrams.gdml"]
         elif(Geo=="flat"):
@@ -367,31 +379,31 @@ def SourceGeneration(configuration, JobType):
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-## GramsDetSim
+    ## GramsDetSim
         values = []
-        values += ["./gramsdetsim", "-i", "Source_${process}.root"]
+        values += ["./gramsdetsim", "--options", "SensitivityOptions.xml", "-i", "Source_${process}.root"]
         values += ["-s", "${process}", "-o" , "Source_Det_${process}.root"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-## Extract
+    ## Extract
         values = []
-        values += ["./Extract", "--GramsG4Name","Source_${process}.root","--GramsDetSimName","Source_Det_${process}.root"]
+        values += ["./Extract", "--options", "SensitivityOptions.xml", "--GramsG4Name","Source_${process}.root","--GramsDetSimName","Source_Det_${process}.root"]
         values += ["-o",output_extract_name]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-# Generate cones
+    # Generate cones
         values = []
-        values += ["./Reconstruct", "-i",output_extract_name, "-o", output_cone_name]
+        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name, "-o", output_cone_name]
         values += ["--SourceType", "Point", "--SourceLoc", PointLocSpherical]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-# clean up 
+    # clean up 
         with open(output_shell_file,'a') as f:
             f.write("cp "+output_extract_name+" ..\n")
             f.write("cp "+output_cone_name+" ..\n")
@@ -406,10 +418,10 @@ def SourceGeneration(configuration, JobType):
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
-## Cmd generation
-        cmd_script_generation_skymap(output_directory_base_path, base_input_name, Job, output_skymap_name, output_shell_file,tar_file, nbatches)
+    ## Cmd generation
+        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Source", output_cmd_file, output_shell_file,tar_file, nbatches)
         input_file_name = base_input_name+"${process}.root"
-        EffectiveAreaFile = configuration["CalcEffArea"]["BaseRecoName"]
+        EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         with open(output_shell_file,'w') as f:
             # generic setup for nevis cluster
             f.write("#!/bin/bash -l\n")
@@ -422,7 +434,7 @@ def SourceGeneration(configuration, JobType):
             f.write("mv "+ input_file_name +"  GramsWork\n")
             f.write("cd  GramsWork\n")
             # Run unweighted calculation
-            f.write("./GenSkyMap -i "+input_file_name+" -o "+output_skymap_name+" --MaskFile "+ mask_output_name+" --EffAreaFile "+EffectiveAreaFile+"\n")
+            f.write("./GenSkyMap"+ " --options SensitivityOptions.xml "+ " -i "+input_file_name+" -o "+output_skymap_name+" --MaskFile "+ mask_output_name+" --EffAreaFile "+EffectiveAreaFile+"\n")
             # move output back up 1 directory and cd up. Condor automatically transfers output
             f.write("mv "+output_skymap_name+" ..\n")
             f.write("cd ..\n")
@@ -440,9 +452,9 @@ def BackgroundGeneration(configuration, JobType):
     else:
         print("Invalid Job type")
         sys.exit()
-## Gramssky part
+    base_name = base_name.replace(":",".")
+    ## Gramssky part
     if(JobType=="Cones"):
-        base_name = base_name.replace(":",".")
         output_extract_name = base_name+"_Extract_${process}.root"
         output_cone_name = base_name+"_Reco_${process}.root"
         output_shell_file = base_name+".sh"
@@ -453,21 +465,20 @@ def BackgroundGeneration(configuration, JobType):
         Geo = configuration["General"]["Geometry"].lower()
         output_directory_base_path = config["General"]["output_directory"]
         BackgroundEventsPerJob = configuration["Background"]["BackgroundEventsPerJob"]
-        BackgroundBatches = configuration["Background"]["SourceBatches"]
-        minE = configuration["Background"]["gramsky"]["minE"]
-        maxE = configuration["Background"]["gramsky"]["maxE"]
+        BackgroundBatches = configuration["Background"]["BackgroundBatches"]
+        minE = configuration["Background"]["gramssky"]["minE"]
+        maxE = configuration["Background"]["gramssky"]["maxE"]
         RadiusSphere = 300
         RadiusDisc = 200
-        cmd_script_generation(output_directory_base_path, "Background", JobType, output_cmd_file,
-            output_shell_file,tar_file, SourceBatchs)
-# Create .mac file to process gramssky
+        cmd_script_generation_cones(output_directory_base_path, "Background", output_cmd_file,  output_shell_file,tar_file, BackgroundBatches)
+    # Create .mac file to process gramssky
         with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
             f.write("/run/initialize\n")
             f.write("/run/beamOn "+str(BackgroundEventsPerJob)+"\n")
-        values = ["./gramssky", "-o","Events.hepmc3", "--RadiusSphere", RadiusSphere]
+        values = ["./gramssky", "--options", "SensitivityOptions.xml", "-o","Events.hepmc3", "--RadiusSphere", RadiusSphere]
         values += ["--RadiusDisc", RadiusDisc]
-        values += ["--PositionGeneration", "Iso", "-n", SourceEventsPerJob]
-        values += ["--PhiMinMax" ,"\"(-3.14159,3.14159)\"", "--ThetaMinMax" ,"\"(0,3.14159265)\""]
+        values += ["--PositionGeneration", "Iso", "-n", BackgroundEventsPerJob]
+        values += ["--PhiMinMax" ,"\"(-3.14159,3.14159)\"", "--ThetaMinMax" ,"\"(-1.57079,1.57079)\""]
         values += ["-s", "${process}","-r", "${process}"]
         if (Geo=="cube"):
             OriginSphere = "\"(0,0,-40.0)\""
@@ -476,16 +487,16 @@ def BackgroundGeneration(configuration, JobType):
         else:
             print("Unknown geometry")
             sys.exit()
-        values += ["--OriginSphere", OriginSphere, "--EnergyGeneration", "Fixed"]
-        values += ["--EnergyGeneration" "PowerLaw", "--PhotonIndex" "1"]
+        values += ["--OriginSphere", OriginSphere]
+        values += ["--EnergyGeneration" ,"PowerLaw", "--PhotonIndex", "1"]
         values += ["--EnergyMin", minE, "--EnergyMax", maxE]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-# GramsG4
+    # GramsG4
         values = []
-        values += ["./gramsg4"]
+        values += ["./gramsg4","--options", "SensitivityOptions.xml"]
         if(Geo=="cube"):
             values += ["-g","ThinGrams.gdml"]
         elif(Geo=="flat"):
@@ -499,31 +510,31 @@ def BackgroundGeneration(configuration, JobType):
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-## GramsDetSim
+    ## GramsDetSim
         values = []
-        values += ["./gramsdetsim", "-i", "Background_${process}.root"]
+        values += ["./gramsdetsim", "--options", "SensitivityOptions.xml", "-i", "Background_${process}.root"]
         values += ["-s", "${process}", "-o" , "Background_Det_${process}.root"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-## Extract
+    ## Extract
         values = []
-        values += ["./Extract", "--GramsG4Name","Background_${process}.root","--GramsDetSimName","Background_Det_${process}.root"]
+        values += ["./Extract","--options", "SensitivityOptions.xml", "--GramsG4Name","Background_${process}.root","--GramsDetSimName","Background_Det_${process}.root"]
         values += ["-o",output_extract_name]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-# Generate cones
+    # Generate cones
         values = []
-        values += ["./Reconstruct", "-i",output_extract_name, "-o", output_cone_name]
+        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name, "-o", output_cone_name]
         values += ["--SourceType", "Iso"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
-# clean up 
+    # clean up 
         with open(output_shell_file,'a') as f:
             f.write("cp "+output_extract_name+" ..\n")
             f.write("cp "+output_cone_name+" ..\n")
@@ -537,16 +548,15 @@ def BackgroundGeneration(configuration, JobType):
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
-## Cmd generation
-        cmd_script_generation_skymap(output_directory_base_path, base_input_name, Job, output_skymap_name, output_shell_file,tar_file, nbatches)
+    ## Cmd generation
+        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches)
         input_file_name = base_input_name+"${process}.root"
-        EffectiveAreaFile = configuration["CalcEffArea"]["BaseRecoName"]
+        output_skymap_name = base_name+"_SkyMap_${process}.root"
+        EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         TotalEvents = int(configuration["Background"]["BackgroundEventsPerJob"])*int(configuration["Background"]["BackgroundBatches"])
         PhysicalFluxFileName = "BackgroundFlux.root"
         ReferenceFluxFileName = "ReferenceFlux.root"
         GenFluxes(EffectiveAreaFile ,PhysicalFluxFileName,  ReferenceFluxFileName)
-        subprocess(["mv", "BackgroundFlux.root" "GramsWork/."])
-        subprocess(["mv", "ReferenceFlux.root" "GramsWork/."])
         ExposureTime = configuration["Background"]["SkyMap"]["ExposureTime"]
         with open(output_shell_file,'w') as f:
             # generic setup for nevis cluster
@@ -560,7 +570,7 @@ def BackgroundGeneration(configuration, JobType):
             f.write("mv "+ input_file_name +" GramsWork\n")
             f.write("cd  GramsWork\n")
             # Run weighted calculation
-            f.write("./GenCountsHists -i "+ShellReconstructedDataFileName+" -o "+OutputFileName+" -w")
+            f.write("./GenSkyMap "+" --options SensitivityOptions.xml "+ " -i "+input_file_name+" -o "+output_skymap_name+" -w")
             f.write(" -t "+str(ExposureTime)+" --TotalEvents " +str(TotalEvents))
             f.write(" --EffAreaFile "+EffectiveAreaFile+" --PhysicalFluxFile "+PhysicalFluxFileName+
             " --ReferenceFluxFile "+ReferenceFluxFileName+" --MaskFile "+ mask_output_name+"\n")
@@ -572,40 +582,42 @@ def BackgroundGeneration(configuration, JobType):
         sys.exit()
     subprocess.run(["tar", "-czf", tar_file, "GramsWork/"]) 
 
-def SensitivityGeneration(configuration, verbose  = False):
-    RootFolder = configuration["General"]["output_directory"]
-    BackgroundCountFolder = os.path.join(RootFolder,"Background","SkyMap")
-    BackgroundBaseName = configuration["Sensitivity"]["BackgroundBaseName"]
-    SourceCountFolder = os.path.join(RootFolder,"Source","SkyMap")
-    SourceBaseName = configuration["Sensitivity"]["SourceBaseName"]
-    ExposureTime = configuration["Background"]["SkyMap"]["ExposureTime"]
-    SourceEnergy = configuration["Source"]["SourceEnergy"]
-    SourceEventsPerJob = configuration["Source"]["SourceEventsPerJob"]
-## Currently source and background batches are coupled here. Need to fix this
-    batches = configuration["Source"]["SourceBatches"]
-    EffectiveAreaFile  = configuration["CalcEffArea"]["OutputFileName"]
+# def SensitivityGeneration(configuration, verbose  = False):
+#     RootFolder = configuration["General"]["output_directory"]
+#     BackgroundCountFolder = os.path.join(RootFolder,"Background","SkyMap")
+#     BackgroundBaseName = configuration["Sensitivity"]["BackgroundBaseName"]
+#     SourceCountFolder = os.path.join(RootFolder,"Source","SkyMap")
+#     SourceBaseName = configuration["Sensitivity"]["SourceBaseName"]
+#     TimeScaling = configuration["Sensitivity"]["TimeScaling"]
+#     ExposureTime = configuration["Background"]["SkyMap"]["ExposureTime"]
+#     SourceEnergy = configuration["Source"]["SourceEnergy"]
+#     SourceEventsPerJob = configuration["Source"]["SourceEventsPerJob"]
+#     ## Currently source and background batches are coupled here. Need to fix this
+#     batches = configuration["Source"]["SourceBatches"]
+#     EffectiveAreaFile  = configuration["CalcEffArea"]["OutputFileName"]
 
-    args = ["./CalcSensi","--options","SensitivityOptions.xml"]
-    args += ["--BackgroundCountFolder", BackgroundCountFolder]
-    args += ["--BackgroundBaseName", BackgroundBaseName]
-    args += ["--ExposureTime", ExposureTime]
-    args += ["--SourceCountsFolder",SourceCountFolder]
-    args += ["--SourceCountsBaseName", SourceBaseName]
-    args += ["--SourceEnergy", SourceEnergy]
-    args += ["--Batches", batches]
-    args += ["--EffectiveAreaRoot", EffectiveAreaFile]
-    command  = ' '.join(args)
-    args = shlex.split(command)
-    subprocess.run(args)
-    if(verbose):
-        print(command)
+#     args = ["./CalcSensi","--options","SensitivityOptions.xml"]
+#     args += ["--BackgroundCountFolder", BackgroundCountFolder]
+#     args += ["--BackgroundBaseName", BackgroundBaseName]
+#     args += ["--ExposureTime", ExposureTime]
+#     args += ["--SourceCountsFolder",SourceCountFolder]
+#     args += ["--SourceCountsBaseName", SourceBaseName]
+#     args += ["--SourceEnergy", SourceEnergy]
+#     args += ["--Batches", batches]
+#     args += ["--EffectiveAreaRoot", EffectiveAreaFile]
+#     args += ["--TimeScaling", TimeScaling]
+#     command  = ' '.join(args)
+#     args = shlex.split(command)
+#     subprocess.run(args)
+#     if(verbose):
+#         print(command)
 
 if __name__ =="__main__":
     parser = argparse.ArgumentParser(
                         prog='GenCondorJobs',
                         description='Generates .sh and .cmd files for condor jobs to send to Nevis cluster')
     parser.add_argument("config",help="Path to .ini config file")
-    parser.add_argument("--Job", default = "EffectiveArea", choices=["EffectiveArea","Source","Background","Sensitivity" ])
+    parser.add_argument("--Job", default = "EffectiveArea", choices=["EffectiveArea","Source","Background" ])
     parser.add_argument("--JobType", default="Cones", choices=["Cones","SkyMap"])
     args = parser.parse_args()
 
@@ -622,7 +634,5 @@ if __name__ =="__main__":
         SourceGeneration(config,args.JobType)
     elif (args.Job=="Background"):
         BackgroundGeneration(config,args.JobType)
-    elif (args.Job=="Sensitivity"):
-        SensitivityGeneration(config)
     else:
         print("Invalid Job")

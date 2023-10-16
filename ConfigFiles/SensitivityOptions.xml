@@ -129,13 +129,6 @@
     </GenSkyMap>
 
     <Sensitivity>
-        <!-- Base folder containing background count root files (ie. output from ./GenCountsHists)-->
-        <option name="BackgroundCountFolder" type="string" value="" desc="Folder containing background counts"></option>
-        <!-- preappended name of root files. For instance, if ${Preappend}{$id}.root, you use ${Preappend}-->
-        <option name="BackgroundBaseName" type="string" value="" desc="Base name of background count histograms. For example, Back_0.root => Back_"></option>
-        <option name="SourceCountsFolder" type="string" value="" desc="Folder containing source count root files"></option>
-        <option name="SourceCountsBaseName" type="string" value="" desc="Base name of source count root file. For example, Reconstruct_0.root => Reconstruct_"></option>
-        <!-- Energy of source. Should be consistent with .sh file that generated cones-->
         <option name="SourceEnergy" type="double" value="-1" desc="Energy of source cones"></option>
         <!-- Effective area root file. Used to caclulate final sensitivity at the end-->
         <option name="EffectiveAreaRoot" type="string" value="" desc="Location of Effective Area root file"></option>

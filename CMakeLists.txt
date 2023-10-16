@@ -68,18 +68,6 @@ file( COPY ${GENERATION_SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/Sensitivity)
 
 # Copy over GenCondorJobs to Background, EffArea, Source, Sensitivity
 
-# Create BackgroundCountHist zip directory
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/Background/BackgroundCountHist)
-
-# Copy over options.xml to BackgroundCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Background/BackgroundCountHist)
-
-# Create SourceCountHist zip directory
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/Source/SourceCountHist)
-
-# Copy over options.xml to SourceCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Source/SourceCountHist)
-
 #Copy over options.xml to Source
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
