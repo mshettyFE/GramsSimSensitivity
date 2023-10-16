@@ -191,8 +191,6 @@ if __name__=="__main__":
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
     mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
-
-# Temporary hack to display all the sky
     # Draw mask if needed
     if(draw):
         c2 = ROOT.TCanvas()
@@ -201,3 +199,12 @@ if __name__=="__main__":
         mask.Draw("colz")
         c2.SaveAs(pic_name)
     write_file(OutputName,mask)
+    # clean up
+    args = ["rm", "-f", "gramssky.hepmc3", "gramssky_mac.mac", "gramsg4.root", "gramsdetsim.root", "Extracted.root", "Reco.root"]
+    command = ' '.join(args)
+    args = shlex.split(command)
+    proc = subprocess.run(args)
+    args = ["mv", OutputName, ".."]
+    command = ' '.join(args)
+    args = shlex.split(command)
+    proc = subprocess.run(args)
