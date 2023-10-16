@@ -10,7 +10,7 @@
 # Defaults. These shouldn't be changed by user.
 # -o gramssky.hepmc3
 # PositionGeneration Iso
-# --PhiMinMax \"(-3.14159,3.14159)\" --ThetaMinMax \"(0,3.14159265)\"
+# --PhiMinMax \"(-3.14159,3.14159)\" --ThetaMinMax \"(-1.57079,1.57079)\"
 # --OriginSphere depends on Geometry. Cube is \"(0,0,-40.0 )\". Flat is  --OriginSphere \"(0,0,-10.0 )\"
     RadiusSphere = 300
     RadiusDisc = 200
@@ -142,7 +142,7 @@
 
 [CalcEffArea]
 # Get parameters from EffArea
-  BaseRecoName = "PLACEHOLDER"
+  BaseRecoName = "EffArea_Reco"
   OutputFileName = "EffectiveArea.root"
   verbose = true
   

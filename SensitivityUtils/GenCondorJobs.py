@@ -4,9 +4,10 @@ import argparse
 import datetime
 import numpy as np
 import subprocess
+import shlex
 
 ## Flux function must have the form func(E,**kwargs)
-## Please make sure that you sanatize your inputs like below when you write your own
+## Please make sure that you sanitize your inputs like below when you write your own
 ## Also, physical fluxes should have units of 1/(MeV cm^2 s sr) to be consistent with the rest of the programs
 
 def BrokenPowerLaw(E,**kwargs):
@@ -208,10 +209,10 @@ def EffectiveAreaGeneration(configuration):
     generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
     Geo = configuration["General"]["Geometry"].lower()
     output_directory_base_path = config["General"]["output_directory"]
-# Constants
+## Constants
     PositionGeneration  = "Iso"
     PhiMinMax = "\"(-3.14159,3.14159)\""
-    ThetaMinMax = "\"(0,3.14159265)\""
+    ThetaMinMax = "\"(-1.57079,1.57079)\""
     if(Geo=='cube'):
         OriginSphere = "\"(0,0,-40.0 )\""
     if(Geo=='flat'):
@@ -239,13 +240,14 @@ def EffectiveAreaGeneration(configuration):
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(nparticles)+"\n")
 ## Finish GramsSky command
-    RadiusSphere = configuration["EffectiveArea"]["gramsky"]["RadiusSphere"]
-    RadiusDisc = configuration["EffectiveArea"]["gramsky"]["RadiusDisc"]
+    RadiusSphere = configuration["EffectiveArea"]["gramssky"]["RadiusSphere"]
+    RadiusDisc = configuration["EffectiveArea"]["gramssky"]["RadiusDisc"]
     values = ["./gramssky","--options", "SensitivityOptions.xml"] 
     values += ["-o", "Events.hepmc3", "--RadiusSphere", RadiusSphere]
     values += ["--RadiusDisc", RadiusDisc, "--PositionGeneration", PositionGeneration]
     values += ["--PhiMinMax",PhiMinMax, "--ThetaMinMax", ThetaMinMax, "-n", nparticles]
     values += [" -s",  "${process}",  "-r" , "${process}"]
+    values += [" --verbose"]
     values += ["--OriginSphere", OriginSphere, "--EnergyGeneration", "Fixed", "--FixedEnergy", "${energies[$process]}"]
     values += ["\n"]
     command = " ".join([str(v) for v in values])
@@ -583,19 +585,20 @@ def SensitivityGeneration(configuration, verbose  = False):
     batches = configuration["Source"]["SourceBatches"]
     EffectiveAreaFile  = configuration["CalcEffArea"]["OutputFileName"]
 
-    command = ["./CalcSensi","--options","SensitivityOptions.xml"]
-    command += ["--BackgroundCountFolder", BackgroundCountFolder]
-    command += ["--BackgroundBaseName", BackgroundBaseName]
-    command += ["--ExposureTime", ExposureTime]
-    command += ["--SourceCountsFolder",SourceCountFolder]
-    command += ["--SourceCountsBaseName", SourceBaseName]
-    command += ["--SourceEnergy", SourceEnergy]
-    command += ["--Batches", batches]
-    command += ["--EffectiveAreaRoot", EffectiveAreaFile]
-    final_command  = ' '.join(command)
-    subprocess.run(command)
+    args = ["./CalcSensi","--options","SensitivityOptions.xml"]
+    args += ["--BackgroundCountFolder", BackgroundCountFolder]
+    args += ["--BackgroundBaseName", BackgroundBaseName]
+    args += ["--ExposureTime", ExposureTime]
+    args += ["--SourceCountsFolder",SourceCountFolder]
+    args += ["--SourceCountsBaseName", SourceBaseName]
+    args += ["--SourceEnergy", SourceEnergy]
+    args += ["--Batches", batches]
+    args += ["--EffectiveAreaRoot", EffectiveAreaFile]
+    command  = ' '.join(args)
+    args = shlex.split(command)
+    subprocess.run(args)
     if(verbose):
-        print(final_command)
+        print(command)
 
 if __name__ =="__main__":
     parser = argparse.ArgumentParser(

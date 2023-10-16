@@ -4,14 +4,13 @@ import tomllib
 import os,sys,math
 import array
 import ROOT
+import argparse
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
                         prog='GenCondorJobs',
                         description='Generates .sh and .cmd files for condor jobs to send to Nevis cluster')
-    parser.add_argument("config",help="Path to .ini config file")
-    parser.add_argument("--Job", default = "EffectiveArea", choices=["EffectiveArea","Source","Background","Sensitivity" ])
-    parser.add_argument("--JobType", default="Cones", choices=["Cones","SkyMap"])
+    parser.add_argument("config",help="Path to .tomi config file")
     args = parser.parse_args()
 
     try:
@@ -25,9 +24,9 @@ if __name__=="__main__":
         print("Doesn't exist")
         sys.exit()
     base_name = config["CalcEffArea"]["BaseRecoName"]
-    TotalEvents = config["nparticles"]
-    TotalBatches  = config["energy_bins"]
-    disk_rad = configuration["EffectiveArea"]["gramsky"]["RadiusDisc"]
+    TotalEvents = config["EffectiveArea"]["gramssky"]["nparticles"]
+    TotalBatches  = config["EffectiveArea"]["gramssky"]["energy_bins"]
+    disk_rad = config["EffectiveArea"]["gramssky"]["RadiusDisc"]
     Output = config["CalcEffArea"]["OutputFileName"]
 
     mapping = []
@@ -38,7 +37,7 @@ if __name__=="__main__":
 # Checks if the folder ends with a '/' and removes if needed
         if(start_folder.endswith('/')):
             start_folder = start_folder[:-1]
-# Create path to root file and test if it exists. exit if it doesn't
+# Create path to root file and test if it exists. keep going if it does not
         path = os.path.join(start_folder,base_name+str(batch)+".root")
         try:
             file = ROOT.TFile(path,"READ")
@@ -48,7 +47,7 @@ if __name__=="__main__":
             continue
 # Get the current number of entries on 
         counts = tree.GetEntries()
-# I can't divine the energy of the incident gamma rays if the root file is. So we skip these ones
+# I can't divine the energy of the incident gamma rays if the root file is non existant. So we skip these ones
 # This does open up the possibility that some energy band has a very low cross section of Compton scattering
 # This would mean that it might be likely that the effective area does in fact become zero
 # This is somewhat of a problem at around 10 MeV, although if you generate around 20,000 or some 10 MeV gammas, you're good
@@ -64,7 +63,7 @@ if __name__=="__main__":
             break
 # Effective area is (# of recorded photons)/(total number of photons)*(area of generating surface (ie. a tangent disk of radius disk_rad))
 # Each cone has a 1 to 1 correspondence with a incident gamma
-        EffA = 4*math.pi*disk_rad*disk_rad*(counts/(TotalEvents))
+        EffA = math.pi*disk_rad*disk_rad*(counts/(TotalEvents))
 # Append to list for writing later
         mapping.append( (TruthEnergy,EffA) )
     root_file= ROOT.TFile(Output, "RECREATE")
@@ -75,7 +74,7 @@ if __name__=="__main__":
         binnings.append(item[0])
 # Needed to add an additional bin at the end for ROOT to stop screaming at me
     binnings.append(binnings[-1])
-# case binnings to array of double so that ROOT doesn't scream at me
+# cast binnings to array of double so that ROOT doesn't scream at me
     EffAreaHist = ROOT.TH1D("EffArea", "Effective Area", len(mapping),  array.array('d',binnings))
 # for each energy, set the bin contents to be whatever is in the associated position in the python list
     for bin in range(0,EffAreaHist.GetNbinsX()):

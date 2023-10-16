@@ -71,8 +71,8 @@ if __name__=="__main__":
                         prog='GenMask',
                         description='Generates a mask to define a neighborhood on the sky')
     parser.add_argument("config", help="Path to .toml file")
-    args = parser.parse_args()
-    with open(args.config, "rb") as f:
+    arguments = parser.parse_args()
+    with open(arguments.config, "rb") as f:
         data = tomllib.load(f)
 # draw
     if(data["Mask"]["draw"] == True):
@@ -99,64 +99,64 @@ if __name__=="__main__":
 
 ## gramssky
     os.chdir("GramsWork")
-    command = ["./gramssky"]
-    command +=  ["--options","SensitivityOptions.xml"]
-    command +=  ["--RadiusSphere", "300"]
-    command +=  ["--RadiusDisc", "1"]
+    args = ["./gramssky"]
+    args +=  ["--options","SensitivityOptions.xml"]
+    args +=  ["--RadiusSphere", "300"]
+    args +=  ["--RadiusDisc", "1"]
     if(geo == "cube"):
-        command += [" --OriginSphere", "\"(0,0,-40.0 )\" "]
+        args += [" --OriginSphere", "\"(0,0,-40.0 )\" "]
     elif(geo == "flat"):
-        command += [" --OriginSphere", "\"(0,0,-10.0 )\" "]
-    command +=  ["--PositionGeneration", "Point"]
-    command += [" --PointSource", "\"(" + str(Cart_loc[0]) + ","+ str(Cart_loc[1]) + ","+ str(Cart_loc[2])+")\" "]
-    command += [" --PhiMinMax", "\"(" + str(-np.pi) + " , "+ str(np.pi)+ ")\" " ]
-    command += [" --ThetaMinMax", "\"(" + str(-np.pi/2.0) + " , "+ str(np.pi/2.0)+ ")\" " ]
-    command += ["-n", str(n_events)]
-    command += [" -s ", str(random.randint(1,100))]
-    command +=   ["--EnergyGeneration","Fixed"]
-    command += ["  --FixedEnergy " ,str(SourceEnergy)]
-    command = shlex.split(' '.join(command))
-    temp.append(command)
-    proc = subprocess.run(command)
+        args += [" --OriginSphere", "\"(0,0,-10.0 )\" "]
+    args +=  ["--PositionGeneration", "Point"]
+    args += [" --PointSource", "\"(" + str(Cart_loc[0]) + ","+ str(Cart_loc[1]) + ","+ str(Cart_loc[2])+")\" "]
+    args += [" --PhiMinMax", "\"(" + str(-np.pi) + " , "+ str(np.pi)+ ")\" " ]
+    args += [" --ThetaMinMax", "\"(" + str(-np.pi/2.0) + " , "+ str(np.pi/2.0)+ ")\" " ]
+    args += ["-n", str(n_events)]
+    args += [" -s ", str(random.randint(1,100))]
+    args +=   ["--EnergyGeneration","Fixed"]
+    args += ["  --FixedEnergy " ,str(SourceEnergy)]
+    command = ' '.join(args)
+    args = shlex.split(command)
+    temp.append(args)
+    proc = subprocess.run(args)
 # Debugging of subprocess output
     with open("gramssky_mac.mac",'w') as f:
         f.write("/run/initialize\n")
         f.write("/run/beamOn "+str(n_events)+'\n')
 ## gramsg4
-    command = ["./gramsg4", "--options","SensitivityOptions.xml"]
-    command += [ "-i", "gramssky.hepmc3", "-m", "gramssky_mac.mac"]
-    command += [" -s ", str(random.randint(1,100))]
+    args = ["./gramsg4", "--options","SensitivityOptions.xml"]
+    args += [ "-i", "gramssky.hepmc3", "-m", "gramssky_mac.mac"]
+    args += [" -s ", str(random.randint(1,100))]
     if(geo=="flat"):
-        command += ["-g","ThinFlatGrams.gdml"]
+        args += ["-g","ThinFlatGrams.gdml"]
     if(geo=="cube"):
-        command += ["-g","ThinGrams.gdml"]
-#    print(' '.join(command))
-    temp.append(' '.join(command))
-    command = shlex.split(' '.join(command))
-    subprocess.run(command)
-
+        args += ["-g","ThinGrams.gdml"]
+    command = ' '.join(args)
+    args = shlex.split(command)
+    temp.append(args)
+    proc = subprocess.run(args)
 ## gramsdetsim
-    command = ["./gramsdetsim" ,"--options","SensitivityOptions.xml" ]
-    command += ["-s", str(random.randint(1,100))]
-#    print(' '.join(command))
-    temp.append(' '.join(command))
-    command = shlex.split(' '.join(command))
-    subprocess.run(command)
-
+    args = ["./gramsdetsim" ,"--options","SensitivityOptions.xml" ]
+    args += ["-s", str(random.randint(1,100))]
+    command = ' '.join(args)
+    args = shlex.split(command)
+    temp.append(args)
+    proc = subprocess.run(args)
 ## Extract
-    command = ["./Extract","--options","SensitivityOptions.xml"]
-    command += [ "--GramsG4Name", "gramsg4.root","--GramsDetSimName", "gramsdetsim.root", "-o", "Extracted.root"]
-    temp.append(' '.join(command))
-    command = shlex.split(' '.join(command))
-    subprocess.run(command)
-
+    args = ["./Extract","--options","SensitivityOptions.xml"]
+    args += [ "--GramsG4Name", "gramsg4.root","--GramsDetSimName", "gramsdetsim.root", "-o", "Extracted.root"]
+    command = ' '.join(args)
+    args = shlex.split(command)
+    temp.append(args)
+    proc = subprocess.run(args)
 ## Reconstruct
-    command = ["./Reconstruct","--options","SensitivityOptions.xml"]
-    command += ["-i", "Extracted.root", "-o", "Reco.root", "--SourceType", "Point", " --SourceLoc"]
-    command += ["\"("+str(RA_loc) +","+str(ALT_loc)+")\""]    
-    temp.append(' '.join(command))
-    command = shlex.split(' '.join(command))
-    subprocess.run(command)
+    args = ["./Reconstruct","--options","SensitivityOptions.xml"]
+    args += ["-i", "Extracted.root", "-o", "Reco.root", "--SourceType", "Point", " --SourceLoc"]
+    args += ["\"("+str(RA_loc) +","+str(ALT_loc)+")\""]    
+    command = ' '.join(args)
+    args = shlex.split(command)
+    temp.append(args)
+    proc = subprocess.run(args)
 
 ##############
     ## Set batch mode on so that canvas doesn't keep opening
@@ -190,13 +190,9 @@ if __name__=="__main__":
         ARM_Dist.Draw()
         c1.SaveAs(pic_name)
     ## Calculate mask and draw if desired
-
-
-#    mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
+    mask = create_mask(blankHist,RA_loc,ALT_loc,ARM)
 
 # Temporary hack to display all the sky
-
-    mask = create_mask(blankHist,RA_loc,ALT_loc,3.14)
     # Draw mask if needed
     if(draw):
         c2 = ROOT.TCanvas()
@@ -205,20 +201,3 @@ if __name__=="__main__":
         mask.Draw("colz")
         c2.SaveAs(pic_name)
     write_file(OutputName,mask)
-## SkyMap
-    command = ["./GenSkyMap","--options","SensitivityOptions.xml"]
-    command += ["-i", "Reco.root","-o", "TempMap.root", "--EffAreaFile", EffAreaFile]
-    command += ["--MaskFile", OutputName]
-    temp.append(' '.join(command))
-    command = shlex.split(' '.join(command))
-    subprocess.run(command)
-    print("\n\n\n")
-    [print(i) for i in temp]
-
-
-# ./gramssky --options SensitivityOptions.xml --RadiusSphere 300 --RadiusDisc 1  --OriginSphere "(0,0,-40.0 )"  --PositionGeneration Point  --PointSource "(1.0,0.0,0.0)"  -n 10000  -s  88 --EnergyGeneration Fixed   --FixedEnergy  1.0
-# ./gramsg4 --options SensitivityOptions.xml -i gramssky.hepmc3 -m gramssky_mac.mac  -s  6 -g ThinGrams.gdml
-# ./gramsdetsim --options SensitivityOptions.xml -s 38
-# ./Extract --options SensitivityOptions.xml --GramsG4Name gramsg4.root --GramsDetSimName gramsdetsim.root -o Extracted.root
-# ./Reconstruct --options SensitivityOptions.xml -i Extracted.root -o Reco.root --SourceType Point  --SourceLoc "(0.0,0.0)"
-# ./GenSkyMap --options SensitivityOptions.xml -i Reco.root -o TempMap.root --EffAreaFile ../EffAreaFixed.root --MaskFile BinaryMask.root
