@@ -14,3 +14,5 @@ add_executable(${SENSEPROG} CalculateSensitivity.cpp)
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}SenseUtilities )
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}GenSkyMapUtils )
 target_link_libraries(${SENSEPROG} ${CMAKE_PROJECT_NAME}CalcSenseUtils )
+
+file( COPY ${CMAKE_SOURCE_DIR}/Source/GenMask.py DESTINATION ${CMAKE_BINARY_DIR}/Source)

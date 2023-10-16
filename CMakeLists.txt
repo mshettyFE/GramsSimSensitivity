@@ -83,3 +83,8 @@ add_subdirectory(Source)
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Background)
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Source)
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+
+# Copy over GenCondorJobs to EffArea, Background, and Source
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
