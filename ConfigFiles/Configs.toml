@@ -2,7 +2,8 @@
   Geometry= "cube" # Geometry of detector. Options are {"flat","cube"}  
   RABinnings= 500 #binnings on skymap fro source and background
   ALTBinnings= 500
-  output_directory = "/nevis/milne/files/ms6556/BleekerData/Refactor"
+#  output_directory = "/nevis/milne/files/ms6556/BleekerData/Flat"
+  output_directory = "/nevis/milne/files/ms6556/BleekerData/Test"
 
 [EffectiveArea.gramssky]
 # Read in by Effective Area condor job and CalcEffArea
@@ -40,7 +41,7 @@
 [EffectiveArea.Reconstruct]
 # Defaults
 # -i ExtractOutput key in Extract
-    ReconstructOutput = "EffectiveAreaReconstruction"
+    ReconstructOutput = "EffectiveAreaReconstruction" # _${process}.root gets appended to this string
 
 [Source]
   SourceEnergy = 1.0 # Energy of Source
@@ -80,14 +81,13 @@
 #input is output of Extract
 # SourceType is Point
 # SourceLoc is from RA and ALT
-  ReconstructOutput = "SourceReconstruction"
+  ReconstructOutput = "SourceReconstruct" # _${process}.root gets appended to this string
 
 [Source.SkyMap]
 #  Input is output of Reconstruct
 # EffAreaFile from CalcEffArea.py
 # Mask from mask
-    SkyMapInputBaseName = "Source_Cones_2023-10-16T17.16.11.367035_Reco_" # Omit the number and ".root" from the filename to get the base name
-    SkyMapOutput = "SkyMapSource"
+    SkyMapOutput = "SourceSkyMap" # _${process}.root gets appended to this string
 
 [Background]
   BackgroundEventsPerJob = 10000 # Number of Background events per job
@@ -118,17 +118,18 @@
 [Background.Extract]
 # GramsG4Name is default
 # GramsDetSimName is default
+  ExtractOutput = "BackgroundExtract"
 
 [Background.Reconstruct]
 # Defaults
 #input is output of Extract
 # SourceType is Iso
+  ReconstructOutput = "BackgroundReconstruction" # _${process}.root gets appended to this string
 
 [Background.SkyMap]
 # EffAreaFile from CalcEffArea.py
 # Flux files created with GenEnergySpectrum
-    SkyMapInputBaseName = "Background_Cones_2023-10-16T18.09.10.034088_Reco_" # Omit the number and ".root" from the filename to get the base name
-    SkyMapOutput = "SkyMapBackground.root"
+    SkyMapOutput = "BackgroundSkyMap" # _${process}.root gets appended to this string
     ExposureTime = 86400 # In seconds
 [Mask]
 # Defaults
@@ -144,11 +145,8 @@
 
 [CalcEffArea]
 # Get parameters from EffArea
-  BaseRecoName = "EffArea_Reco"
-  OutputFileName = "EffectiveArea.root"
+  OutputFileName = "EffectiveArea"
   verbose = true
   
 [Sensitivity]
-  BackgroundBaseName = "PLACEHOLDER"  # Omit the number and ".root" from the filename of skymap to get the base name
-  SourceBaseName = "PLACEHOLDER"  # Omit the number and ".root" from the filename of skymap to get the base name
   TimeScaling = 1.0 # How much to scale up/down the exposure time

@@ -5,7 +5,7 @@ import datetime
 import numpy as np
 import subprocess
 import shlex
-import ROOT
+from  ROOT import TFile
 
 ## Flux function must have the form func(E,**kwargs)
 ## Please make sure that you sanitize your inputs like below when you write your own
@@ -65,9 +65,9 @@ def GenFluxes(EffectiveAreaFile  ,PhysicalFluxName , ReferenceFluxName ):
     home = os.getcwd()
     os.chdir(os.path.join(home,"GramsWork"))
     args = parser.parse_args()
-    EffAreaFile = ROOT.TFile(EffectiveAreaFile, "READ")
+    EffAreaFile = TFile(EffectiveAreaFile, "READ")
     EffAreaHist = EffAreaFile.EffArea
-    BackgroundFile = ROOT.TFile(PhysicalFluxName ,"RECREATE")
+    BackgroundFile = TFile(PhysicalFluxName ,"RECREATE")
     ## NOTE: When using Clone(), the title doesn't get changed. Make sure that you are aware of this
     ## You can change this if you want to with SetNameTitle(), but I didnt' care enough to do so
     BackgroundEnergyHist = EffAreaHist.Clone("BackgroundFlux")
@@ -83,7 +83,7 @@ def GenFluxes(EffectiveAreaFile  ,PhysicalFluxName , ReferenceFluxName ):
     ## Save to disk
     BackgroundFile.WriteObject(BackgroundEnergyHist, "PhysicalFlux")
     ## Create reference file
-    ReferenceFile = ROOT.TFile(ReferenceFluxName ,"RECREATE")
+    ReferenceFile = TFile(ReferenceFluxName ,"RECREATE")
     ReferenceEnergyHist = EffAreaHist.Clone("ReferenceFlux")
     ReferenceEnergyHist.Reset()
     EnergyCenters = [ReferenceEnergyHist.GetBinCenter(i) for i in range(ReferenceEnergyHist.GetNbinsX())]
@@ -216,6 +216,7 @@ def EffectiveAreaGeneration(configuration):
     current_time = datetime.datetime.now().isoformat()
     base_name = "EffArea_"+str(current_time)
     base_name = base_name.replace(":",".")
+    output_root_file_base = configuration["EffectiveArea"]["Reconstruct"]["ReconstructOutput"]
     output_shell_file = base_name+".sh"
     output_cmd_file = base_name+".cmd"
     tar_file = base_name+".tar.gz"
@@ -297,14 +298,14 @@ def EffectiveAreaGeneration(configuration):
     # ## Reconstruct 
     values = []
     values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i", "EffAreaExtract_${process}.root"]
-    values += ["-o","EffArea_Reco${process}.root"]
+    values += ["-o",output_root_file_base+"_${process}.root"]
     values += ['\n']
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
     # ## Clean up
     with open(output_shell_file,'a') as f:
-        f.write("cp EffArea_Reco${process}.root ..\n")
+        f.write("cp "+ output_root_file_base+"_${process}.root" +" ..\n")
         f.write("cd ..")
     subprocess.run(["tar", "-czf", tar_file, "GramsWork/"]) 
 
@@ -319,8 +320,8 @@ def SourceGeneration(configuration, JobType):
         sys.exit()
     base_name = base_name.replace(":",".")
     if(JobType=="Cones"):
-        output_extract_name = base_name+"_Extract_${process}.root"
-        output_cone_name = base_name+"_Reco_${process}.root"
+        output_extract_name = configuration["Source"]["Extract"]["ExtractOutput"]+"_${process}.root"
+        output_cone_name = configuration["Source"]["Reconstruct"]["ReconstructOutput"]+"_${process}.root"
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
@@ -414,7 +415,7 @@ def SourceGeneration(configuration, JobType):
         base_input_name = configuration["Source"]["SkyMap"]["SkyMapInputBaseName"]
         nbatches = configuration["Source"]["SourceBatches"]
         mask_output_name  = configuration["Mask"]["MaskOutput"]
-        output_skymap_name = base_name+"_SkyMap_${process}.root"
+        output_skymap_name = configuration["Source"]["SkyMap"]["SkyMapOutput"]+"_${process}.root"
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
@@ -455,8 +456,8 @@ def BackgroundGeneration(configuration, JobType):
     base_name = base_name.replace(":",".")
     ## Gramssky part
     if(JobType=="Cones"):
-        output_extract_name = base_name+"_Extract_${process}.root"
-        output_cone_name = base_name+"_Reco_${process}.root"
+        output_extract_name = configuration["Background"]["Extract"]["ExtractOutput"]+"_${process}.root"
+        output_cone_name = configuration["Background"]["Reconstruct"]["ReconstructOutput"]+"_${process}.root"
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
@@ -551,7 +552,7 @@ def BackgroundGeneration(configuration, JobType):
     ## Cmd generation
         cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches)
         input_file_name = base_input_name+"${process}.root"
-        output_skymap_name = base_name+"_SkyMap_${process}.root"
+        output_skymap_name = configuration["Background"]["SkyMap"]["SkyMapOutput"]+"_${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         TotalEvents = int(configuration["Background"]["BackgroundEventsPerJob"])*int(configuration["Background"]["BackgroundBatches"])
         PhysicalFluxFileName = "BackgroundFlux.root"
@@ -581,36 +582,6 @@ def BackgroundGeneration(configuration, JobType):
         print("Unknown Geometry")
         sys.exit()
     subprocess.run(["tar", "-czf", tar_file, "GramsWork/"]) 
-
-# def SensitivityGeneration(configuration, verbose  = False):
-#     RootFolder = configuration["General"]["output_directory"]
-#     BackgroundCountFolder = os.path.join(RootFolder,"Background","SkyMap")
-#     BackgroundBaseName = configuration["Sensitivity"]["BackgroundBaseName"]
-#     SourceCountFolder = os.path.join(RootFolder,"Source","SkyMap")
-#     SourceBaseName = configuration["Sensitivity"]["SourceBaseName"]
-#     TimeScaling = configuration["Sensitivity"]["TimeScaling"]
-#     ExposureTime = configuration["Background"]["SkyMap"]["ExposureTime"]
-#     SourceEnergy = configuration["Source"]["SourceEnergy"]
-#     SourceEventsPerJob = configuration["Source"]["SourceEventsPerJob"]
-#     ## Currently source and background batches are coupled here. Need to fix this
-#     batches = configuration["Source"]["SourceBatches"]
-#     EffectiveAreaFile  = configuration["CalcEffArea"]["OutputFileName"]
-
-#     args = ["./CalcSensi","--options","SensitivityOptions.xml"]
-#     args += ["--BackgroundCountFolder", BackgroundCountFolder]
-#     args += ["--BackgroundBaseName", BackgroundBaseName]
-#     args += ["--ExposureTime", ExposureTime]
-#     args += ["--SourceCountsFolder",SourceCountFolder]
-#     args += ["--SourceCountsBaseName", SourceBaseName]
-#     args += ["--SourceEnergy", SourceEnergy]
-#     args += ["--Batches", batches]
-#     args += ["--EffectiveAreaRoot", EffectiveAreaFile]
-#     args += ["--TimeScaling", TimeScaling]
-#     command  = ' '.join(args)
-#     args = shlex.split(command)
-#     subprocess.run(args)
-#     if(verbose):
-#         print(command)
 
 if __name__ =="__main__":
     parser = argparse.ArgumentParser(

@@ -19,26 +19,23 @@ if __name__=="__main__":
     except:
         print("Couldn't read"+ args.config)
         sys.exit()
-    start_folder = os.path.join(config["General"]["output_directory"],"EffectiveArea")
+    start_folder = os.path.join(config["General"]["output_directory"],"EffectiveArea","Cones")
     if not (os.path.exists(start_folder)):
-        print("Doesn't exist")
+        print(start_folder+"Doesn't exist")
         sys.exit()
-    base_name = config["CalcEffArea"]["BaseRecoName"]
+    base_name = config["EffectiveArea"]["Reconstruct"]["ReconstructOutput"]
     TotalEvents = config["EffectiveArea"]["gramssky"]["nparticles"]
     TotalBatches  = config["EffectiveArea"]["gramssky"]["energy_bins"]
     disk_rad = config["EffectiveArea"]["gramssky"]["RadiusDisc"]
-    Output = config["CalcEffArea"]["OutputFileName"]
+    Output = config["CalcEffArea"]["OutputFileName"]+".root"
 
     mapping = []
-    if not (Output.endswith(".root")):
-        print("Output format must be .root")
-        sys.exit()
     for batch in range(TotalBatches):
 # Checks if the folder ends with a '/' and removes if needed
         if(start_folder.endswith('/')):
             start_folder = start_folder[:-1]
 # Create path to root file and test if it exists. keep going if it does not
-        path = os.path.join(start_folder,base_name+str(batch)+".root")
+        path = os.path.join(start_folder,base_name+"_"+str(batch)+".root")
         try:
             file = ROOT.TFile(path,"READ")
             tree = file.Get("Cones")
