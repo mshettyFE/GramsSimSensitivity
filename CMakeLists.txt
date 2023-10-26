@@ -88,3 +88,6 @@ file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/EffArea
 file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
 file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
 file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
+
+# Copy over CalculateSensitivity.py to correct folder
+file( COPY ${CMAKE_SOURCE_DIR}/Sensitivity/CalculateSensitivity.py DESTINATION ${CMAKE_BINARY_DIR}/Sensitivity)

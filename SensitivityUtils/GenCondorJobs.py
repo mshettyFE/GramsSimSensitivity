@@ -4,14 +4,30 @@ import argparse
 import datetime
 import numpy as np
 import subprocess
-import shlex
 from  ROOT import TFile
 
-## Flux function must have the form func(E,**kwargs)
-## Please make sure that you sanitize your inputs like below when you write your own
-## Also, physical fluxes should have units of 1/(MeV cm^2 s sr) to be consistent with the rest of the programs
+def SanityCheck(output_directory):
+# Function to make sure that you aren't overwriting old files by accident
+    if not (os.path.isdir(output_directory)):
+        print(output_directory+" doesn't exist")
+        sys.exit()
+    for file in os.listdir(output_directory):
+        if file.endswith(".root"):
+            print(output_directory+ " already has .root files in it.")
+            user_input = input("Are you sure you have the correct output directory? (You can potentially overwrite these files with the resulting files if Y is selected) [Y/N]")
+            if(user_input.lower().strip() == "y"):
+                return True
+            else:
+                print("Ok. Terminating program...")
+                sys.exit()
+    return True
+
 
 def BrokenPowerLaw(E,**kwargs):
+    ## Flux function must have the form func(E,**kwargs)
+    ## Please make sure that you sanitize your inputs like below when you write your own
+    ## Also, physical fluxes should have units of 1/(MeV cm^2 s sr) to be consistent with the rest of the programs
+
     ## Broken power law spectrum. 
     # Background MeV Spectra found here: https://iopscience.iop.org/article/10.3847/1538-4357/acab69
     try:
@@ -62,6 +78,7 @@ def LogUniform(E,**kwargs):
     return np.power(E,-1)/scaling
 
 def GenFluxes(EffectiveAreaFile  ,PhysicalFluxName , ReferenceFluxName ):
+## Generate reference and physical background flux for background cone generation
     home = os.getcwd()
     os.chdir(os.path.join(home,"GramsWork"))
     args = parser.parse_args()
@@ -118,7 +135,7 @@ def shell_script_preamble(shell_name, tar_file_name):
         f.write("tar -xzf "+tar_file_name+"\n")
         f.write("cd GramsWork\n")
 
-def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell_name,tar_name, nbatches):
+def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell_name,tar_name, nbatches, batch_mode):
     # Create absolute paths to location of shell script, tar file and name temporary files
     home = os.getcwd()
     shell_path = os.path.join(home,shell_name)
@@ -148,6 +165,8 @@ def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell
     except  Exception as err:
         print("couldn't create "+output_dir)
         sys.exit()
+    if not batch_mode:
+        SanityCheck(output_dir)
     ## Write cmd file for condor
     with open(cmd_name, 'w') as f:
         f.write("executable = "+shell_path +"\n")
@@ -164,7 +183,7 @@ def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell
         f.write("notification   = Never\n")
         f.write("queue "+str(nbatches)+"\n")
 
-def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Job, cmd_name, shell_name,tar_name, nbatches):
+def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Job, cmd_name, shell_name,tar_name, nbatches, batch_mode):
     # Create absolute paths to location of shell script, tar file and name temporary files
     home = os.getcwd()
     shell_path = os.path.join(home,shell_name)
@@ -185,6 +204,8 @@ def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Jo
     except  Exception as err:
         print("couldn't create "+output_dir)
         sys.exit()
+    if not batch_mode:
+        SanityCheck(output_dir)
     ## Check that the input cone files are present in the correct directory
     input_file_pattern = base_input_name+"*.root"
     data_dir = os.path.join(output_directory_base_path,Job,"Cones")
@@ -212,7 +233,7 @@ def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Jo
         f.write("notification   = Never\n")
         f.write("queue "+str(nbatches)+"\n")
 
-def EffectiveAreaGeneration(configuration):
+def EffectiveAreaGeneration(configuration, batch_mode):
     current_time = datetime.datetime.now().isoformat()
     base_name = "EffArea_"+str(current_time)
     base_name = base_name.replace(":",".")
@@ -236,7 +257,7 @@ def EffectiveAreaGeneration(configuration):
     energy_bins = int(configuration["EffectiveArea"]["gramssky"]["energy_bins"])
     ## cmd generation
     cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
-    output_shell_file,tar_file, energy_bins)
+    output_shell_file,tar_file, energy_bins, batch_mode)
     ## Generate energies for each job
     energies = np.logspace(math.log10(minE),math.log10(maxE),num=energy_bins)
     energy_str = "energies=( "
@@ -309,7 +330,7 @@ def EffectiveAreaGeneration(configuration):
         f.write("cd ..")
     subprocess.run(["tar", "-czf", tar_file, "GramsWork/"]) 
 
-def SourceGeneration(configuration, JobType):
+def SourceGeneration(configuration, JobType, batch_mode):
     current_time = datetime.datetime.now().isoformat()
     if(JobType=="Cones"):
         base_name = "Source_Cones_"+str(current_time)
@@ -339,7 +360,7 @@ def SourceGeneration(configuration, JobType):
         PointLocSpherical = "\"("+str(RASourceLoc)+","+str(ALTSourceLoc)+")\""
         RadiusSphere = 300
         RadiusDisc = 200
-        cmd_script_generation_cones(output_directory_base_path, "Source", output_cmd_file, output_shell_file,tar_file, SourceBatchs)
+        cmd_script_generation_cones(output_directory_base_path, "Source", output_cmd_file, output_shell_file,tar_file, SourceBatchs, batch_mode)
     # Create .mac file to process gramssky
         nparticles = configuration["Source"]["SourceEventsPerJob"]
         with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
@@ -420,7 +441,7 @@ def SourceGeneration(configuration, JobType):
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
     ## Cmd generation
-        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Source", output_cmd_file, output_shell_file,tar_file, nbatches)
+        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Source", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
         input_file_name = base_input_name+"${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         with open(output_shell_file,'w') as f:
@@ -444,7 +465,7 @@ def SourceGeneration(configuration, JobType):
         sys.exit()
     subprocess.run(["tar", "-czf", tar_file, "GramsWork/"]) 
 
-def BackgroundGeneration(configuration, JobType):
+def BackgroundGeneration(configuration, JobType, batch_mode):
     current_time = datetime.datetime.now().isoformat()
     if(JobType=="Cones"):
         base_name = "Background_Cones_"+str(current_time)
@@ -471,7 +492,7 @@ def BackgroundGeneration(configuration, JobType):
         maxE = configuration["Background"]["gramssky"]["maxE"]
         RadiusSphere = 300
         RadiusDisc = 200
-        cmd_script_generation_cones(output_directory_base_path, "Background", output_cmd_file,  output_shell_file,tar_file, BackgroundBatches)
+        cmd_script_generation_cones(output_directory_base_path, "Background", output_cmd_file,  output_shell_file,tar_file, BackgroundBatches, batch_mode)
     # Create .mac file to process gramssky
         with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
             f.write("/run/initialize\n")
@@ -550,7 +571,7 @@ def BackgroundGeneration(configuration, JobType):
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
     ## Cmd generation
-        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches)
+        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
         input_file_name = base_input_name+"${process}.root"
         output_skymap_name = configuration["Background"]["SkyMap"]["SkyMapOutput"]+"_${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
@@ -587,9 +608,10 @@ if __name__ =="__main__":
     parser = argparse.ArgumentParser(
                         prog='GenCondorJobs',
                         description='Generates .sh and .cmd files for condor jobs to send to Nevis cluster')
-    parser.add_argument("config",help="Path to .ini config file")
+    parser.add_argument("config",help="Path to .toml config file")
     parser.add_argument("--Job", default = "EffectiveArea", choices=["EffectiveArea","Source","Background" ])
     parser.add_argument("--JobType", default="Cones", choices=["Cones","SkyMap"])
+    parser.add_argument('-b', '--batch', action='store_true', help = "Run script without prompting. Turns off sanity check on wheather output directory is empty")
     args = parser.parse_args()
 
     try:
@@ -600,10 +622,10 @@ if __name__ =="__main__":
         sys.exit()
 
     if(args.Job=="EffectiveArea"):
-        EffectiveAreaGeneration(config)
+        EffectiveAreaGeneration(config,args.batch)
     elif (args.Job=="Source"):
-        SourceGeneration(config,args.JobType)
+        SourceGeneration(config,args.JobType, args.batch)
     elif (args.Job=="Background"):
-        BackgroundGeneration(config,args.JobType)
+        BackgroundGeneration(config,args.JobType, args.batch)
     else:
         print("Invalid Job")

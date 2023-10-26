@@ -2,8 +2,7 @@
   Geometry= "cube" # Geometry of detector. Options are {"flat","cube"}  
   RABinnings= 500 #binnings on skymap fro source and background
   ALTBinnings= 500
-#  output_directory = "/nevis/milne/files/ms6556/BleekerData/Flat"
-  output_directory = "/nevis/milne/files/ms6556/BleekerData/Test"
+  output_directory = "/nevis/milne/files/ms6556/BleekerData/Refactor"
 
 [EffectiveArea.gramssky]
 # Read in by Effective Area condor job and CalcEffArea
@@ -146,7 +145,6 @@
 [CalcEffArea]
 # Get parameters from EffArea
   OutputFileName = "EffectiveArea"
-  verbose = true
   
 [Sensitivity]
   TimeScaling = 1.0 # How much to scale up/down the exposure time

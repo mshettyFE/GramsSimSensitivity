@@ -266,7 +266,7 @@ int main(int argc, char** argv){
   // We assume that the number of photons is proportional to the number of cones generated
   // The proportionality constant might be different for each energy, but we only consider 1 energy at a time, so it's OK
   // as an example: NPhotonsThreeSigma/FiveSigmaRecordedPhotons = ThreeSigmaThresholdCones/TotalCones. Rearrange for NPhotonsThreeSigma
-  double NPhotonsThreeSigma = (ThreeSigmaThreshold)/(TotalCounts)*((double) FiveSigmaRecordedPhotons);
+  double NPhotonsThreeSigma = (ThreeSigmaThreshold)/(TotalCounts)*((double) ThreeSigmaRecordedPhotons);
   double NPhotonsFiveSigma = (FiveSigmaThreshold)/(TotalCounts)*((double) FiveSigmaRecordedPhotons);
 
   // Get the effective area at this energy
