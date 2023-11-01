@@ -1,0 +1,1303 @@
+<?xml version="1.0" ?>
+<gdml xmlns:gdml="http://cern.ch/2001/Schemas/GDML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="GDMLSchema/gdml.xsd">
+<!-- 
+
+07-Apr-2020 WGS: 
+
+Everything in this file is preliminary. Please assume it's wrong
+until you're satisfied that it's right. By the way, I composed the
+scintillators of milk chocolate; you'd better look up what 
+scintillator is actually made of. Similarly with PTFE, which I assume
+was a 50/50 mix of platinum and iron. 
+
+No, not really. But please look at everything in this file as if it were
+a potential joke. Do NOT treat it as a black box whose contents cannot
+be changed!
+
+Source for all the serious stuff: the GRAMS paper arXiv:1901.03430v3
+Source for the mistakes and stupid jokes: William Seligman (WGS) <seligman>
+of <nevis.columbia.edu>
+
+10-Mar-2021 WGS:
+
+What is an Identifier?
+
+This is a concept: Assign each sensitive element in the detector with a unique
+ID of some sort. I'm using the word "Identifier" to describe this idea, because
+that's the term that ATLAS uses. 
+
+Geant4 can assign ID numbers to physical volumes using a "copy number". In 
+GDML, this parameter is assigned to be non-zero via the copynumber attribute. 
+So as you go through the statements below, copynumber is equivalent to an
+Identifier. 
+
+The reason I use the term "Identifier" and not just "copy number" is that I
+anticipate this ID will be used outside of Geant4, as we start to write 
+additional programs to analyze the results of the simulation. 
+
+Also note that my assignments are _not_ meant to be permanent. In particular,
+as the data-acquisition system is being developed, it's likely that we'd want
+to change the Identifiers to match the assignments of the DAQ hardware.
+
+Within Geant4 and potentially other programs, if there is a need to "decode"
+the Identifier, that code will be in utils::GramsIdentifier.
+If the following scheme is changed, then both this GDML file and
+GramsIdentifier have to be revised with the new assignments. (If you look for
+that routine and don't find it, it's because it hasn't been written yet
+because no one has needed a decoder until now.)
+
+With all that said, here is the Identifier scheme as of 10-Mar-2021:
+
+An Identifier is an integer of the form TZZYYXX where
+
+T: 1 for LAr TPC
+   2 for Scintillator strips
+   3 for inside one of the sheets that optically separate cells
+   4 for the tile
+   5 for the SIPMs
+   6 for the cathode plate
+   7 for any bits of LAr not covered by the above
+   8 for the cryostat walls
+    
+ZZ: 
+
+    For LAr TPC, this is the index of the z-layer of the cells
+    within the TPC, starting with 0, increasing with increasing z.
+    (As of Mar-2021, there's only a single layer of cells in the TPC.)
+
+    For the scintillator strips, this refers to the walls of the outer
+    and inner scintillator detectors:
+    
+    0 = inner scintillator low x
+    1 = inner scintillator high x 
+    2 = inner scintillator low y
+    3 = inner scintillator high y 
+    4 = inner scintillator low z
+    5 = inner scintillator high z 
+
+    10 = outer scintillator low x
+    11 = outer scintillator high x 
+    12 = outer scintillator low y
+    13 = outer scintillator high y 
+    14 = outer scintillator low z
+    15 = outer scintillator high z 
+    
+YY:
+
+    For the LAr TPC, this is the index of the cell in y, starting at 0,
+    increasing along the y-axis.
+    
+XX:
+
+    For the LAr TPC, this is the index of the cell in x, starting at 0,
+    increasing along the x-axis.
+    
+YYXX:
+   
+    For the scintillator strips, this is the index of the scintillator
+    strips within its wall (considering YYXX as a four-digit number).
+
+For  now, there are no individual identifiers for the tiles or the
+separators. 
+
+Examples: 1000309 is in the LArTPC, the 4th cell along y, the 10th cell
+along x. 2120005 is in the low-y outer scintillator wall, the 6th strip
+along that wall.  
+
+Note that we want avoid a potential Identifier (copynumber) of zero, because
+that is the default Geant4 will assign to a volume if we don't supply
+a copynumber attribute; e.g., the volume is not sensitive. 
+
+I only assigned Identifiers for detector elements that are sensitive, that are 
+embedded in the LAr but are not instrumented, or that might be a signficant
+source of interactions (e.g., the cryostat walls.)
+
+-->
+
+  <define>
+
+    <position name="posCenter" unit="cm" x="0" y="0" z="0"/>
+
+    <!-- 17-Aug-2022 WGS: Index variables for our loops. -->
+    <variable name="i" value="0" />
+    <variable name="j" value="0" />
+    <variable name="k" value="0" />
+
+    <!-- 5-May-2020 WGS: Everything will eventually get placed into a large
+    world volume. Typically you want a volume that's big enough to contain 
+    everything you're modeling, plus some space to both inject incoming
+    particles and track outgoing particles from the detector simulation. -->
+    
+    <quantity name="worldVolumeXSize" type="length" value="600" unit="cm" />
+    <quantity name="worldVolumeYSize" type="length" value="600" unit="cm" />
+    <quantity name="worldVolumeZSize" type="length" value="600" unit="cm" />
+    
+    <!-- 5-May-2020 WGS: All length units are cm. Many of the dimensions
+    used below are 'constant' or 'variable' so they can be used in calculations. -->
+    <constant name="ZOffset" value = "100" />
+
+    <!-- ************** LArTPC section ************** -->
+    
+    <!-- 8-May-2020 WGS: How big will the active LAr volume be? I don't know. 
+    To make the placement of the sensitive detector cells easier, I'm putting 
+    the same boundary as the volume of the LArTPC. This
+    isn't realistic, but you have to start somewhere. -->
+    <constant name="fidVolGap" value="0" />
+
+    <constant name="lArTPCXSize" value="140" />
+    <constant name="lArTPCYSize" value="140" />
+    <constant name="lArTPCZSize" value="20" />
+
+    <!-- 5-May-2020 WGS: For all I know the cryostat will be made of insulating foam.
+    With no other information, I'm assuming a steel cryostat of 1cm thickness. -->
+    <!-- 10-Mar-2021 WGS: Following a suggestion by GK, reduce the cryostat thickness
+    to 0.5cm -->
+    <!-- 29-Sep-2021 WGS: A talk at the collaboration meeting suggest 6mm is more likely. -->
+    <constant name="cryostatThickness" value="0.6" />
+    <constant name="cryostatXSize" value="lArTPCXSize + 2*cryostatThickness" />
+    <constant name="cryostatYSize" value="lArTPCYSize + 2*cryostatThickness" />
+    <constant name="cryostatZSize" value="lArTPCZSize + 2*cryostatThickness" />
+
+    <!-- 05-Oct-2021 WGS: 
+    
+    Set aside the wire anodes used by prior LArTPC detectors in favor of
+    etched tiles. For now, model this as a 0.6mm layer of silica with a
+    1.57mm layer of G10 on top for support. (It's likely that the actual
+    tile arrangement won't be a single solid plane, but for now model it
+    as such.) 
+    
+    The tile plane has gold etched into the surface, but it's so thin
+    that this is not likely to affect the simulation. 
+    
+    For "compatibility" with LArSoft, the bottom of the tile plane (the anode)
+    will define z=0 for our coordinate system. 
+    -->
+    
+    <constant name="silicaThickness" value="0.06" />
+    <constant name="G10Thickness" value="0.157" />
+    <constant name="tilePlaneXSize" value="lArTPCXSize" />
+    <constant name="tilePlaneYSize" value="lArTPCYSize" />
+    <constant name="tilePlaneZSize" value="silicaThickness + G10Thickness" />
+ 
+    <!-- 6-May-2020 WGS: There has to be a cathode plate to provide the field along with
+    the anode plane. -->
+    <constant name="cathodeThickness" value="0.1" />
+    <constant name="cathodeXSize" value="lArTPCXSize" />
+    <constant name="cathodeYSize" value="lArTPCYSize" />
+    <constant name="cathodeZSize" value="cathodeThickness" />
+    
+    <!-- 5-May-2020 WGS: How many active cells will there be? I don't know, 
+    so assume 5 separator sheets dividing the LAr into 6 cells (the number
+    in the diagrams in arXiv:1901.03430v3). -->
+    
+    <!-- 16-Jul-2020 WGS: It's not clear from arXiv:1901.03430v3, but it appears
+    that cells are delimited in both x and y. -->
+    
+    <!-- 15-Mar-2021 WGS: I should have noted this before: Late last year,
+    the group decided to decrease the cells size to 10cmx10cm, which means
+    there are presently 14 cells in both x and y. -->
+    
+    <!-- 15-Mar-2021 WGS: It's also not clear whether the material that 
+    separates the cells optically will be PTFE or something else. For
+    now, leave the material to be PTFE but call them "Separator sheets"
+    instead of PTFE sheets so that swapping the material will be easier. -->
+    <!-- 10-June-2022 MS: Changed number of cells to be 7x7x4 instead of 14x14x1-->
+    <constant name="numberActiveCellsY" value="7" />
+    <constant name="numberSepSheetsY" value="numberActiveCellsY - 1" />
+    <constant name="numberActiveCellsX" value="7" />
+    <constant name="numberSepSheetsX" value="numberActiveCellsX - 1" />
+    <constant name="numberActiveCellsZ" value="4" />
+    <constant name="numberSepSheetsZ" value="numberActiveCellsZ - 1" />
+    
+    <!-- 5-May-2020 WGS: How thick will the separator sheets be? I don't know, so 
+    assume 1mm. For the sheets' z-size, leave some room for the tiles and the 
+    cathode plate. -->
+    <!-- 1-19-2023: Changed thickness of seperator sheets so that they could be ignored-->
+    <constant name="sepThickness" value="0.000001" />
+
+    <!-- 16-Jul-2020 WGS: Define the groups of cells we'll place along x. 
+    Allow for additional spacing for a fiducial volume cut. -->
+    <constant name="cellGroupXRegion" value="lArTPCXSize - 2*fidVolGap" />
+    <constant name="cellGroupXSize" value="(cellGroupXRegion - numberSepSheetsX*sepThickness) / numberActiveCellsX" />
+    <constant name="cellGroupYSize" value="lArTPCYSize - 2*fidVolGap" />
+    <constant name="cellGroupZSize" value="lArTPCZSize - 2*fidVolGap" />
+
+    <!-- 16-Jul-2020 WGS: The sheets that separate the cell groups along x. -->
+    <constant name="sepGroupXSize" value="sepThickness" />
+    <constant name="sepGroupYSize" value="cellGroupYSize" />
+    <constant name="sepGroupZSize" value="cellGroupZSize" />
+    
+    <!-- 16-Jul-2020 WGS: Within a cell group we'll place the cells. -->
+    <constant name="activeCellXSize" value="cellGroupXSize" />
+    <constant name="activeCellYSize" value="(cellGroupYSize - numberSepSheetsY*sepThickness) / numberActiveCellsY" />
+    <constant name="activeCellZSize" value="cellGroupZSize" />
+    
+    <!-- 16-Jul-2020 WGS: The sheets that separate the cells along y. -->
+    <constant name="sepXSize" value="cellGroupXSize" />
+    <constant name="sepYSize" value="sepThickness" />
+    <constant name="sepZSize" value="cellGroupZSize" />
+    
+<!-- 05-May-2020 WGS: How big is a SIPM? I don't know. Make a guess. -->
+    <!-- 06-Oct-2021 WGS: With a plate as a cathode and a tile as the anode,
+    the location of the SiPMs is now a complete unknown. I'm going to arbitrarily
+    place them in the center of the high-x side of each cell, magically
+    attached to the separator sheet. This will _definitely_ need revision in 
+    the future. -->
+    <constant name="sipmThickness" value="0.1" />
+    <constant name="sipmXSize" value="sipmThickness" />
+    <constant name="sipmYSize" value="1.0" />
+    <constant name="sipmZSize" value="1.0" />
+
+    <!-- 17-Jul-2020 WGS: How many SIPMs within each cell? What will their
+    arrangement be? I don't know. Start with evenly spacing the SIPMs within
+    each cell evenly and identicially. (This will become more complex if we
+    explore "honeycomb" patterns.) The following values are defined here,
+    but they are not used (yet) in this GDML file. The code to implement anything 
+    with them must wait until we until we do some optical physics studies. -->
+    <constant name="numberSIPMsInCell" value="6" />
+    <constant name="sipmXseparation" value="activeCellXSize/numberSIPMsInCell" />
+
+    <!-- ************** Scintillator walls section **************
+
+    "Outer" and "inner" refer to the two main boxes of scintillator in the detector. 
+    Think of each box as a pair of x-walls, y-walls, and z-walls. Assume that 
+    opposite walls (e.g., in the plus and minus x-directions) are symmetric.
+    
+    10-Mar-2021 WGS: However, the walls are not rotationally symmetric when it
+    comes to the Identifiers. I always want the Identifiers to increase along the
+    positive direction of the coordinate axis (e.g., in a negative z-wall the
+    Identifiers increase with increasing z).
+    
+    Note that the z-walls and the y-walls are _not_ the same, though they may look
+    like they have the same dimensions from a distance. Assuming that all the
+    scintillator strips will fit together, the lengths of the z-wall and y-wall strips
+    are slightly different. 
+    -->
+    
+    <constant name="outerVolumeXSize" value="280" />
+    <constant name="outerVolumeYSize" value="280" />
+    <constant name="outerVolumeZSize" value="250" />
+
+    <!-- 5-May-2020 WGS: The sole reason I've defined the scintillator 
+    width and thickness with these values is that they fit exactly in the crude
+    diagram I made of the detector. In the actual GRAMs detector they'll 
+    almost certainly be different. 
+    -->
+    <!-- 29-Sep-2021 WGS: At the collaboration meeting, I learned that
+    GAPS uses 6mm scintillator strips. -->
+    <!-- 05-Oct-2021 WGS: But if I use scintillatorThickness=0.6, the
+    arithmetic used in later sections doesn't work out. I'd need a 
+    detailed description of how the strips in the different walls fit
+    together. Without such a description, stick with 10mm. -->
+    <!-- 17-Aug-2022 WGS: We fix the thickness issue with a rounding offset
+         correction; see below. Now we can have non-integer thicknesses,
+         provided we correct for them. -->
+    <constant name="scintillatorThickness" value="0.5" />
+    <constant name="scintillatorWidth"     value="2.0" />
+
+    <!-- 17-Aug-2022 WGS: This is a work-around needed because GDML
+         expressions (which use the CLHEP Evaluator class) don't have
+         an "int" function available (see
+         https://gitlab.cern.ch/CLHEP/CLHEP/-/blob/master/Evaluator/Evaluator/Evaluator.h). In
+         GDML, loops require integer arguments. So if a computation of
+         a loop limit does not evaluate to an integer, the Geant4 GDML
+         interpreter will crash.
+
+         To work around this, stick in this "rounding offset" in those
+         calculations that would otherwise result in a
+         non-integer. This is an ad-hoc value: You have to figure out
+         what it should be to make the calculations work out. -->
+    
+    <constant name="roundingOffset" value="-0.5" />
+
+    <!-- 15-Jun-2020 WGS: Each wall contains a single layer of strips (in an
+    earlier version of this file, each wall had two layers of strips criss-crossing
+    each other). Assume the direction of the strips is such that strips will be
+    as short as possible, since (again by assumption) shorter strips are easier to
+    make than longer ones. 
+    -->
+    
+    <constant name="lengthOuterZwallXstrips" value="outerVolumeXSize" />
+    <constant name="lengthOuterYwallXstrips" value="(outerVolumeXSize - 2*scintillatorThickness)" />
+    <constant name="lengthOuterXwallZstrips" value="(outerVolumeZSize - 2*scintillatorThickness)" />
+    
+    <constant name="numberOuterZwallXstrips" value="outerVolumeYSize / scintillatorWidth" />
+    <constant name="numberOuterYwallXstrips" value="(outerVolumeZSize - 2*scintillatorThickness) / scintillatorWidth + roundingOffset" />
+    <constant name="numberOuterXwallZstrips" value="(outerVolumeYSize - 2*scintillatorThickness) / scintillatorWidth + roundingOffset" />
+
+    <!-- 7-May-2020 WGS: Define "walls" in which to place the scintillator strips. This extra
+    layer of geometry will make things easier in the long run; e.g., for placing the strips
+    within a mechanical frame. -->
+
+    <constant name="outerZwallXSize" value="outerVolumeXSize" />
+    <constant name="outerZwallYSize" value="outerVolumeYSize" />
+    <constant name="outerZwallZSize" value="scintillatorThickness" />
+
+    <constant name="outerYwallXSize" value="outerVolumeXSize - 2*scintillatorThickness" />
+    <constant name="outerYwallYSize" value="scintillatorThickness" />
+    <constant name="outerYwallZSize" value="outerVolumeZSize - 2*scintillatorThickness" />
+
+    <constant name="outerXwallXSize" value="scintillatorThickness" />
+    <constant name="outerXwallYSize" value="outerVolumeYSize" />
+    <constant name="outerXwallZSize" value="outerVolumeZSize - 2*scintillatorThickness" />
+
+
+    <constant name="innerVolumeXSize" value="90 + 2*fidVolGap" />
+    <constant name="innerVolumeYSize" value="90 + 2*fidVolGap" />
+    <constant name="innerVolumeZSize" value="100 + 2*fidVolGap" />
+
+    <constant name="lengthInnerZwallXstrips" value="innerVolumeXSize" />
+    <constant name="lengthInnerYwallXstrips" value="(innerVolumeXSize - 2*scintillatorThickness)" />
+    <constant name="lengthInnerXwallZstrips" value="(innerVolumeZSize - 2*scintillatorThickness)" />
+    
+    <constant name="numberInnerZwallXstrips" value="innerVolumeYSize / scintillatorWidth" />
+    <constant name="numberInnerYwallXstrips" value="(innerVolumeZSize - 2*scintillatorThickness) / scintillatorWidth + roundingOffset" />
+    <constant name="numberInnerXwallZstrips" value="(innerVolumeYSize - 2*scintillatorThickness) / scintillatorWidth + roundingOffset" />
+ 
+    <!-- 7-May-2020 WGS: Define "walls" in which to place the scintillator strips. This extra
+    layer of geometry will make things easier in the long run; e.g., for placing the strips
+    within a mechanical frame. -->
+
+    <constant name="InnerZwallXSize" value="innerVolumeXSize" />
+    <constant name="InnerZwallYSize" value="innerVolumeYSize" />
+    <constant name="InnerZwallZSize" value="scintillatorThickness" />
+
+    <constant name="InnerYwallXSize" value="innerVolumeXSize - 2*scintillatorThickness" />
+    <constant name="InnerYwallYSize" value="scintillatorThickness" />
+    <constant name="InnerYwallZSize" value="innerVolumeZSize - 2*scintillatorThickness" />
+
+    <constant name="InnerXwallXSize" value="scintillatorThickness" />
+    <constant name="InnerXwallYSize" value="innerVolumeYSize" />
+    <constant name="InnerXwallZSize" value="innerVolumeZSize - 2*scintillatorThickness" />
+
+
+    <!-- 8-May-2020 WGS: The above walls are defined for the positive axes (x,y,z)>0.
+    Assume the negative-axis walls are the mirror images of the positive ones,
+    and can be defined in terms of a simple rotations. -->
+    <!-- 10-Mar-2021 WGS: These rotations are now unused, since due to the
+    Identifiers we don't simply rotate the scinillator walls to place them. -->
+    <rotation name="rPlus180AboutX" unit="deg" x="180" y="0"    z="0"  />
+    <rotation name="rPlus180AboutY" unit="deg" x="0"   y="180"  z="0"  />
+    <rotation name="rPlus180AboutZ" unit="deg" x="0"   y="0"    z="180"/>
+
+    <!-- 10-May-2020 WGS: This is the offset of the inner detector from the center of
+    of the outer detector. According to the diagram in arXiv:1901.03430v3, this is
+    1.5m. We have to adjust a bit to make this the offset of the center of the 
+    inner detector from the center of the outer detector. -->
+    <!-- 23-Jun-2021 WGS: 150->140 to offset increased in z-height of LArTPC -->
+    <!-- 16-Aug-2022 WGS: Since we're playing around with the LArTPC
+         geometry, a better location is to place the bottom of the
+         inner detector 20cm from the bottom of the outer
+         detector. -->
+    <constant name="innerDetectorOffsetInOuter" value ="-outerVolumeZSize/2 + innerVolumeZSize/2 + 20" />
+
+    <!-- 10-May-2020 WGS: This is the offset of the outer detector from the center of
+    of the world volume. This is tricky, because (to follow the LArSoft convention,
+    at least partly) the anode (the low-z side of the tiles in this tentative geometry)
+    defines the z=0 axis. -->
+    
+    <!-- 15-May-2020 WGS: It took me 5 days to realize that, with z=0 set to the anode,
+    all of the TPC active cells have z<0. The purpose of LArSoft's definition of having
+    the induction plane be at an axis=0 is to avoid negative numbers! Leave this
+    for now, and let the collaboration decide an appropriate coordinate system. -->
+    <constant name="outerDetectorOffsetInWorld" value ="-(lArTPCZSize/2) + tilePlaneZSize - innerDetectorOffsetInOuter" />
+
+    <!-- Understanding these properties: These matrices define properties that will
+        be used in the <materials> section below. -->
+
+    <!-- 07-Jul-2020 WGS: Material optical properties -->
+    <!-- From https://cdcvs.fnal.gov/redmine/projects/larg4/wiki -->
+    <!-- Unit constants for Geant4 (mm, ns, MeV) -->
+
+    <matrix name="SY"  coldim="1" values="51282/MeV" />
+    <matrix name="RS"  coldim="1" values="1.0" />
+    <matrix name="FTC" coldim="1" values="7.*ns" />
+    <matrix name="STC" coldim="1" values="1400.*ns" />
+    <matrix name="YR"  coldim="1" values="0.75" /> 
+    <matrix name="ArINDEX" coldim="2" values="6.7*eV 1.5
+                                              7.1*eV 1.5 
+                                              7.4*eV 1.5  
+                                              7.7*eV 1.5 
+                                              7.9*eV 1.5 
+                                              8.1*eV 1.5          
+                                              8.4*eV 1.5 
+                                              8.5*eV 1.5 
+                                              8.6*eV 1.5 
+                                              8.8*eV 1.5 
+                                              9.0*eV 1.5 
+                                              9.1*eV 1.5 
+                                              9.4*eV 1.5 
+                                              9.8*eV 1.5 
+                                              10.4*eV 1.5"/>
+    <matrix name="REFLECTIVITY" coldim="2" values="6.7*eV 0.8
+                                                   7.1*eV 0.8 
+                                                   7.4*eV 0.8  
+                                                   7.7*eV 0.8 
+                                                   7.9*eV 0.8 
+                                                   8.1*eV 0.8          
+                                                   8.4*eV 0.8 
+                                                   8.5*eV 0.8 
+                                                   8.6*eV 0.8 
+                                                   8.8*eV 0.8 
+                                                   9.0*eV 0.8 
+                                                   9.1*eV 0.8 
+                                                   9.4*eV 0.8 
+                                                   9.8*eV 0.8 
+                                                   10.4*eV 0.8"/>
+    <matrix name="SCINT" coldim="2" values="6.7*eV 0.04
+                                            7.1*eV 0.12 
+                                            7.4*eV 0.27 
+                                            7.7*eV 0.44 
+                                            7.9*eV 0.62
+                                            8.1*eV 0.80          
+                                            8.4*eV 0.91 
+                                            8.5*eV 0.92 
+                                            8.6*eV 0.85 
+                                            8.8*eV 0.70
+                                            9.0*eV 0.50 
+                                            9.1*eV 0.31 
+                                            9.4*eV 0.13 
+                                            9.8*eV 0.04 
+                                            10.4*eV 0.01"/>
+    <matrix name="RINDEX" coldim="2" values="1.56258*eV 1.74822
+					     1.59515*eV 1.74941
+					     1.63606*eV 1.75
+					     1.67667*eV 1.75178
+                         1.71167*eV 1.75296
+                         1.76698*eV 1.75474
+					     1.80023*eV 1.75593
+					     1.84655*eV 1.7583
+					     1.9016*eV  1.7583 
+					     1.95004*eV 1.76067
+					     1.99407*eV 1.76244
+					     2.03291*eV 1.76422
+					     2.07329*eV 1.76422
+					     2.12313*eV 1.766
+					     2.155*eV   1.76778
+					     2.20466*eV 1.76955
+					     2.25223*eV 1.77192
+					     2.30652*eV 1.7737
+					     2.36837*eV 1.77666
+					     2.43363*eV 1.77903
+					     2.48095*eV 1.78081
+					     2.54136*eV 1.78437
+					     2.58717*eV 1.78614
+					     2.65907*eV 1.78911
+					     2.73508*eV 1.79266
+					     2.80182*eV 1.79563
+					     2.85761*eV 1.79977
+					     2.93054*eV 1.80451
+					     2.99162*eV 1.80925
+					     3.04721*eV 1.8134
+					     3.0799*eV  1.81696
+					     3.1133*eV  1.82051
+					     3.16479*eV 1.82525
+					     3.20902*eV 1.83059
+					     3.25449*eV 1.83533
+					     3.30128*eV 1.84007
+					     3.34944*eV 1.8454
+					     3.39901*eV 1.85192
+					     3.43974*eV 1.85725
+					     3.49205*eV 1.86258
+					     3.53505*eV 1.86673
+					     3.57914*eV 1.87206
+					     3.6358*eV  1.87799
+					     3.68244*eV 1.8851
+					     3.7303*eV  1.89102
+					     3.79189*eV 1.89873
+					     3.84266*eV 1.90465
+					     3.90805*eV 1.90999
+					     3.94837*eV 1.91473
+					     3.97571*eV 1.92065
+					     4.04576*eV 1.92658
+					     4.07447*eV 1.93191
+					     4.14807*eV 1.93665
+					     4.19353*eV 1.94198
+					     4.25569*eV 1.94672
+					     4.33605*eV 1.95206
+					     4.43657*eV 1.95798
+					     4.50622*eV 1.96628
+					     4.63351*eV 1.9722
+					     4.76822*eV 1.97694
+					     4.86931*eV 1.98109"/>
+  </define>
+  
+  <!-- 
+    List of materials stolen from MicroBooNE's GDML file.
+  -->
+  <materials>
+    <element Z="35" formula="Br" name="bromine">
+      <atom value="79.904"/>
+    </element>
+    <element Z="1" formula="H" name="hydrogen">
+      <atom value="1.0079"/>
+    </element>
+    <element Z="7" formula="N" name="nitrogen">
+      <atom value="14.0067"/>
+    </element>
+    <element Z="8" formula="O" name="oxygen">
+      <atom value="15.999"/>
+    </element>
+    <element Z="13" formula="Al" name="aluminum">
+      <atom value="26.9815"/>
+    </element>
+    <element Z="14" formula="Si" name="silicon">
+      <atom value="28.0855"/>
+    </element>
+    <element Z="6" formula="C" name="carbon">
+      <atom value="12.0107"/>
+    </element>
+    <element Z="19" formula="K" name="potassium">
+      <atom value="39.0983"/>
+    </element>
+    <element Z="24" formula="Cr" name="chromium">
+      <atom value="51.9961"/>
+    </element>
+    <element Z="26" formula="Fe" name="iron">
+      <atom value="55.8450"/>
+    </element>
+    <element Z="28" formula="Ni" name="nickel">
+      <atom value="58.6934"/>
+    </element>
+    <element Z="20" formula="Ca" name="calcium">
+      <atom value="40.078"/>
+    </element>
+    <element Z="12" formula="Mg" name="magnesium">
+      <atom value="24.305"/>
+    </element>
+    <element Z="11" formula="Na" name="sodium">
+      <atom value="22.99"/>
+    </element>
+    <element Z="22" formula="Ti" name="titanium">
+      <atom value="47.867"/>
+    </element>
+    <element Z="18" formula="Ar" name="argon">
+      <atom value="39.9480"/>
+    </element>
+    <material Z="1" formula=" " name="Vacuum">
+      <D unit="g/cm3" value="1.e-25"/>
+      <atom value="1.0079"/>
+    </material>
+    <material formula="ALUMINUM_Al" name="ALUMINUM_Al">
+      <D unit="g/cm3" value="2.6990"/>
+      <fraction n="1.0000" ref="aluminum"/>
+    </material>
+    <material formula="SILICON_Si" name="SILICON_Si">
+      <D unit="g/cm3" value="2.3300"/>
+      <fraction n="1.0000" ref="silicon"/>
+    </material>
+    <material formula="C38H40O6Br4" name="epoxy_resin">
+      <D unit="g/cm3" value="1.1250"/>
+      <composite n="38" ref="carbon"/>
+      <composite n="40" ref="hydrogen"/>
+      <composite n="6" ref="oxygen"/>
+      <composite n="4" ref="bromine"/>
+    </material>
+    <material formula="C25H42N2O6" name="PU_foam_dense">
+      <D unit="g/cm3" value=".224"/>
+      <composite n="25" ref="carbon"/>
+      <composite n="42" ref="hydrogen"/>
+      <composite n="2" ref="nitrogen"/>
+      <composite n="6" ref="oxygen"/>
+    </material>
+    <material formula="C25H42N2O6" name="PU_foam_light">
+      <D unit="g/cm3" value=".0384"/>
+      <composite n="25" ref="carbon"/>
+      <composite n="42" ref="hydrogen"/>
+      <composite n="2" ref="nitrogen"/>
+      <composite n="6" ref="oxygen"/>
+    </material>
+    <material formula="SiO2" name="SiO2">
+      <D unit="g/cm3" value="2.2"/>
+      <composite n="1" ref="silicon"/>
+      <composite n="2" ref="oxygen"/>
+    </material>
+    <material formula="Al2O3" name="Al2O3">
+      <D unit="g/cm3" value="3.97"/>
+      <composite n="2" ref="aluminum"/>
+      <composite n="3" ref="oxygen"/>
+    </material>
+    <material formula="Fe2O3" name="Fe2O3">
+      <D unit="g/cm3" value="5.24"/>
+      <composite n="2" ref="iron"/>
+      <composite n="3" ref="oxygen"/>
+    </material>
+    <material formula="CaO" name="CaO">
+      <D unit="g/cm3" value="3.35"/>
+      <composite n="1" ref="calcium"/>
+      <composite n="1" ref="oxygen"/>
+    </material>
+    <material formula="MgO" name="MgO">
+      <D unit="g/cm3" value="3.58"/>
+      <composite n="1" ref="magnesium"/>
+      <composite n="1" ref="oxygen"/>
+    </material>
+    <material formula="Na2O" name="Na2O">
+      <D unit="g/cm3" value="2.27"/>
+      <composite n="2" ref="sodium"/>
+      <composite n="1" ref="oxygen"/>
+    </material>
+    <material formula="TiO2" name="TiO2">
+      <D unit="g/cm3" value="4.23"/>
+      <composite n="1" ref="titanium"/>
+      <composite n="2" ref="oxygen"/>
+    </material>
+    <material name="fibrous_glass">
+      <D unit="g/cm3" value="2.74351"/>
+      <fraction n="0.600" ref="SiO2"/>
+      <fraction n="0.118" ref="Al2O3"/>
+      <fraction n="0.001" ref="Fe2O3"/>
+      <fraction n="0.224" ref="CaO"/>
+      <fraction n="0.034" ref="MgO"/>
+      <fraction n="0.010" ref="Na2O"/>
+      <fraction n="0.013" ref="TiO2"/>
+    </material>
+    <material name="FR4">
+      <D unit="g/cm3" value="1.5224"/>
+      <fraction n="0.47" ref="epoxy_resin"/>
+      <fraction n="0.53" ref="fibrous_glass"/>
+    </material>
+    <material formula="STEEL_STAINLESS_Fe7Cr2Ni" name="STEEL_STAINLESS_Fe7Cr2Ni">
+      <D unit="g/cm3" value="7.9300"/>
+      <fraction n="0.0010" ref="carbon"/>
+      <fraction n="0.1792" ref="chromium"/>
+      <fraction n="0.7298" ref="iron"/>
+      <fraction n="0.0900" ref="nickel"/>
+    </material>
+    
+    <!-- Understanding optical properties: 
+    The property names below correspond to strings found in
+    source/materials/src/G4MaterialPropertiesTable.cc
+    Note that no spell-checking is done, so it's possible to misspell
+    a property below that does nothing in the materials property
+    table (this is called the "RNIDEX" problem).
+    
+    The properties refer to matrices defined above. The matrices
+    themselves have two columns, with each row corresponding to the 
+    photon energy and the value of the property at that energy. 
+    -->
+    
+    <!-- 07-Jul-2020 WGS:
+	 Additional LAr optical properties from 
+	 https://cdcvs.fnal.gov/redmine/projects/larg4/wiki 
+    -->
+    <material name="LAr" formula="LAr">
+      <property name="RINDEX" ref="ArINDEX"/>
+      <property name="SLOWCOMPONENT" ref="SCINT"/>
+      <property name="SCINTILLATIONYIELD" ref="SY" />
+      <property name="RESOLUTIONSCALE" ref="RS" />
+      <property name="SLOWTIMECONSTANT" ref="STC" />
+      <property name="YIELDRATIO" ref="YR" />
+      <D value="1.40" unit="g/cm3"/>
+      <fraction n="1.0000" ref="argon"/>
+    </material>
+    <material formula=" " name="Air">
+      <D unit="g/cm3" value="0.001205"/>
+      <fraction n="0.781154" ref="nitrogen"/>
+      <fraction n="0.209476" ref="oxygen"/>
+      <fraction n="0.00937" ref="argon"/>
+    </material>
+    <material formula=" " name="G10">
+      <D unit="g/cm3" value="1.7"/>
+      <fraction n="0.2805" ref="silicon"/>
+      <fraction n="0.3954" ref="oxygen"/>
+      <fraction n="0.2990" ref="carbon"/>
+      <fraction n="0.0251" ref="hydrogen"/>
+    </material>
+    <material formula="H2O" name="Water">
+      <D unit="g/cm3" value="1.0"/>
+      <fraction n="0.1119" ref="hydrogen"/>
+      <fraction n="0.8881" ref="oxygen"/>
+    </material>
+    <material formula="Ti" name="Titanium">
+      <D unit="g/cm3" value="4.506"/>
+      <fraction n="1." ref="titanium"/>
+    </material>
+    <material formula="TPB" name="TPB">
+      <D unit="g/cm3" value="1.40"/>
+      <fraction n="1.0000" ref="argon"/>
+    </material>
+    <material name="Glass">
+      <D unit="g/cm3" value="2.74351"/>
+      <fraction n="0.600" ref="SiO2"/>
+      <fraction n="0.118" ref="Al2O3"/>
+      <fraction n="0.001" ref="Fe2O3"/>
+      <fraction n="0.224" ref="CaO"/>
+      <fraction n="0.034" ref="MgO"/>
+      <fraction n="0.010" ref="Na2O"/>
+      <fraction n="0.013" ref="TiO2"/>
+    </material>
+    <material name="Acrylic">
+      <D unit="g/cm3" value="1.19"/>
+      <fraction n="0.600" ref="carbon"/>
+      <fraction n="0.320" ref="oxygen"/>
+      <fraction n="0.080" ref="hydrogen"/>
+    </material>
+    <material name="Polystyrene">
+      <D unit="g/cm3" value="1.06"/>
+      <fraction n="0.077418" ref="hydrogen"/>
+      <fraction n="0.922582" ref="carbon"/>
+    </material>
+    <material formula="Ar" name="Argon_gas_87K">
+      <D unit="g/cm3" value="0.0056"/>
+      <!-- standard pressure, 87.3K -->
+      <fraction n="1.0000" ref="argon"/>
+    </material>
+
+    <!-- 8-May-2020 WGS: PTFE is a polymer chain. Its formula is (C2F4)n.
+    Maybe the following is correct. -->
+    <element Z="9" formula="F" name="flourine">
+      <atom value="18.998403"/>
+    </element>
+    <material name="PTFE">
+        <D unit="g/cm3" value="2.2"/>
+        <composite n="2" ref="carbon"/>
+        <composite n="4" ref="flourine"/>
+    </material>
+
+  </materials>
+
+  <solids>
+  
+    <!-- The constants and quantities used in this section are defined in the <define></define> 
+    section above. -->
+    <box lunit="cm" name="TPC" x="lArTPCXSize" y="lArTPCYSize" z="lArTPCZSize" />
+
+    <box lunit="cm" name="CathodePlate" x="cathodeXSize" y="cathodeYSize" z="cathodeZSize" />
+    <box lunit="cm" name="SilicaPlane" x="tilePlaneXSize" y="tilePlaneYSize" z="silicaThickness" />
+    <box lunit="cm" name="G10Plane" x="tilePlaneXSize" y="tilePlaneYSize" z="G10Thickness" />
+    <box lunit="cm" name="TilePlane" x="tilePlaneXSize" y="tilePlaneYSize" z="tilePlaneZSize" />
+    <box lunit="cm" name="SeparatorGroupSheet" x="sepGroupXSize" y="sepGroupYSize" z="sepGroupZSize" />
+    <box lunit="cm" name="SeparatorSheet" x="sepXSize" y="sepYSize" z="sepZSize" />
+    <box lunit="cm" name="CellGroup" x="cellGroupXSize" y="cellGroupYSize" z="cellGroupZSize" />
+    <box lunit="cm" name="ActiveCell" x="activeCellXSize" y="activeCellYSize" z="activeCellZSize" />
+    <box lunit="cm" name="SIPM" x="sipmXSize" y="sipmYSize" z="sipmZSize" />
+  
+    <box lunit="cm" name="World" x="worldVolumeXSize" y="worldVolumeYSize" z="worldVolumeZSize"/>
+    <box lunit="cm" name="OuterDetector" x="outerVolumeXSize" y="outerVolumeYSize" z="outerVolumeZSize"/>
+    
+    <box lunit="cm" name="OuterZwallXstrip" x="lengthOuterZwallXstrips" y="scintillatorWidth" z="scintillatorThickness"/>
+ 
+    <box lunit="cm" name="OuterYwallXstrip" x="lengthOuterYwallXstrips" y="scintillatorThickness" z="scintillatorWidth"/>
+  
+    <box lunit="cm" name="OuterXwallZstrip" x="scintillatorThickness" y="scintillatorWidth" z="lengthOuterXwallZstrips"/>
+
+    <box lunit="cm" name="OuterXwall" x="outerXwallXSize" y="outerXwallYSize" z="outerXwallZSize"/>
+    <box lunit="cm" name="OuterYwall" x="outerYwallXSize" y="outerYwallYSize" z="outerYwallZSize"/>
+    <box lunit="cm" name="OuterZwall" x="outerZwallXSize" y="outerZwallYSize" z="outerZwallZSize"/>
+    
+    <box lunit="cm" name="InnerDetector" x="innerVolumeXSize" y="innerVolumeYSize" z="innerVolumeZSize"/>
+    
+    <box lunit="cm" name="InnerZwallXstrip" x="lengthInnerZwallXstrips" y="scintillatorWidth" z="scintillatorThickness"/>
+ 
+    <box lunit="cm" name="InnerYwallXstrip" x="lengthInnerYwallXstrips" y="scintillatorThickness" z="scintillatorWidth"/>
+  
+    <box lunit="cm" name="InnerXwallZstrip" x="scintillatorThickness" y="scintillatorWidth" z="lengthInnerXwallZstrips"/>
+
+    <box lunit="cm" name="InnerXwall" x="InnerXwallXSize" y="InnerXwallYSize" z="InnerXwallZSize"/>
+    <box lunit="cm" name="InnerYwall" x="InnerYwallXSize" y="InnerYwallYSize" z="InnerYwallZSize"/>
+    <box lunit="cm" name="InnerZwall" x="InnerZwallXSize" y="InnerZwallYSize" z="InnerZwallZSize"/>
+
+    <box lunit="cm" name="Cryostat" x="cryostatXSize" y="cryostatYSize" z="cryostatZSize" />
+
+  </solids>
+
+  <!-- 13-May-2020 WGS: The following tag will associate a Geant4 sensitive detector named
+  "LArSD" (for example) to a given volume. Note that this does not create the code for "LArSD" 
+  out of nowhere (don't get confused with options.xml!); you have to write the code for any
+  sensitive detectors and define them to Geant4's SDManager.
+  
+  <auxiliary auxtype="SensDet" auxvalue="LArSD" />
+  -->
+
+  <!-- 29-Jun-2020 WGS: The following tag will assign a maximum step
+       size for a given volume. This will override Geant4's normal
+       mechanism for determining step size. Note that there may be an
+       option in the XML options file that will override this
+       value. 
+
+       Units are set in options.xml (typically cm). 
+
+       Also note that for this to have any effect, STEPLIMIT has to be
+       turned on in the physics list (see the options XML file).
+  
+  <auxiliary auxtype="StepLimit" auxvalue="0.02" />
+  -->
+
+  <!-- 13-May-2020 WGS: For the sake of G4 visualization, a volume can optionally be set
+  to a specific color. (If you're from England, you can also set a volume's visibility to 
+  a specific colour.) Colors and visibility are set on the volume level. The tag's structure is:
+  
+  <auxiliary auxtype="Color" auxvalue="G4Color" />
+  
+  where G4Color is from the set (white, gray, black, brown, red, green, blue, cyan, magenta, yellow, none) 
+  
+  If you use "none" the volume will be invisible. If you don't include this tag for a volume, 
+  then it will have the default color of white. 
+  -->
+  
+  <structure>
+  
+    <!-- 6-May-2020 WGS: Note that the materials used below are mostly the MicroBooNE definitions.
+    They may not apply to GRAMS. -->
+
+    <volume name="volTPCSilica">
+      <materialref ref="SiO2"/>
+      <solidref ref="SilicaPlane"/>
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volTPCG10">
+      <materialref ref="LAr"/>
+      <solidref ref="G10Plane"/>
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volTilePlane">
+      <materialref ref="G10"/>
+      <solidref ref="TilePlane"/>
+      <physvol copynumber="4000000">
+         <volumeref ref="volTPCSilica"/>
+         <position name="posSilica" unit="cm" x="0" y="0" z="-(tilePlaneZSize/2) + (silicaThickness/2)"/>
+      </physvol>
+      <physvol copynumber="4100000">
+         <volumeref ref="volTPCG10"/>
+         <position name="posG10" unit="cm" x="0" y="0" z="(tilePlaneZSize/2) - (G10Thickness/2)"/>
+      </physvol>
+     <auxiliary auxtype="Color" auxvalue="yellow" />
+    </volume>
+
+    <!-- 8-May-2020 WGS: As a first approximation, let's assume that
+    SIPMs are pure silicon. Question this assumption! -->
+    <volume name="volSIPM">
+      <materialref ref="SILICON_Si"/>
+      <solidref ref="SIPM"/>
+      <auxiliary auxtype="Color" auxvalue="gray" />
+    </volume>
+
+    <volume name="volTPCActive">
+      <materialref ref="LAr"/>
+      <solidref ref="ActiveCell"/>
+      <!-- 05-Oct-2021 WGS: Where are the SIPMs? How will they be mounted? I don't know.
+      For now, let them magically be attached to the separator sheets on the high-x
+      side of each cell. -->
+      <physvol copynumber="5000000">
+        <volumeref ref="volSIPM"/>
+        <position name="posSIPM" unit="cm" x="(activeCellXSize/2) - sipmThickness" y="0" z="0" />
+      </physvol>
+      <auxiliary auxtype="SensDet" auxvalue="LArSensitiveDetector" />
+      <auxiliary auxtype="StepLimit" auxvalue="0.02"/>
+      <auxiliary auxtype="Color" auxvalue="red" />
+    </volume>
+
+    <volume name="volSeparatorGroupSheet">
+      <materialref ref="PTFE"/>
+      <solidref ref="SeparatorGroupSheet"/>
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volSeparatorSheet">
+      <materialref ref="PTFE"/>
+      <solidref ref="SeparatorSheet"/>
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volCathodePlate">
+      <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+      <solidref ref="CathodePlate"/>
+      <auxiliary auxtype="Color" auxvalue="red" />
+    </volume>
+
+    <!-- LArTPC definition -->
+    <volume name="volTPC">
+      <materialref ref="LAr"/>
+      <solidref ref="TPC"/>
+      
+      <!-- 8-May-2020 WGS: Where will the cathode plate be? I don't know. Make a guess. -->
+      <physvol copynumber="6000000">
+        <volumeref ref="volCathodePlate"/>
+        <position name="posCathod" unit="cm" x="0" y="0" z="-(lArTPCZSize/2) + 2*cathodeThickness" />
+      </physvol>
+      
+      <!-- 08-May-2020 WGS: Where will the tile planes be? I don't know. Make a guess. -->
+      <physvol>
+        <volumeref ref="volTilePlane"/>
+        <position name="posXplane" unit="cm" x="0" y="0" z="(lArTPCZSize/2) - (tilePlaneZSize/2)" />
+      </physvol>
+
+      <!-- 16-Jul-2020 WGS: First we're going to place the cell groups
+           along x within the LArTPC. Then we're going to place the
+           active cells within a cell group along y. -->
+      <!-- 10-Mar-2021 WGS: When I defined the Identifiers, I switched
+           the scheme for placing the cells to a nested loop in x and
+           y (and potentially z if we include layers in the future.)
+           -->
+      <!-- 10-Mar-2021 WGS: As of now, there's just a single z-layer
+           of cells within the TPC. But it's possible that we'll have
+           to need more. Most of the statements below ignore the
+           possibility of multiple z-layers. -->
+
+      <!-- Place the separator sheets that go along the entire y-length of the TPC area. -->
+      <loop for="i" from="0" to="numberSepSheetsX - 1" step="1">
+        <physvol copynumber="3000000">
+            <volumeref ref="volSeparatorGroupSheet"/>
+            <position name="posSeparatorGroupSheet" unit="cm" x="-(cellGroupXRegion/2) + cellGroupXSize + sepGroupXSize/2 + i*(cellGroupXSize + sepGroupXSize)" y="0" z="0"/>
+        </physvol>
+      </loop> <!-- over sheets in x -->
+
+      <!-- 15-Mar-2021 WGS: Place TPC cells in x and y. -->
+
+      <loop for="i" from="0" to="numberActiveCellsX - 1" step="1">
+
+      <!-- 8-May-2020 WGS: For each active cell, we have to place a volume representing that
+      cell, and the separator sheet that separates the cells. This gets a bit tricky, since
+      the arrangement is cell / sheet / cell / sheet ... cell / sheet / cell; that is,
+      there's one fewer sheet along along x than there are cells.  -->
+      
+        <!-- First, place the separator sheets that go along x. -->
+        <loop for="j" from="0" to="numberSepSheetsY - 1" step="1">
+          <physvol copynumber="3000000">
+              <volumeref ref="volSeparatorSheet"/>
+              <position name="posSeparatorSheet" unit="cm" x="-(cellGroupXRegion/2) + cellGroupXSize/2 + i*(cellGroupXSize + sepGroupXSize)" y="-(cellGroupYSize/2) + activeCellYSize + sepYSize/2 + j*(activeCellYSize + sepYSize)" z="0"/>
+          </physvol>
+        </loop> <!-- over y-sheets -->
+      
+        <!--  Now place the active TPC cells -->
+        <loop for="j" from="0" to="numberActiveCellsY - 1" step="1">
+          <physvol copynumber="1000000 + (k*10000) + (j*100) + i">
+              <volumeref ref="volTPCActive"/>
+              <position name="posTPCActive" unit="cm" x="-(cellGroupXRegion/2) + cellGroupXSize/2 + i*(cellGroupXSize + sepGroupXSize)" y="-(cellGroupYSize/2) + activeCellYSize/2 + j*(activeCellYSize + sepYSize)" z="0"/>
+          </physvol>
+        </loop> <!-- over y-cells -->  
+
+      </loop> <!-- over x-cells -->
+
+      <auxiliary auxtype="Color" auxvalue="magenta" />
+    </volume>
+    <!-- End of LArTPC definition -->
+    
+    <!-- Inner detector definition -->
+
+    <volume name="volCryostat">
+      <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+      <solidref ref="Cryostat"/>
+      <physvol copynumber="7000000">
+        <volumeref ref="volTPC" />
+        <positionref ref="posCenter" />
+      </physvol>     
+      <auxiliary auxtype="Color" auxvalue="gray" />      
+    </volume>
+
+    <!-- 8-May-2020 WGS: Is "polystyrene" (used in MicroBoone) a reasonable description of scintillator? -->
+
+    <volume name="volInnerZwallXstrip">
+      <materialref ref="Polystyrene"/>
+      <solidref ref="InnerZwallXstrip"/>
+      <auxiliary auxtype="SensDet" auxvalue="ScintillatorSD" />
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volInnerYwallXstrip">
+      <materialref ref="Polystyrene"/>
+      <solidref ref="InnerYwallXstrip"/>
+      <auxiliary auxtype="SensDet" auxvalue="ScintillatorSD" />
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volInnerXwallZstrip">
+      <materialref ref="Polystyrene"/>
+      <solidref ref="InnerXwallZstrip"/>
+      <auxiliary auxtype="SensDet" auxvalue="ScintillatorSD" />
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+    
+    <!-- 8-May-2020 WGS: Place the scintillator 
+    strips in the x, y, and z detector walls. -->
+    
+    <!-- 11-Mar-2021 WGS: In an earlier version of this file, I just
+         defined the high-axis volumes (high-x, high-y, high-z) then
+         defined the low-axis volumes by flipping the high-axis
+         ones. I can't do that anymore, because the identifiers for
+         the high-axis volumes are different from the low-axis
+         volumes. -->
+
+    <volume name="volInnerHighZwall">
+      <materialref ref="Air"/>
+      <solidref ref="InnerZwall"/>
+      <loop for="i" from="0" to="numberInnerZwallXstrips - 1" step="1">
+        <physvol copynumber="2050000 + i">
+            <volumeref ref="volInnerZwallXstrip"/>
+            <position name="InnerHighZwallXstrip" unit="cm" x="0" y="-InnerZwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+        
+    <volume name="volInnerHighYwall">
+      <materialref ref="Air"/>
+      <solidref ref="InnerYwall"/>
+      <loop for="i" from="0" to="numberInnerYwallXstrips - 1" step="1">
+        <physvol copynumber="2030000 + i">
+            <volumeref ref="volInnerYwallXstrip"/>
+            <position name="InnerHighYwallXstrip" unit="cm" x="0" y="0" z="-InnerYwallZSize/2 + scintillatorWidth/2 + i*scintillatorWidth"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+         
+    <volume name="volInnerHighXwall">
+      <materialref ref="Air"/>
+      <solidref ref="InnerXwall"/>
+      <loop for="i" from="0" to="numberInnerXwallZstrips - 1" step="1">
+        <physvol copynumber="2010000 + i">
+            <volumeref ref="volInnerXwallZstrip"/>
+            <position name="InnerHighXwallZstrip" unit="cm" x="0" y="-InnerXwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+
+    <volume name="volInnerLowZwall">
+      <materialref ref="Air"/>
+      <solidref ref="InnerZwall"/>
+      <loop for="i" from="0" to="numberInnerZwallXstrips - 1" step="1">
+        <physvol copynumber="2040000 + i">
+            <volumeref ref="volInnerZwallXstrip"/>
+            <position name="InnerLowZwallXstrip" unit="cm" x="0" y="-InnerZwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+        
+    <volume name="volInnerLowYwall">
+      <materialref ref="Air"/>
+      <solidref ref="InnerYwall"/>
+      <loop for="i" from="0" to="numberInnerYwallXstrips - 1" step="1">
+        <physvol copynumber="2020000 + i">
+            <volumeref ref="volInnerYwallXstrip"/>
+            <position name="InnerLowYwallXstrip" unit="cm" x="0" y="0" z="-InnerYwallZSize/2 + scintillatorWidth/2 + i*scintillatorWidth"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+         
+    <volume name="volInnerLowXwall">
+      <materialref ref="Air"/>
+      <solidref ref="InnerXwall"/>
+      <loop for="i" from="0" to="numberInnerXwallZstrips - 1" step="1">
+        <physvol copynumber="2000000 + i">
+            <volumeref ref="volInnerXwallZstrip"/>
+            <position name="InnerLowXwallZstrip" unit="cm" x="0" y="-InnerXwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+
+    <volume name="volInnerDetector">
+      <materialref ref="Air"/>
+      <solidref ref="InnerDetector"/>
+      
+      <!-- 10-May-2020 WGS: Place the positive-axis walls in the detector. -->
+      <physvol>
+        <volumeref ref="volInnerHighZwall" />
+        <position name="posInnerHighZwall" unit="cm" x="0" y="0" z="(innerVolumeZSize - InnerZwallZSize)/2" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volInnerHighYwall" />
+        <position name="posInnerHighYwall" unit="cm" x="0" y="(innerVolumeYSize - InnerYwallYSize)/2" z="0" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volInnerHighXwall" />
+        <position name="posInnerHighXwall" unit="cm" x="(innerVolumeXSize - InnerXwallXSize)/2" y="0" z="0" />
+      </physvol>
+      
+      <!-- 10-May-2020 WGS: Place the negative-axis walls in the detector. -->
+      <physvol>
+        <volumeref ref="volInnerLowZwall" />
+        <position name="negInnerZwall" unit="cm" x="0" y="0" z="-(innerVolumeZSize - InnerZwallZSize)/2" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volInnerLowYwall" />
+        <position name="negInnerYwall" unit="cm" x="0" y="-(innerVolumeYSize - InnerYwallYSize)/2" z="0" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volInnerLowXwall" />
+        <position name="negInnerXwall" unit="cm" x="-(innerVolumeXSize - InnerXwallXSize)/2" y="0" z="0" />
+      </physvol>
+
+      <!-- 10-May-2020 WGS: The cryostat -->
+      <physvol copynumber="8000000">
+        <volumeref ref="volCryostat" />
+        <positionref ref="posCenter" />
+      </physvol>
+
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+    <!-- End of Inner detector definition -->
+    
+
+    <!-- Outer detector definition -->
+
+    <!-- 8-May-2020 WGS: Is "polystyrene" (used in MicroBoone) a reasonable description of scintillator? -->
+
+    <volume name="volOuterZwallXstrip">
+      <materialref ref="Polystyrene"/>
+      <solidref ref="OuterZwallXstrip"/>
+      <auxiliary auxtype="SensDet" auxvalue="ScintillatorSD" />
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volOuterYwallXstrip">
+      <materialref ref="Polystyrene"/>
+      <solidref ref="OuterYwallXstrip"/>
+      <auxiliary auxtype="SensDet" auxvalue="ScintillatorSD" />
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+
+    <volume name="volOuterXwallZstrip">
+      <materialref ref="Polystyrene"/>
+      <solidref ref="OuterXwallZstrip"/>
+      <auxiliary auxtype="SensDet" auxvalue="ScintillatorSD" />
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+    
+    <!-- 8-May-2020 WGS: Place the scintillator 
+    strips in the x, y, and z detector walls.  -->
+    
+    <!-- 11-Mar-2021 WGS: In an earlier version of this file, I just
+         defined the high-axis volumes (high-x, high-y, high-z) then
+         defined the low-axis volumes by flipping the high-axis
+         ones. I can't do that anymore, because the identifiers for
+         the high-axis volumes are different from the low-axis
+         volumes. -->
+
+    <volume name="volOuterHighZwall">
+      <materialref ref="Air"/>
+      <solidref ref="OuterZwall"/>
+      <loop for="i" from="0" to="numberOuterZwallXstrips - 1" step="1">
+        <physvol copynumber="2150000 + i">
+            <volumeref ref="volOuterZwallXstrip"/>
+            <position name="OuterHighZwallXstrip" unit="cm" x="0" y="-outerZwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+        
+    <volume name="volOuterHighYwall">
+      <materialref ref="Air"/>
+      <solidref ref="OuterYwall"/>
+      <loop for="i" from="0" to="numberOuterYwallXstrips - 1" step="1">
+        <physvol copynumber="2130000 + i">
+            <volumeref ref="volOuterYwallXstrip"/>
+            <position name="OuterHighYwallXstrip" unit="cm" x="0" y="0" z="-outerYwallZSize/2 + scintillatorWidth/2 + i*scintillatorWidth"/>
+        </physvol>
+      </loop>
+     <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+         
+    <volume name="volOuterHighXwall">
+      <materialref ref="Air"/>
+      <solidref ref="OuterXwall"/>
+      <loop for="i" from="0" to="numberOuterXwallZstrips - 1" step="1">
+        <physvol copynumber="2110000 + i">
+            <volumeref ref="volOuterXwallZstrip"/>
+            <position name="OuterHighXwallZstrip" unit="cm" x="0" y="-outerXwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+     <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+    
+    <volume name="volOuterLowZwall">
+      <materialref ref="Air"/>
+      <solidref ref="OuterZwall"/>
+      <loop for="i" from="0" to="numberOuterZwallXstrips - 1" step="1">
+        <physvol copynumber="2140000 + i">
+            <volumeref ref="volOuterZwallXstrip"/>
+            <position name="OuterLowZwallXstrip" unit="cm" x="0" y="-outerZwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+        
+    <volume name="volOuterLowYwall">
+      <materialref ref="Air"/>
+      <solidref ref="OuterYwall"/>
+      <loop for="i" from="0" to="numberOuterYwallXstrips - 1" step="1">
+        <physvol copynumber="2120000 + i">
+            <volumeref ref="volOuterYwallXstrip"/>
+            <position name="OuterLowYwallXstrip" unit="cm" x="0" y="0" z="-outerYwallZSize/2 + scintillatorWidth/2 + i*scintillatorWidth"/>
+        </physvol>
+      </loop>
+     <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+         
+    <volume name="volOuterLowXwall">
+      <materialref ref="Air"/>
+      <solidref ref="OuterXwall"/>
+      <loop for="i" from="0" to="numberOuterXwallZstrips - 1" step="1">
+        <physvol copynumber="2100000 + i">
+            <volumeref ref="volOuterXwallZstrip"/>
+            <position name="OuterLowXwallZstrip" unit="cm" x="0" y="-outerXwallYSize/2 + scintillatorWidth/2 + i*scintillatorWidth" z="0"/>
+        </physvol>
+      </loop>
+     <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+
+    <volume name="volOuterDetector">
+      <materialref ref="Air"/>
+      <solidref ref="OuterDetector"/>
+      
+      <!-- 10-May-2020 WGS: Place the positive-axis walls in the detector. -->
+      <physvol>
+        <volumeref ref="volOuterHighZwall" />
+        <position name="posOuterHighZwall" unit="cm" x="0" y="0" z="(outerVolumeZSize - outerZwallZSize)/2" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volOuterHighYwall" />
+        <position name="posOuterHighYwall" unit="cm" x="0" y="(outerVolumeYSize - outerYwallYSize)/2" z="0" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volOuterHighXwall" />
+        <position name="posOuterHighXwall" unit="cm" x="(outerVolumeXSize - outerXwallXSize)/2" y="0" z="0" />
+      </physvol>
+      
+      <!-- 10-May-2020 WGS: Place the negative-axis walls in the detector. -->
+      <physvol>
+        <volumeref ref="volOuterLowZwall" />
+        <position name="negOuterZwall" unit="cm" x="0" y="0" z="-(outerVolumeZSize - outerZwallZSize)/2" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volOuterLowYwall" />
+        <position name="negOuterYwall" unit="cm" x="0" y="-(outerVolumeYSize - outerYwallYSize)/2" z="0" />
+      </physvol>
+      <physvol>
+        <volumeref ref="volOuterLowXwall" />
+        <position name="negOuterXwall" unit="cm" x="-(outerVolumeXSize - outerXwallXSize)/2" y="0" z="0" />
+      </physvol>
+
+       <!-- 10-May-2020 WGS: Then place the inner detector -->
+      <physvol>
+        <volumeref ref="volInnerDetector" />
+        <position name="posInnerDetector" unit="cm" x="0" y="0" z="innerDetectorOffsetInOuter"/>
+      </physvol>     
+
+      <auxiliary auxtype="Color" auxvalue="cyan" />
+    </volume>
+   <!-- End of Outer detector definition -->
+   
+    <volume name="volWorld">
+      <materialref ref="Vacuum"/>
+      <solidref ref="World"/>
+      <physvol>
+        <volumeref ref="volOuterDetector"/>
+        <position name="posOuterDetector" unit="cm" x="0" y="0" z="outerDetectorOffsetInWorld"/>
+      </physvol>
+      <auxiliary auxtype="Color" auxvalue="none" />
+    </volume>
+  </structure>
+  
+  <setup name="Default" version="1.0">
+    <world ref="volWorld"/>
+  </setup>
+  
+</gdml>
