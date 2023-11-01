@@ -72,14 +72,12 @@ file( COPY ${GENERATION_SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/Sensitivity)
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
 # Copy over RemoveClutter.sh
-
 file( COPY ${CMAKE_SOURCE_DIR}/RemoveClutter.sh DESTINATION ${CMAKE_BINARY_DIR})
 
 add_subdirectory(SensitivityUtils)
 add_subdirectory(EffArea)
-add_subdirectory(Source)
 
-# Copy over GramsWork containing compiled GramsSim programs to  Background and Source
+# Copy over GramsWork containing compiled GramsSim programs to Background and Source
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Background)
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Source)
 file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/EffArea)

@@ -18,6 +18,5 @@ rm -rf scripts
 rm -rf bin
 rm -rf CMakeFiles
 rm -f CMakeCache.txt cmake_install.cmake Makefile
-cp ../ThinFlatGrams.gdml .
-cp ../ThinGrams.gdml .
+cp ./gdml/* .
 cp ../ConfigFiles/SensitivityOptions.xml .
