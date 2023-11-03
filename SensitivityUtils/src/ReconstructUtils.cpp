@@ -164,6 +164,9 @@ void Reconstruction(std::map<std::tuple<int,int>, std::vector<ExtractEntry> > &S
     std::vector<R3> AdjacentDist;
     std::vector<double> KEs;
     AdjacentDist = Distances(Events);
+    if(AdjacentDist.size() < 2){
+      continue;
+    }
     KEs = KineticEnergies(Events);
   // Calculate Reconstruction Angle (if possible)
   // Check if Reconstruction Angle could be calculated
