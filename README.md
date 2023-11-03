@@ -102,7 +102,6 @@ python CalculateSensitivity.py Configs.toml
 
 # TODO
 * Write Configs.toml to the condor output directory when running script generator
-* Have GenEnergySpectrum.py use Config.toml
 * Implement minimum count threshold and energy binning for sources
 * Include experimental errors into calculation
 * Auto detect condor job completion? (would allow automation of pipeline)
