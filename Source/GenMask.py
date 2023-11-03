@@ -14,6 +14,7 @@ import tomllib
 import subprocess
 import shutil
 
+
 def lorentzian(x,params):
 ## ARM follows a Lorentzian distribution (technically a Voigt function, but fitting to that gave we poorer results)
 # We pass this function to ROOT for fitting
@@ -60,15 +61,7 @@ def create_mask(HistogramBlank,truth_RA_loc,truth_ALT_loc,ARMAngle):
     ## Return TH2D histogram
     return HistogramBlank
 
-if __name__=="__main__":
-    ## Parse command line
-    parser = argparse.ArgumentParser(
-                        prog='GenMask',
-                        description='Generates a mask to define a neighborhood on the sky')
-    parser.add_argument("config", help="Path to .toml file")
-    arguments = parser.parse_args()
-    with open(arguments.config, "rb") as f:
-        data = tomllib.load(f)
+def WriteFile(data,OutputName):
 # draw
     if(data["Mask"]["draw"] == True):
         draw=True
@@ -86,8 +79,7 @@ if __name__=="__main__":
     ALT_loc = data["Source"]["ALTSourceLoc"]*np.pi/180
     n_events = data["Mask"]["nevents"]
     nbins = data["Mask"]["nbins"]
-    OutputName = data["Mask"]["MaskOutput"]
-    OutFile = ROOT.TFile.Open(OutputName, "RECREATE")
+    Output = ROOT.TFile.Open(OutputName,"RECREATE")
     Cart_loc = SphereToCart(RA_loc,ALT_loc)
 
 # Generate Source events
@@ -195,12 +187,24 @@ if __name__=="__main__":
         mask.SetStats(0)
         mask.Draw("colz")
         c2.SaveAs(pic_name)
-    OutFile.WriteObject(mask, "Mask")
+    Output.WriteObject(mask,"Mask")
     # clean up
     args = ["rm", "-f", "gramssky.hepmc3", "gramssky_mac.mac", "gramsg4.root", "gramsdetsim.root", "Extracted.root", "Reco.root"]
     command = ' '.join(args)
     args = shlex.split(command)
     proc = subprocess.run(args)
+    Output.Close()
+if __name__=="__main__":
+    ## Parse command line
+    parser = argparse.ArgumentParser(
+                        prog='GenMask',
+                        description='Generates a mask to define a neighborhood on the sky')
+    parser.add_argument("config", help="Path to .toml file")
+    arguments = parser.parse_args()
+    with open(arguments.config, "rb") as f:
+        data = tomllib.load(f)
+    OutputName = data["Mask"]["MaskOutput"]
+    WriteFile(data,OutputName)
     # Copy Mask over
     os.chdir("..")
     home = os.path.dirname(os.getcwd())

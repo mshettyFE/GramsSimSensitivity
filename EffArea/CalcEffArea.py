@@ -33,7 +33,7 @@ if __name__=="__main__":
     TotalEvents = config["EffectiveArea"]["gramssky"]["nparticles"]
     TotalBatches  = config["EffectiveArea"]["gramssky"]["energy_bins"]
     disk_rad = config["EffectiveArea"]["gramssky"]["RadiusDisc"]
-    Output = config["CalcEffArea"]["OutputFileName"]+".root"
+    Output = config["CalcEffArea"]["OutputFileName"]
 
     mapping = []
     for batch in range(TotalBatches):

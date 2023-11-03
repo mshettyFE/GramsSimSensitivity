@@ -216,7 +216,7 @@ def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Jo
     if len(glob.glob(os.path.join(data_dir,input_file_pattern))) == 0:
         print(data_dir + " doesn't contain cone files")
         sys.exit()
-    input_data_file = os.path.join(data_dir, base_input_name+"$(Process).root")
+    input_data_file = os.path.join(data_dir, base_input_name+"_$(Process).root")
     ## Write cmd file for sky map generation
     with open(cmd_name, 'w') as f:
         f.write("executable = "+shell_path +"\n")
@@ -433,7 +433,7 @@ def SourceGeneration(configuration, JobType, batch_mode):
 
     elif (JobType =="SkyMap"):
         output_directory_base_path = configuration["General"]["output_directory"]
-        base_input_name = configuration["Source"]["SkyMap"]["SkyMapInputBaseName"]
+        base_input_name = configuration["Source"]["Reconstruct"]["ReconstructOutput"]
         nbatches = configuration["Source"]["SourceBatches"]
         mask_output_name  = configuration["Mask"]["MaskOutput"]
         output_skymap_name = configuration["Source"]["SkyMap"]["SkyMapOutput"]+"_${process}.root"
@@ -442,7 +442,7 @@ def SourceGeneration(configuration, JobType, batch_mode):
         tar_file = base_name+".tar.gz"
     ## Cmd generation
         cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Source", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
-        input_file_name = base_input_name+"${process}.root"
+        input_file_name = base_input_name+"_${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         with open(output_shell_file,'w') as f:
             # generic setup for nevis cluster
@@ -563,7 +563,7 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
             f.write("cd ..\n")
     elif(JobType=="SkyMap"):
         output_directory_base_path = configuration["General"]["output_directory"]
-        base_input_name = configuration["Background"]["SkyMap"]["SkyMapInputBaseName"]
+        base_input_name = configuration["Background"]["Reconstruct"]["ReconstructOutput"]
         nbatches = configuration["Background"]["BackgroundBatches"]
         mask_output_name  = configuration["Mask"]["MaskOutput"]
         output_skymap_name = base_name+"_SkyMap_${process}.root"
@@ -572,7 +572,7 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         tar_file = base_name+".tar.gz"
     ## Cmd generation
         cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
-        input_file_name = base_input_name+"${process}.root"
+        input_file_name = base_input_name+"_${process}.root"
         output_skymap_name = configuration["Background"]["SkyMap"]["SkyMapOutput"]+"_${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         TotalEvents = int(configuration["Background"]["BackgroundEventsPerJob"])*int(configuration["Background"]["BackgroundBatches"])

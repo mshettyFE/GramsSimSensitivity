@@ -139,11 +139,11 @@
   nevents = 10000 # Number of Source events per job
   nbins =  1000 # Number of binnings in ARM distribution
   MaskOutput = "BinaryMask.root"
-  draw = false
+  draw = true
 
 [CalcEffArea]
 # Get parameters from EffArea
-  OutputFileName = "EffectiveArea"
+  OutputFileName = "EffectiveArea.root"
   
 [Sensitivity]
   TimeScaling = 1.0 # How much to scale up/down the exposure time
