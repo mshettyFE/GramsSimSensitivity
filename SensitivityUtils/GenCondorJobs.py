@@ -258,8 +258,8 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     ## cmd generation
     cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
     output_shell_file,tar_file, energy_bins, batch_mode)
-    ## Generate energies for each job
-    energies = np.logspace(math.log10(minE),math.log10(maxE),num=energy_bins)
+    ## Generate energies for each job. Linear scale
+    energies = np.linspace(minE,maxE,num=energy_bins)
     energy_str = "energies=( "
     for e in energies:
         energy_str = energy_str + ' \"'+str(e)+'\" '
