@@ -75,33 +75,34 @@ Running an effective area calculation consists of the following:
 3. Run ```condor_submit``` on the .cmd files that gets generated
     *   You can check the status of the job with ```condor_q```
 4. Once the batch job is done, run ```python3 CalcEffArea.py Configs.toml```
+    * See [TODO](TODO) for more info on CalcEffArea
 5. cp the generated .root file to the ```GramsWork``` directory in both the ```Source``` and the ```Background``` directory
 ```
-cp $OUTPUT_ROOT ../Source/GramsSimWork
-cp $OUTPUT_ROOT ../Background/GramsWork
+cp $OUTPUT__EFFAREA_ROOT ../Source/GramsSimWork
+cp $OUTPUT__EFFAREA_ROOT ../Background/GramsWork
 ```
 
 ### Source
 To generate the source, do the following:
 1. cd-ing into the ```Source``` directory
 2. Run ```python3 GenMask.py Configs.toml```
+    * See [TODO](TODO) for more info on GenMask.py
     * Copy the output .root file into the ```GramsWork``` directory in ```Background```
 ```
-cp $OUTPUT_ROOT ../Background/GramsWork
+cp $OUTPUT_MASK_ROOT ../Background/GramsWork
 ```
-3. Run ```python3 GenCondorJobs.py Configs.toml --Job EffectiveArea --JobType Cones```
+3. Run ```python3 GenCondorJobs.py Configs.toml --Job Source --JobType Cones```
 4. Run ```condor_submit``` on the .cmd files that gets generated
+5. Once that job is done, run ```python3 GenCondorJobs.py Configs.toml --Job Source --JobType SkyMap```
+6. Run ```condor_submit``` on the .cmd files that gets generated
 
 ### Background
 To generate the background, do the following:
 1. cd-ing into the ```Background``` directory
-2. Run ```python3 GenMask.py Configs.toml```
-    * Copy the output .root file into the ```GramsWork``` directory in ```Background```
-```
-cp $OUTPUT_ROOT ../Background/GramsWork
-```
-3. Run ```python3 GenCondorJobs.py Configs.toml --Job EffectiveArea --JobType Cones```
-4. Run ```condor_submit``` on the .cmd file that gets generated
+2. Run ```python3 GenCondorJobs.py Configs.toml --Job Background --JobType Cones```
+3. Run ```condor_submit``` on the .cmd file that gets generated
+4. Once that job is done, run ```python3 GenCondorJobs.py Configs.toml --Job Background --JobType SkyMap```
+5. Run ```condor_submit``` on the .cmd files that gets generated
 
 ### Sensitivity Calculation
 1. Assuming that you ran all the other scripts, just run the following in the ```Sensitivity``` folder to calculate the sensitivity:
