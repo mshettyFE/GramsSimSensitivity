@@ -5,6 +5,12 @@ import os,sys,math
 import array
 import ROOT
 import argparse
+import shutil
+
+def WriteFile(Output,EffAreaHist):
+    root_file= ROOT.TFile(Output, "RECREATE")
+    root_file.WriteObject(EffAreaHist,"EffArea")
+    root_file.Close()
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
@@ -63,7 +69,6 @@ if __name__=="__main__":
         EffA = math.pi*disk_rad*disk_rad*(counts/(TotalEvents))
 # Append to list for writing later
         mapping.append( (TruthEnergy,EffA) )
-    root_file= ROOT.TFile(Output, "RECREATE")
 
 # Generate the binnings of the root file
     binnings=[]
@@ -76,4 +81,7 @@ if __name__=="__main__":
 # for each energy, set the bin contents to be whatever is in the associated position in the python list
     for bin in range(0,EffAreaHist.GetNbinsX()):
         EffAreaHist.SetBinContent(bin,mapping[bin][1])
-    root_file.WriteObject(EffAreaHist,"EffArea")
+    WriteFile(Output,EffAreaHist)
+    home = os.path.dirname(os.getcwd())
+    shutil.copyfile(os.path.join(os.getcwd(),Output), os.path.join(home, "Background","GramsWork",Output))
+    os.rename(os.path.join(os.getcwd(),Output), os.path.join(home, "Source","GramsWork",Output) )

@@ -12,12 +12,7 @@ import random
 import argparse
 import tomllib
 import subprocess
-
-def write_file(OutputName,mask):
-    # Write to file
-    OutFile = ROOT.TFile.Open(OutputName, "RECREATE")
-    OutFile.WriteObject(mask, "Mask")
-    OutFile.Close()
+import shutil
 
 def lorentzian(x,params):
 ## ARM follows a Lorentzian distribution (technically a Voigt function, but fitting to that gave we poorer results)
@@ -92,7 +87,7 @@ if __name__=="__main__":
     n_events = data["Mask"]["nevents"]
     nbins = data["Mask"]["nbins"]
     OutputName = data["Mask"]["MaskOutput"]
-    EffAreaFile = data["Mask"]["EffArea"]
+    OutFile = ROOT.TFile.Open(OutputName, "RECREATE")
     Cart_loc = SphereToCart(RA_loc,ALT_loc)
 
 # Generate Source events
@@ -200,9 +195,14 @@ if __name__=="__main__":
         mask.SetStats(0)
         mask.Draw("colz")
         c2.SaveAs(pic_name)
-    write_file(OutputName,mask)
+    OutFile.WriteObject(mask, "Mask")
     # clean up
     args = ["rm", "-f", "gramssky.hepmc3", "gramssky_mac.mac", "gramsg4.root", "gramsdetsim.root", "Extracted.root", "Reco.root"]
     command = ' '.join(args)
     args = shlex.split(command)
     proc = subprocess.run(args)
+    # Copy Mask over
+    os.chdir("..")
+    home = os.path.dirname(os.getcwd())
+    shutil.copyfile(os.path.join(os.getcwd(), OutputName), os.path.join(home,"Background","GramsWork", OutputName))
+    os.rename(os.path.join(os.getcwd(), OutputName), os.path.join(os.getcwd(),"GramsWork", OutputName))

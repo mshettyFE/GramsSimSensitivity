@@ -76,21 +76,11 @@ Running an effective area calculation consists of the following:
     *   You can check the status of the job with ```condor_q```
 4. Once the batch job is done, run ```python3 CalcEffArea.py Configs.toml```
     * See [TODO](TODO) for more info on CalcEffArea
-5. cp the generated .root file to the ```GramsWork``` directory in both the ```Source``` and the ```Background``` directory
-```
-cp $OUTPUT__EFFAREA_ROOT ../Source/GramsSimWork
-cp $OUTPUT__EFFAREA_ROOT ../Background/GramsWork
-```
-
 ### Source
 To generate the source, do the following:
 1. cd-ing into the ```Source``` directory
 2. Run ```python3 GenMask.py Configs.toml```
     * See [TODO](TODO) for more info on GenMask.py
-    * Copy the output .root file into the ```GramsWork``` directory in ```Background```
-```
-cp $OUTPUT_MASK_ROOT ../Background/GramsWork
-```
 3. Run ```python3 GenCondorJobs.py Configs.toml --Job Source --JobType Cones```
 4. Run ```condor_submit``` on the .cmd files that gets generated
 5. Once that job is done, run ```python3 GenCondorJobs.py Configs.toml --Job Source --JobType SkyMap```
