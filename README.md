@@ -1,96 +1,107 @@
- This repository contains the various scripts and tools used to calculate the sensitivity of the GRAMS detector to MeV gamma rays. Based on the Geant4 simulation [GramsSim](https://github.com/wgseligman/GramsSim).
+# Introduction
+GramsSimSensitivity is for gamma-ray sensitivity calculations for the upcoming GRAMS (Gamma Ray and Anti-Matter Survey) experiment. The actual physics simulations of the gamma-rays propagating through the detector is performed by [GramsSim](https://github.com/wgseligman/GramsSim). This repository is a wrapper around GramsSim which provides syncrhonization between all of the various condor jobs and scripts of the sensitivity calculation.
 
- NOTE: if you aren't planning on building and running this on the nevis cluster, you need to do a good amount of leg work to download the required libraries and modify the condor generation scripts to work for your system's condor enviornment. You have been forewarned.
-
-# Pipeline
-The workflow for the analysis is as follows:
-1. Calculate the effective area of GRAMS as a function of energy (GenCondorScripts.py and CalcEffArea.py in [EffArea](./EffArea))
-2. Generate the background
-    * Generate a "reference flux" and a "physical flux" of the background (ie. experimental data) to enable energy reweighting ([GenEnergySpectrum](./BackgroundRecon/GenEnergySpectrum.py))
-    * Generate the background Compton Cones from the reference flux (GenCondorScripts.py in [BackgroundRecon](./BackgroundRecon))
-3. Generate Compton cones from a monoenergetic, point-like source at some right ascension (RA) and altitude (ALT) location on the sky (NOTE: use radians) (GenCondorScripts.py in [SourceRecon](./SourceRecon/))
-4. Define a "neighborhood" around the true source location based on the ARM (GenMask.py in [SourceRecon](./SourceRecon/))
-5. For both the source and the background, calculate the number of Comptons cones that lie within the neighborhood of the source
-    * For the background, we use the effective area and physical flux to [reweight](./utils/README.md/#aside-reweighting) the data generated in step 2. This allows us to test variable exposure times and different physical background fluxes (GenCondorCountsHistsScripts.py in [utils](./utils/) which gets copied over on build)
-    * For the source, we don't use any reweighting (same script as background case)
-6. Assuming Poisson statistics, we calculate the number of source cones needed to have a 3/5 sigma threshold above the background at the source energy. Once we have the number of Compton cones from the source, we can then convert this number to to the number of photons needed to generate said Compton cones. Finally, we convert the number of photons needed to a sensitvitity, taking into account the effective area, exposure time, and energy of the photon (CalcSensitivity.cpp in [SourceRecon](./SourceRecon/))
-
-If you want to start from scratch, start at [EffArea](./EffArea/).
-
-If you don't want to start from scratch, then on the nevis neutrino cluster you can find:
-*   The background dataset I generated can be found at ```/nevis/riverside/data/ms6556/Background```. 10000 batches each with 20000 events generated for each batch
-*   1 MeV source photons generated along the x-axis ($<RA,ALT> = <0,0>$) can be found at ```/nevis/riverside/data/ms6556/Background```. 10000 batches with 20000 events generated for each batch (this was gross overkill, which I didn't know at the time)
-
-Feel free to use and modify as you like, or generate your own data set (it takes around 12 hours to generate 2 billion events via condor if you properly divy up the work)
-
-# Useful Links
-* [Nevis Condor Guide](https://www.nevis.columbia.edu/~seligman/root-class/html/appendix/batch/index.html) is useful to get up to speed on how to get started with condor
-* [GramsSim](https://github.com/wgseligman/GramsSim) is the repository that this is based on
-* [ROOT Class Documentation](https://root.cern.ch/doc/master/) will tell you the signatures of all the classes and functions you will ever need
-
-# Files and Folders
-Each folder contains a different aspect of calculating the sensitivity. For more information on a particular aspect of the simulation, please read the associated README.md in each folder.
-* [BackgroundRecon](BackgroundRecon) contains the scripts necessary to set up condor jobs for two purposes:
-    1. Calculating the Compton cones generated from an isotropic MeV gamma ray source.
-    2. Generating AllSkyMaps and Count histograms from said Compton Cones in a neighborhood around a source location
-* [cmake](cmake/) contains the .cmake modules needed to build the project (taken directly from [here](https://github.com/wgseligman/GramsSim/tree/master/cmake))
-* [EffArea](EffArea/) contains the scripts necessary to calculate the effective area of the detector as a function of energy
-* [SenseJob](SenseJob/) contains the [GramsSim](https://github.com/wgseligman/GramsSim) executables/files with some modifications
-* [SourceRecon](SourceRecon/) is similar to BackgroundRecon in that it calculates the Compton Cones generated from a monoenergetic point source. It also, given the reconstructed background counts, background flux, effective area and exposure time, can calculate the sensitivity of GRAMS to a point source at a given energy.
-* [utils](utils/) contains a bunch of static libraries and programs that are used elsewhere
-* RemoveClutter.sh is used to clean up .out, .err and .log files generated by condor. If you don't need these output files, then remove them by copying RemoveClutter.sh to the condor output folder and running
+While this code is designed to run on the Nevis condor batch farm, it should be possible with some tweaking to run on similar condor farms (the preamble written to the various .cmd files needs to be modified to accomplish this; see the [condor script generator](./SensitivityUtils/GenCondorJobs.py) for details)
+# Building
+## Conda Enviornment
+After cloning the repositiory with the command:
 ```
-source RemoveClutter.sh
+git clone https://github.com/mshettyFE/GramsSimSensitivity.git
 ```
-this makes looking at the root files in the output directory much easier (tab completion is not as glacially slow)
-# Dependencies
-
-To build the project, you will need [cmake](https://cmake.org/), [ROOT](https://root.cern/install/), [XercesC](https://xerces.apache.org/xerces-c/download.cgi) (xml parser), and [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
-
-If you ever want to rebuild the GramSim executables, you will also need [Geant4](https://geant4.web.cern.ch/) and [hepmc3](https://gitlab.cern.ch/hepmc/HepMC3) for everything and [healpix](https://healpix.sourceforge.io/) to build gramssky.
-
- If you are at Nevis, you don't have to worry about downloading any of these. Just run
+cd into GramsSimSensitivity
+* If you are at Nevis:
+    * You can set up your enviornment by running:
+        *  ```conda activate /nevis/amsterdam/share/seligman/conda/grams```
+* If you are not at Nevis:
+    * You first need to install conda (see [here](https://conda.io/projects/conda/en/latest/user-guide/install/index.html))
+    * Run the following commands to download the requisite packages for GramsSim and GramsSimSensitivity
 ```
-module load cmake root geant4 hepmc3 healpix
+env_name="grams-dev"
+conda $env create -f environment.yml
+```
+Once everything is done, run the following to activate the enviornment:
+* ```conda $env activate```
+## Set up
+* In order to build GramsSim from source, as well as prepare the  ```GramsWork``` directory (which is the folder that gets transferred to the condor batch farms), run ```config.sh```:
+```
+./config.sh # In GramSimSensitivity directory
 ```
 
-# Building the Project
-You can download the repository with the `git clone` command.
-
-Navigate to the directory containing the github repo, but not the repo itself. Suppose that you want your build directory to be named "GramsSimSensitivityWork". Run the following commands:
-
+* Run the following commands in the ```GramsSimSensitivity``` folder in order to create a working directory to run [cmake](https://cmake.org/) in. cmake will then build the necessary executables and set up each directory to work on a certain subtask :
 ```
-module load cmake root geant4 hepmc3 healpix
-mkdir GramsSimSensitivityWork
-cd GramsSimSensitivityWork
-cmake ../GramsSimSensitivity
-make
-```
-
-This creates "GramsSimSensitivityWork" and generate the project in this folder.
-
-# Making Changes
-If you want to edit a .cpp file or header file, you need to change the file in the original GramsSimSensitivity directory. You then need to run the ```make``` command again.
-
-If you want to temporarily edit any other file to test something out, you can stay in your build directory.
-
-If you want to make a more permanent change to a file, go back to GramsSimSensitivity, make the edit there, go back to your build directory and run
-```
+WorkingDirName=Work
+mkdir ../$WorkingDirName
+cd ../$WorkingDirName
 cmake ../GramsSimSensitivity
 ```
+* (Side note: this is called "out of source" building, and is a common paradigm for building with cmake. GramsSim also does this)
+* Your final directory structure should look like the following, with GramsSimSensitivity and $WorkDirName on the same level:
+```
+.
+├── GramSimSensitivity
+    ├── ...
+└── $WorkDirName
+    ├── ...
+```
 
-# Caveats
-There are couple of important things to keep in mind when interpreting your results from the above simulations.
+All of the scripts mentioned in [Workflow](#Workflow) should be run in the $WorkDirName directory.
+# Workflow
+The overall workflow of the sensitivity calculation is as follows:
+* Calculate the effective area of the detector for a given energy and geometry
+* Calculate the detector response to a point source of a given energy
+    * As part of this step, generate a "local" background to the source via the ARM (Angular Resolution Measure) at the given energy
+* Calculate the detector response to some isotropic background
+    * The background follows some power law flux distribution, which is compared to some reference distribution for scaling purposes
+* Calculate the differential point source sensitivity at that particular energy
+## Creating Condor Jobs for Each Subtask
+In order to coordinate between the condor job scripts across each subtask, the following [script](./SensitivityUtils/GenCondorJobs.py) is utilized along with a [.toml](./ConfigFiles/Configs.toml) file. 
+### Job Generation
+The script generates .cmd, .sh and .tar.gz files which are needed to specify a condor job for a particular subtasks. The script also ensures that arguments between jobs are compatible with each other (assuming that .toml file doesn't change in the interim time). Arguments are as follows:
+* config: The path to the .toml config file
+* --Job: What Sub task you want to run: EffectiveArea, Source and Background
+* --JobType: What output data you want. "Cones" corresponds to the MC-truth level information for each scatter series, as well as Compton Cone data. "SkyMap" corresponds to the 2D skymap associated with all the Compton cones, as well as the number of cones which fall within the "local background"
+* -b: Is used to run the script without any safety prompts. Normally, the script will check if you have the potential to overwrite previously generated root files upon running your condor job and warn you about this possibility. The -b flag just assumes you are aware of this risk and will generate condor jobs anyways.
+### Config file
+* The default Config file can be found [here](./ConfigFiles/Configs.toml).
+    * See the  [the full spec](https://toml.io/en/v1.0.0) for more information on the .toml format
+* Feel free to modify as needed. A TOML validator can be found [here](https://www.toml-lint.com/).
+## Subtasks
+* For all of these, make sure that you are in the working directory and NOT GramsSimSensitivity. Also, make sure to modify the variables in Configs.toml to your liking PRIOR to running any tasks (changing Configs.toml mid-analysis might create inconsistencies).
+    * NOTE: Of particular importance is getting the ```output``` variable under ```[General]``` to point to the correct location. At Nevis, this should point to some ```data``` partition. In general though, this should point to some directory OTHER than the GramsSimSensitivity or Work directory. 
+### Effective Area
+Running an effective area calculation consists of the following:
+1. cd-ing into the ```EffArea``` directory
+2. Run the following command: ``` python3 GenCondorJobs.py Configs.toml --Job EffectiveArea --JobType Cones```
+3. Run ```condor_submit``` on the .cmd files that gets generated
+    *   You can check the status of the job with ```condor_q```
+4. Once the batch job is done, run ```python3 CalcEffArea.py Configs.toml```
+    * See [TODO](TODO) for more info on CalcEffArea
+### Source
+To generate the source, do the following:
+1. cd-ing into the ```Source``` directory
+2. Run ```python3 GenMask.py Configs.toml```
+    * See [TODO](TODO) for more info on GenMask.py
+3. Run ```python3 GenCondorJobs.py Configs.toml --Job Source --JobType Cones```
+4. Run ```condor_submit``` on the .cmd files that gets generated
+5. Once that job is done, run ```python3 GenCondorJobs.py Configs.toml --Job Source --JobType SkyMap```
+6. Run ```condor_submit``` on the .cmd files that gets generated
 
-The first is that experimental uncertainties are not taken into account (for instance, electronics noise, the discretization error associated with a pixel readout system, diffusion, recombination etc).
+### Background
+To generate the background, do the following:
+1. cd-ing into the ```Background``` directory
+2. Run ```python3 GenCondorJobs.py Configs.toml --Job Background --JobType Cones```
+3. Run ```condor_submit``` on the .cmd file that gets generated
+4. Once that job is done, run ```python3 GenCondorJobs.py Configs.toml --Job Background --JobType SkyMap```
+5. Run ```condor_submit``` on the .cmd files that gets generated
 
-While GramsSim does have tools to model these uncertainties like [GramsElecSim](https://github.com/wgseligman/GramsSim/tree/master/GramsElecSim), [GramsReadoutSim](https://github.com/wgseligman/GramsSim/tree/master/GramsReadoutSim) and [GramsDetSim](https://github.com/wgseligman/GramsSim/tree/master/GramsDetSim), one needs to fiddle with a bunch of parameters in order to get reasonable results. In order to do this fiddling, experimental data is needed, which ostenstiably would come from either the results from the balloon test flights in Japan or the experimental setup in Northeastern. Until that data comes through, the output from these uncertainty programs are currently not included in the pipeline.
-
-The second is that the optical photon simulation of GramsSim has yet to be completed. Whether sucessive scatters are optically isolated has a great impact on the effective area of the detector, as well as the reconstruction of the z coordinate of each scatter. Hence, this code will eventually need to be reworked to include the optical simulation results.
+### Sensitivity Calculation
+1. Assuming that you ran all the other scripts, just run the following in the ```Sensitivity``` folder to calculate the sensitivity:
+```
+python CalculateSensitivity.py Configs.toml
+```
 
 # TODO
-* Add in uncertainty programs to pipeline (electronics noise, detsim, pixel readout, optical simulation)
-* Add minimum signal to noise background ratio and minimum count thresholds like [CTAO](https://www.cta-observatory.org/science/ctao-performance/#1472563157332-1ef9e83d-426c)
-* Run analysis for more than a single energy
-    * A good starting point would be to mimic the COMPTEL energy ranges and energy binnings
-    * As a part of that process, it would be good to change Source generation to draw from a uniform energy distribution with width the size of your logarithmic binning
+* Write Configs.toml to the condor output directory when running script generator
+* Implement minimum count threshold and energy binning for sources
+* Include experimental errors into calculation
+* Auto detect condor job completion? (would allow automation of pipeline)

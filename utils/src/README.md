@@ -1,1 +1,0 @@
-The source directory for the static libraries. For details of implementation, see the relavent .cpp file. For a broader overview, see the [header files](../include/).

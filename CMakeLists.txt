@@ -35,45 +35,57 @@ find_package (XercesC REQUIRED)
 
 # Find Eigen library for GenSkyMapUtils
 find_package(Eigen3 REQUIRED)
-link_directories(${Eigen_INCLUDE_DIRS})
+link_directories(${EIGEN_INCLUDE_DIRS})
 
 # Set the rpath so that the executables can find the libraries
 # even if the environment setups have not been run in the shell (ie. even if module load hasn't been run)
 set(CMAKE_INSTALL_RPATH "${ROOT_LIBRARY_DIR}")
 
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/SenseJob/mac/batch)
+# Copy over Background
+file(GLOB BACKGROUND_RECON_FILES "${CMAKE_SOURCE_DIR}/Background/*")
+file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Background)
 
-# Copy over SenseJob containing compiled GramsSim programs to  BackgroundRecon and SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over Source
+file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/Source/*")
+file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
-# Copy over BackgroundRecon
-file(GLOB BACKGROUND_RECON_FILES "${CMAKE_SOURCE_DIR}/BackgroundRecon/*")
-file( COPY ${BACKGROUND_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon)
+# Make Sensitivity Directory
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/Sensitivity)
 
-# Copy over SourceRecon
-file(GLOB SOURCE_RECON_FILES "${CMAKE_SOURCE_DIR}/SourceRecon/*")
-file( COPY ${SOURCE_RECON_FILES} DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+# Copy over ConfigFiles to Background,EffArea, Source
+file(GLOB CONFIG_FILES "${CMAKE_SOURCE_DIR}/ConfigFiles/*")
+file( COPY ${CONFIG_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CONFIG_FILES} DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+file( COPY ${CONFIG_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Source)
+file( COPY ${CONFIG_FILES} DESTINATION ${CMAKE_BINARY_DIR}/Sensitivity)
 
-# Create BackgroundCountHist zip directory
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
+# Copy over GenCondorJobs
+file(GLOB GENERATION_SCRIPT "${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py")
+file( COPY ${GENERATION_SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${GENERATION_SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+file( COPY ${GENERATION_SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/Source)
+file( COPY ${GENERATION_SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/Sensitivity)
 
-# Copy over options.xml to BackgroundCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/BackgroundRecon/BackgroundCountHist)
+# Copy over GenCondorJobs to Background, EffArea, Source, Sensitivity
 
-# Create SourceCountHist zip directory
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
-
-# Copy over options.xml to SourceCountHist
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon/SourceCountHist)
-
-#Copy over options.xml to SourceRecon
-file( COPY ${CMAKE_SOURCE_DIR}/SenseJob/options.xml DESTINATION ${CMAKE_BINARY_DIR}/SourceRecon)
+#Copy over options.xml to Source
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork/options.xml DESTINATION ${CMAKE_BINARY_DIR}/Source)
 
 # Copy over RemoveClutter.sh
-
 file( COPY ${CMAKE_SOURCE_DIR}/RemoveClutter.sh DESTINATION ${CMAKE_BINARY_DIR})
 
-add_subdirectory(utils)
+add_subdirectory(SensitivityUtils)
 add_subdirectory(EffArea)
-add_subdirectory(SourceRecon)
+
+# Copy over GramsWork containing compiled GramsSim programs to Background and Source
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/Source)
+file( COPY ${CMAKE_SOURCE_DIR}/GramsWork DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+
+# Copy over GenCondorJobs to EffArea, Background, and Source
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/Background)
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/EffArea)
+file( COPY ${CMAKE_SOURCE_DIR}/SensitivityUtils/GenCondorJobs.py DESTINATION ${CMAKE_BINARY_DIR}/Source)
+
+# Copy over CalculateSensitivity.py to correct folder
+file( COPY ${CMAKE_SOURCE_DIR}/Sensitivity/CalculateSensitivity.py DESTINATION ${CMAKE_BINARY_DIR}/Sensitivity)
