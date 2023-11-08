@@ -33,6 +33,7 @@ WorkingDirName=Work
 mkdir ../$WorkingDirName
 cd ../$WorkingDirName
 cmake ../GramsSimSensitivity
+make
 ```
 * (Side note: this is called "out of source" building, and is a common paradigm for building with cmake. GramsSim also does this)
 * Your final directory structure should look like the following, with GramsSimSensitivity and $WorkDirName on the same level:
