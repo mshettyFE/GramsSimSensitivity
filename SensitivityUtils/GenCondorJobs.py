@@ -1,5 +1,5 @@
 import tomllib
-import os, sys, glob
+import os, sys, glob, math
 import argparse
 import datetime
 import numpy as np
@@ -10,7 +10,7 @@ def get_keys(config):
     # Recursively gather all the keys in a dictionary of nested dictionaries
     output = []
     for k,v in config.items():
-# Recurse: The items are dictionaries, so they can possible contain more keys themselves. Recurse on each dictionary v
+    # Recurse: The items are dictionaries, so they can possible contain more keys themselves. Recurse on each dictionary v
         if isinstance(v,dict):
             output += [k]
             output += get_keys(v)
@@ -588,7 +588,7 @@ def LogUniform(E,**kwargs):
     return np.power(E,-1)/scaling
 
 def GenFluxes(EffectiveAreaFile  ,PhysicalFluxName , ReferenceFluxName ):
-## Generate reference and physical background flux for background cone generation
+    ## Generate reference and physical background flux for background cone generation
     home = os.getcwd()
     os.chdir(os.path.join(home,"GramsWork"))
     args = parser.parse_args()
@@ -768,8 +768,15 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     ## cmd generation
     cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
     output_shell_file,tar_file, energy_bins, batch_mode)
-    ## Generate energies for each job. Linear scale
-    energies = np.linspace(minE,maxE,num=energy_bins)
+    ## Generate energies for each job. Uses "scale" to decide what scaliing the x axis should be (linear or log)
+    if(configuration["General"]["scale"].lower() == "linear"):
+        energies = np.linspace(minE,maxE,num=energy_bins)
+    elif (configuration["General"]["scale"].lower() == "log"):
+        energies = np.logspace(math.log10(minE),math.log10(maxE),num=energy_bins)
+    ## This shouldn't happen, but you never know!
+    else:
+        print("Invalid scale for x axis of Effective Area")
+        sys.exit()
     energy_str = "energies=( "
     for e in energies:
         energy_str = energy_str + ' \"'+str(e)+'\" '
@@ -1134,6 +1141,8 @@ if __name__ =="__main__":
     print(opt[1])
     if not opt[0]:
         sys.exit()
+## Using config dictionary to also pass down filename into config generation functions
+    config["DummyPlaceholder"] = os.path.split(args.config)[1]
     if(args.Job=="EffectiveArea"):
         EffectiveAreaGeneration(config,args.batch)
     elif (args.Job=="Source"):
@@ -1142,3 +1151,4 @@ if __name__ =="__main__":
         BackgroundGeneration(config,args.JobType, args.batch)
     else:
         print("Invalid Job")
+    print("Finished ;)")
