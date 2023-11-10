@@ -104,6 +104,7 @@
         <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
         This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the generated events were isotropic-->
     </Reconstruct>
+    
     <GenSkyMap>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
         <option name="Output" value="CountsHists.root" short='o' type="string" desc="Output root file containing Counts TH1D histogram and TH2D Sky Map"></option>
