@@ -507,7 +507,7 @@ def ParameterValidityCheck(configuration):
         return (False, "TimeScaling must be strictly greater than 0")
 
     if(len(possible_keys) > 0):
-        print("\n\n")
+        print("\n\n\n")
         for key in possible_keys:
             print("Parameter: " +str(key)+" not found")
         return (False, "Missing headers/attributes")
