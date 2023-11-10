@@ -3,6 +3,8 @@
   RABinnings= 500 #binnings on skymap fro source and background
   ALTBinnings= 500
   output_directory = "/nevis/milne/files/ms6556/BleekerData/Test"
+  MC_truth = true # flag to denote if Reconstruct ...
+  scale = "linear" # What scale the binnings should be. Options are {"linear","log"}
 
 [EffectiveArea.gramssky]
 # Read in by Effective Area condor job and CalcEffArea
