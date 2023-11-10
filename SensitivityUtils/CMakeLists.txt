@@ -1,3 +1,10 @@
+file(GLOB G4Entry src/G4Entry.c
+    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/G4Entry.cpp
+)
+set(G4LibName ${CMAKE_PROJECT_NAME}G4Entry)
+add_library (${G4LibName} STATIC ${G4Entry})
+target_include_directories (${CMAKE_PROJECT_NAME}G4Entry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # The source code to compile for options
 file(GLOB UtilSrc src/Options.cpp
                     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/Options.cpp
