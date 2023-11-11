@@ -10,7 +10,6 @@
 #include <cstring>
 #include <iostream>
 
-#include "GramsG4Entry.h"
 #include "UsefulTypeDefs.h"
 
 void print_G4map(std::map<std::tuple<int,int>, std::vector<G4Entry> > mapping){

@@ -1,7 +1,5 @@
-#include <any>
-#include <tuple>
+#include <vector>
 
-#include "Entry.h"
 #include "GramsG4Entry.h"
 
 GramsG4Entry::GramsG4Entry(int run,int event, int TrackID, int ParentID,  int PDGCode, 
@@ -19,10 +17,8 @@ GramsG4Entry::GramsG4Entry(int run,int event, int TrackID, int ParentID,  int PD
 }
 
 std::vector<int> GramsG4Entry::extract_key(){
-    int run = this->get_value<int>(0);
-    int event = this->get_value<int>(1);
-    std::vector<int> output =  {run, event};
-    return output;
+    return {this->get_run(), this->get_event()};
+
 }
 
 int GramsG4Entry::get_run(){
