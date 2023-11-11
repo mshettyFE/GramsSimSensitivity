@@ -7,7 +7,9 @@ GramsG4Entry::GramsG4Entry(int run,int event, int TrackID, int ParentID,  int PD
     data.push_back(run);
     data.push_back(event);
     data.push_back(TrackID);
+    data.push_back(ParentID);
     data.push_back(PDGCode);
+    data.push_back(ProcessName);
     data.push_back(t);
     data.push_back(x);
     data.push_back(y);
