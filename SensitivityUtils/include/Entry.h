@@ -3,21 +3,28 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <variant>
+#include "UsefulTypeDefs.h"
 
 class Entry{
+  // Entry is an abstract base class that must be inherited to be used
+  // The inherited type should properly implement a valid contructor/descructor pair to populate data member
+  // extract_key should also return a vector
   public:
-// Generic printing method for Entry
-    virtual void print()  = 0;
-// Get data[index] value out of Entry
-    template <typename T>
-    std::variant<int,double,std::string> get_value(int index);
-
-// Empty constructor and destructor
     Entry(){};
     ~Entry(){};
+  // Generic printing method for Entry
+  void print();
+  // Get data[index]. The generic function defaults to returning an error.
+  // You need to specialize the function to the correct datatype to get useful output (see associated .cpp file)
+  template <typename DType>
+  DType get_value(int index);
+  // extract key from Entry (preferable should a std::tuple of some kind)
+  virtual std::vector<int> extract_key() = 0;
+  // Interpret == and != as stating weather the events came from the same gamma ray
   protected:
-    std::vector<std::variant<int, double, std::string>> data;
+    EntryRow data;
 };
 
 #endif

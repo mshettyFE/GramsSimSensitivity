@@ -1,11 +1,14 @@
 #ifndef GRAMS_SENSE_TYPEDEFS
 #define GRAMS_SENSE_TYPEDEFS 1
+#include <variant>
 
 // Typedefs so I don't have to type out all of these.
 // Also so that I have one place where I can refer to to remember which variable is which
-// I don't think I have to do anything fancy with CMAKE other than including the include directory (already doing)
 
-// Convinient typedefs
+// contains data associated with a hit event
+typedef std::variant<int, double, float, std::string> EntryData;
+// groups EntryData into 1 event hit
+typedef std::vector<EntryData>  EntryRow;
 // <TrackID,ParentID,PDGCode,ProcessName,t,x,y,z,Etot,identifier>
 typedef std::tuple<int,int,int,std::string,double,float,float,float,double,int> G4Entry;
 // <Energy,x_det,y_det,z_det,t_det>
