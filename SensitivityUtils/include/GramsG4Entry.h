@@ -11,6 +11,9 @@ class GramsG4Entry : public Entry{
     // get key
     std::vector<int> extract_key() override;
 
+    // print
+    void print() override;
+
     int get_run();
     int get_event();
     int get_TrackID();
@@ -21,7 +24,7 @@ class GramsG4Entry : public Entry{
     float get_x();
     float get_y();
     float get_z();
-    double get_E();
+    double get_Energy();
     int get_ID();
 };
 

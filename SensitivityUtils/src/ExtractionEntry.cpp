@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 
 #include "ExtractionEntry.h"
 
@@ -22,6 +23,26 @@ GramsExtractEntry::GramsExtractEntry(bool MCTruth, int run, int event, double t,
 
 std::vector<int> GramsExtractEntry::extract_key(){
     return {this->get_run(), this->get_event() };
+}
+
+void GramsExtractEntry::print(){
+  bool currentMC = this->get_MCTruth();
+  this->set_MCTruth(true);
+  std::cout <<"run = " << this->get_run() ;
+  std::cout <<" event = " << this->get_event() ;
+  std::cout << " MC_t = " << this->get_time();
+  std::cout << " MC_x = " << this->get_xpos();
+  std::cout <<  "MC_y = " << this->get_ypos();
+  std::cout << " MC_z = " << this->get_zpos();
+  std::cout << " MC_energy = " << this->get_Energy();
+  this->set_MCTruth(false);
+  std::cout << " Det_t = " << this->get_time();
+  std::cout << " Det_x = " << this->get_xpos();
+  std::cout << " Det_y = " << this->get_ypos();
+  std::cout << " Det_z = " << this->get_zpos();
+  std::cout << " Det_energy = " << this->get_Energy();
+  std::cout << "\n" <<  std::endl;
+  this->set_MCTruth(currentMC);
 }
 
 int GramsExtractEntry::get_run(){

@@ -15,7 +15,7 @@ class Entry{
     Entry(){};
     ~Entry(){};
   // Generic printing method for Entry
-  void print();
+  virtual void print() = 0;
   // Get data[index]. The generic function defaults to returning an error.
   // You need to specialize the function to the correct datatype to get useful output (see associated .cpp file)
   template <typename DType>

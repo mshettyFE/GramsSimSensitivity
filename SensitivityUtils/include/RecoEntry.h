@@ -13,6 +13,10 @@ class GramsRecoEntry : public Entry{
     GramsRecoEntry(int,int,double,double,double,double,double,double,double,double);
     // get key
     std::vector<int> extract_key() override;
+
+    // print
+    void print() override;
+
     int get_run();
     int get_event();
 

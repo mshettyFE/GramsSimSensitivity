@@ -6,18 +6,6 @@
 
 #include "Entry.h"
 
-void Entry::print(){
-    if(data.size == 0){
-        std::cout << "no data in Entry";
-    }
-    // Adapted from here: https://en.cppreference.com/w/cpp/utility/variant/visit
-    for (const auto& v: data){
-        std::visit([](auto&& arg){ std::cout << arg << ' '; }, v);
-    }
-    std::cout << std::endl;
-}
-
-
 template <typename DType>
 DType Entry::get_value(int index){
   throw std::invalid_argument("DType is not int, double, float or string");

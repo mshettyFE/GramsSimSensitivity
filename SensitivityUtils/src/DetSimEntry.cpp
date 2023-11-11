@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 
 #include "DetSimEntry.h"
 
@@ -18,6 +19,18 @@ std::vector<int> GramsDetSimEntry::extract_key(){
     return {this->get_run(), this->get_event(), this->get_TrackID()};
 }
 
+void GramsDetSimEntry::print(){
+  std::cout <<"run= " << this->get_run() ;
+  std::cout <<" event = " << this->get_event() ;
+  std::cout << " TrackID = " << this->get_TrackID();
+  std::cout << " energy = " << this->get_Energy();
+  std::cout << " xdet = " << this->get_x();
+  std::cout << " ydet = " << this->get_y();
+  std::cout << " zdet = " << this->get_z();
+  std::cout << " tdet = " << this->get_t();
+  std::cout << "\n" <<  std::endl;
+}
+
 int GramsDetSimEntry::get_run(){
   return this->get_value<int>(0);
 }
@@ -30,7 +43,7 @@ int GramsDetSimEntry::get_TrackID(){
     return this->get_value<int>(2);
 }
 
-double GramsDetSimEntry::get_E(){
+double GramsDetSimEntry::get_Energy(){
   return this->get_value<double>(3);
 }
 

@@ -13,6 +13,8 @@ class GramsExtractEntry : public Entry{
     // get key
     std::vector<int> extract_key() override;
 
+    void print() override;
+
     int get_run();
     int get_event();
     std::string get_SeriesType();

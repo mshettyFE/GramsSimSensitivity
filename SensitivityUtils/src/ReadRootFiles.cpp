@@ -35,7 +35,6 @@ void print_G4map(std::map<std::tuple<int,int>, std::vector<G4Entry> > mapping){
   }
 }
 
-
 std::map<std::tuple<int,int>, std::vector<G4Entry> > ReadGramsG4(std::string GramsG4FileName, bool verbose){
   // See type defs for G4Entry
   // Uses <run,event> as key, and a list of interactions as the value

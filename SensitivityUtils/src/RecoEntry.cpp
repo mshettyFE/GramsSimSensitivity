@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 #include "RecoEntry.h"
 
 
@@ -18,6 +19,20 @@ double xTip, double yTip, double zTip, double RecoAngle, double TruthEnergy){
 
 std::vector<int> GramsRecoEntry::extract_key(){
     return {this->get_run(), this->get_event() };
+}
+
+void GramsRecoEntry::print(){
+  std::cout << "run= " << this->get_run() ;
+  std::cout << " event = " << this->get_event() ;
+  std::cout << " xDir = " << this->get_XDir();
+  std::cout << " yDir = " << this->get_YDir();
+  std::cout << " zDir = " << this->get_ZDir();
+  std::cout << " xTip = " << this->get_XTip();
+  std::cout << " yTip = " << this->get_YTip();
+  std::cout << " zTip = " << this->get_ZTip();
+  std::cout << " RecoAngle = " << this->get_RecoAngle();
+  std::cout << " TruthEnergy = " << this->get_TruthEnergy();
+  std::cout << '\n' << std::endl;
 }
 
 int GramsRecoEntry::get_run(){
