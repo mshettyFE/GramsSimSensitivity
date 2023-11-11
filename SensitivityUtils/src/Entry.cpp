@@ -20,7 +20,7 @@ void Entry::print(){
 
 template <typename DType>
 DType Entry::get_value(int index){
-  throw std::invalid_argument("DType is not int, double, or string");
+  throw std::invalid_argument("DType is not int, double, float or string");
 }
 
   // specializations of get_value to int, double, std::string

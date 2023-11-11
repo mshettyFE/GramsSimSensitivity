@@ -32,10 +32,6 @@ int GramsExtractEntry::get_event(){
   return this->get_value<int>(1);
 }
 
-std::string GramsExtractEntry::get_SeriesType(){
-  return this->get_value<std::string>(12);
-}
-
 double GramsExtractEntry::get_time(){
   if(this->get_MCTruth()){
     return this->get_value<double>(2);
@@ -70,6 +66,10 @@ double GramsExtractEntry::get_Energy(){
     return this->get_value<double>(6);
   }
   return this->get_value<double>(11);
+}
+
+std::string GramsExtractEntry::get_SeriesType(){
+  return this->get_value<std::string>(12);
 }
 
 void GramsExtractEntry::set_MCTruth(bool flag){

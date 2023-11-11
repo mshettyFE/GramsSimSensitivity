@@ -30,20 +30,22 @@ int GramsDetSimEntry::get_TrackID(){
     return this->get_value<int>(2);
 }
 
-double GramsDetSimEntry::get_t(){
-    return this->get_value<double>(6);
+double GramsDetSimEntry::get_E(){
+  return this->get_value<double>(3);
 }
 
 float GramsDetSimEntry::get_x(){
-  return this->get_value<float>(7);
+  return this->get_value<float>(4);
 }
 
 float GramsDetSimEntry::get_y(){
-  return this->get_value<float>(8);
+  return this->get_value<float>(5);
 }
+
 float GramsDetSimEntry::get_z(){
-  return this->get_value<float>(9);
+  return this->get_value<float>(6);
 }
-double GramsDetSimEntry::get_E(){
-  return this->get_value<double>(10);
+
+double GramsDetSimEntry::get_t(){
+    return this->get_value<double>(7);
 }
