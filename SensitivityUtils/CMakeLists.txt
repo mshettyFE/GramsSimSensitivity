@@ -3,6 +3,7 @@ file(GLOB Entries
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/GramsG4Entry.cpp
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/DetSimEntry.cpp
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/ExtractionEntry.cpp
+    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/RecoEntry.cpp
 )
 set(G4LibName ${CMAKE_PROJECT_NAME}Entries)
 add_library (${G4LibName} STATIC ${Entries})

@@ -5,9 +5,11 @@
 #include <vector>
 
 class GramsExtractEntry : public Entry{
+  private:
+    bool MCTruth_flag;
   public:
-    // run, event, energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet, EventType
-    GramsExtractEntry(int, int, double,double,double,double,double,double,double,double,double,double,std::string);
+    // MC_Truth_flag, run, event, energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet, EventType
+    GramsExtractEntry(bool, int, int, double,double,double,double,double,double,double,double,double,double,std::string);
     // get key
     std::vector<int> extract_key() override;
 
@@ -15,18 +17,14 @@ class GramsExtractEntry : public Entry{
     int get_event();
     std::string get_SeriesType();
     // MC truth variables
-    double get_t();
-    double get_x();
-    double get_y();
-    double get_z();
-    double get_E();
-    // DetSimVariables
-    double get_tDet();
-    double get_xDet();
-    double get_yDet();
-    double get_zDet();
-    double get_EDet();
+    double get_time();
+    double get_xpos();
+    double get_ypos();
+    double get_zpos();
+    double get_Energy();
 
+    void set_MCTruth(bool flag);
+    bool get_MCTruth();
 };
 
 #endif
