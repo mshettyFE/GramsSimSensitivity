@@ -1,5 +1,5 @@
-file(GLOB Entries src/G4Entry.cpp
-    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/G4Entry.cpp
+file(GLOB Entries src/GramsG4Entry.cpp
+    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/GramsG4Entry.cpp
 )
 set(G4LibName ${CMAKE_PROJECT_NAME}G4Entry)
 add_library (${G4LibName} STATIC ${Entries})
