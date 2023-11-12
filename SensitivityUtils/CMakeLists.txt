@@ -39,6 +39,7 @@ set(ReadRootLib ${CMAKE_PROJECT_NAME}ReadRoot)
 add_library (${ReadRootLib} STATIC ${ReadRootSrc})
 
 target_link_libraries(${ReadRootLib} ${ROOT_LIBRARIES} )
+target_link_libraries(${ReadRootLib} ${CMAKE_PROJECT_NAME}Entries)
 target_include_directories (${CMAKE_PROJECT_NAME}ReadRoot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create ReconstructUtils library

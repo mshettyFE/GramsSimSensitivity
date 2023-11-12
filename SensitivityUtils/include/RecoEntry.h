@@ -9,7 +9,7 @@
 
 class GramsRecoEntry : public Entry{
   public:
-    // MCTruth_flag, run, event, xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle, TruthEnergy
+    //run, event, xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle, TruthEnergy
     GramsRecoEntry(int,int,double,double,double,double,double,double,double,double);
     // get key
     std::vector<int> extract_key() override;

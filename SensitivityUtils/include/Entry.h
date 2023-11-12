@@ -2,6 +2,7 @@
 #define ENTRY
 
 #include <string>
+#include <memory>
 #include <vector>
 #include <map>
 #include <variant>
@@ -26,5 +27,11 @@ class Entry{
   protected:
     EntryRow data;
 };
+
+void printEntries(std::vector<std::unique_ptr<Entry>> rows){
+  for(auto& row: rows){
+    row->print();
+  }
+}
 
 #endif
