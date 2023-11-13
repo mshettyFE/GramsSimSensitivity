@@ -39,6 +39,9 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
+  bool MCTruth;
+  options->GetOption("verbose",MCTruth);
+
   std::string inputFileName;
   std::string outputFileName;
   bool checkInput = options->GetOption("Input",inputFileName);
@@ -58,7 +61,7 @@ int main(int argc, char** argv){
     return -1;
   }
 
-  // Read in Source Type
+  // Read in Source Types
   std::string SourceType;
   bool CheckSourceType = options->GetOption("SourceType",SourceType);
   if(!CheckSourceType){
@@ -89,7 +92,7 @@ int main(int argc, char** argv){
   TTree* tree;
   tree = new TTree("Cones","Compton Cones");
   // Fill tree with Reconstructed Cone Data
-  Reconstruction(Series,tree,truthLoc,SourceType);
+  Reconstruction(Series,tree,truthLoc,SourceType, MCTruth);
   // Write TTree to File
   tree->Write();
   // Clean Up

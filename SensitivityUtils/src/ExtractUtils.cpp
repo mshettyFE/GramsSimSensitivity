@@ -4,200 +4,44 @@
 #include "TTree.h"
 #include "TH3D.h"
 
+#include "GramsG4Entry.h"
+#include "DetSimEntry.h"
+#include "UsefulTypeDefs.h"
+
 // The C++ includes.
 #include <vector>
 #include <map>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 
-void SortEvents(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> &Events){
-  // Sorts events by time for easier processing later (ie. 5th argument)
-    sort(Events.begin(),Events.end(),[](
-      std::tuple<int,int,int,std::string,double,float,float,float,double,int> a, 
-      std::tuple<int,int,int,std::string,double,float,float,float,double,int> b){
-      return (std::get<4>(a) < std::get<4>(b));
-    });
-}
-
-void SortDetEvents(std::vector<std::tuple<double,double,double,double,double>> &Events){
-  // Sorts events by time for easier processing later (ie. 5th argument)
-    sort(Events.begin(),Events.end(),[](
-      std::tuple<double,double,double,double,double> a,
-       std::tuple<double,double,double,double,double> b){
-      return (std::get<4>(a) < std::get<4>(b));
-    });
-}
-
-std::vector<double> L2NormSquaredAdjacentScatters(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> Series){
-  // Function that calculates the L2NormSquared (ie. squared Euclidean distance) between adjacent scatters
-  //Cone Variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier
-  std::vector<double> L2NormSquared;
-  // We are assuming that the first "scatter" is a gamma ray, hence we skip that interaction
-  for(int i=1; i<(Series.size()-1);++i){
-    double dx = std::get<5>(Series[i])-std::get<5>(Series[i+1]);
-    double dy = std::get<6>(Series[i])-std::get<6>(Series[i+1]);
-    double dz = std::get<7>(Series[i])-std::get<7>(Series[i+1]);
-    L2NormSquared.push_back(dx*dx+dy*dy+dz*dz);
-  }
-  return L2NormSquared;
-}
-
-bool UniqueCellsOnePair(std::tuple<int,int,int,std::string,double,float,float,float,double,int> first, std::tuple<int,int,int,std::string,double,float,float,float,double,int> second,
-std::vector<double> Dimensions, std::vector<int> Binnings){
-  //Cone variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
-  // create a histogram that aligns with the coordinate system of TPc (ie. x and y origin at center of detector. z=0 at top of detector)
-    // x dimension ranges from -x_dim/2 to x_dim/2
-    // y dimension from -y_dim/2 to y_dim/2
-    // z dimension from -z_dim to 0
-  TH3D *classifier = new TH3D("class", "doesn't matter",
-   Binnings[0], -Dimensions[0]/2.0, Dimensions[0]/2.0,
-   Binnings[1], -Dimensions[1]/2.0, Dimensions[1]/2.0,
-   Binnings[2], -Dimensions[2], Dimensions[2]);
-  // Bin the first and second scatters and get the associated bin numbers
-  // (there might be a bug if you exceed the histogram limits, but that shouldn't happen... I hope)
-  int first_bin = classifier->Fill(std::get<5>(first),std::get<6>(first),std::get<7>(first));
-  int second_bin = classifier->Fill(std::get<5>(second),std::get<6>(second),std::get<7>(second));
-  // clean up pointer
-  delete classifier;
-  return first_bin==second_bin;
-}
-
-bool filter(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string SeriesType,
- std::string FilterType,  std::vector<double> Dimensions ,  std::vector<int> Binnings,  double seperation , bool verbose){
-  // variables in series corresponds to the following:
-    //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
-  // Function that sorts through events and selects Compton series to be analyzed
-  // This means at  all non-gamma ray events are inside detector, all events inside TPC are comptons and photoabsorbitons, and all events came from primary (ie. no showers)
-  // Assume that events are sorted in order of increasing time
-  // Checks for at least 3 events (Primary, first event, second event). Need at least 2 events to perform reconstruction
-  // FilterType can add on additional filtering.
-    // Standard adds no additional filtering criterion
-    // UniqueCells stipulates that each scatter must occur in a unique cell (ie. each scatter happens in an optically isolated region)
-    // Sphere denotes that the distance between each scatter must be at least seperation cm apart
-    if(verbose){
-      for(int i =0; i<series.size(); ++i){
-        auto &event = series[i];
-        std::string PName = std::get<3>(event);
-        std::cout << PName << std::endl;
-      }
-    }
-    for(int i =0; i<series.size(); ++i){
-        auto &event = series[i];
-        std::string ProcessName = std::get<3>(event);
-  // If the event is not a primary gamma, a compton scatter, or a photoabsorbtion, reject series
-        bool ProcessCheck = (ProcessName=="Primary") || (ProcessName == "compt") || (ProcessName == "phot");
-        if (!ProcessCheck){
-          return false;
-        }
-  // If the event is not a primary photon, check if it is inside the LAr. If it is not, the reject event
-        if (ProcessName != "Primary"){
-          // we divide by 1000000 since interactions in LAr have an identifier starting with 1
-          if ( static_cast<int>( static_cast<float>( std::get<9>(event) ) /1000000.0)  !=1){
-              return false;
-          }
-        }
-  // Check if all events originated from primary gamma
-      int ParentIdentity = std::get<1>(event);
-      bool PaternityTest = (ParentIdentity ==1 || ParentIdentity ==0); 
-      if(!PaternityTest){
-        return false;
-      }
-    }
-    
-  if(SeriesType=="Escape"){
-    // Need 3 non-gamma events
-    if(series.size()<4){
-      return false;
-    }
-  }
-  else if(SeriesType=="AllIn"){
-    // Need 2 non gamma events
-    if(series.size()<3){
-      return false;
-    }
-  }
-  else{
-    // SHouldn't happen, but just in case
-    std::cerr << "Invalid Series Type" << std::endl;
-    return false;
-  }
-
-  if(FilterType=="Standard"){
-    // No additional filters
-    return true;
-  }
-
-  else if(FilterType=="Sphere"){
-    std::vector<double> L2NormSquaredDistances = L2NormSquaredAdjacentScatters(series);
-    for(int index=0; index <L2NormSquaredDistances.size(); ++index){
-    // check if distance b/w scatters is at least seperation
-    // Actually calculate distance squared so that we don't need to take square roots
-      if(L2NormSquaredDistances[index]<(seperation*seperation)){
-        return false;
-      }
-    }
-    return true;
-  }
-
-  else if(FilterType=="UniqueCells"){
-    // check for unique, optically isolated cells
-    // Ignore the first hit since it is a gamma ray.
-    for(int index=1; index <series.size()-1; ++index){
-      std::tuple<int,int,int,std::string,double,float,float,float,double,int> first = series[index];
-      std::tuple<int,int,int,std::string,double,float,float,float,double,int> second = series[index+1];
-      // If two adjacent scatters are not in unique cells, return false
-      if(!UniqueCellsOnePair(first,second,Dimensions,Binnings)){
-        return false;
-      }
-    }
-    // All the scatters are in unique cells
-    return true;
-  }
-
-  else{
-  // Defaults to "Standard" if somehow, you get an invalid filter value
-    return true;
-  }
-}
-
-void escape(std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> series, std::string &outParam){
-  // int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
-  // Assuming the events are time sorted, we see if last event was a photoabsorbtion
-  // Each series is gaurenteed to be at least 1 (since the gamma ray is part of the series)
-    if (std::get<3>(series.at(series.size()-1)) == "phot"){
-        outParam =  std::string("AllIn");
-    }
-    else{
-        outParam = std::string("Escape");
-    }
-}
-
-void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > GramsG4Map,
-  std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > GramsDetSimMap,
-  std::string outputRootFile, std::string FilterType,
-  std::vector<double> Dimensions,  std::vector<int> Binnings, double seperation,  bool verbose){
-  // Create output file
-  TFile* output = new TFile(outputRootFile.c_str(), "RECREATE");
-  TTree* ntuple = new TTree("FilteredSeries","Compton scatter series");
-
+bool WriteEntry(std::unique_ptr<GramsG4Entry>& G4, std::unique_ptr<GramsDetSimEntry>& DetSim, TTree* ntuple, bool verbose){
   // variables to be written
-  int Run;
-  int Event;
-  int TrackID;
-  int ParentID;
-  int PDGCode;
-  double energy;
-  double t;
-  double x;
-  double y;
-  double z;
-  double tDet;
-  double xDet;
-  double yDet;
-  double zDet;
-  double DetEnergy;
-  int identifier;
-  std::string series_type;
+  EntryKey G4_key = G4->extract_key();
+  EntryKey Det_key = DetSim->extract_key();
+  if(G4_key[0] != Det_key[0]){
+    throw std::invalid_argument("Keys don't match");
+  }
+  if(G4_key[1] != Det_key[1]){
+    throw std::invalid_argument("Keys don't match");
+  }
+  int Run = G4->get_run();
+  int Event = G4->get_event();
+  int TrackID = G4->get_TrackID(); 
+  int ParentID = G4->get_ParentID();
+  int PDGCode = G4->get_PDGCode();
+  double energy = G4->get_Energy();
+  double t = G4->get_t();
+  double x = G4->get_x();
+  double y = G4->get_y();
+  double z = G4->get_z();
+  double tDet = DetSim->get_t();
+  double xDet = DetSim->get_x();
+  double yDet = DetSim->get_y();
+  double zDet = DetSim->get_z();
+  double DetEnergy = DetSim->get_Energy();
+  int identifier = G4->get_ID();
+  std::string series_type = G4->get_ProcessName();
 
   // Assign each variable to ntuple
   ntuple->Branch("Run", &Run);
@@ -219,72 +63,238 @@ void FilterWrite(std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,in
   ntuple->Branch("identifier", &identifier);
   ntuple->Branch("SeriesType",&series_type);
 
+  ntuple->Fill();
+
+  if(verbose){
+    G4->print();
+    DetSim->print();    
+  }
+  return true;
+}
+
+std::vector<double> L2NormSquaredAdjacentScatters(std::vector<std::unique_ptr<GramsG4Entry>>& G4, std::vector<std::unique_ptr<GramsDetSimEntry>>& Det, bool MCTruth){
+  // Function that calculates the L2NormSquared (ie. squared Euclidean distance) between adjacent scatters
+  //Cone Variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier
+  std::vector<double> L2NormSquared;
+  // We are assuming that the first "scatter" is a gamma ray, hence we skip that interaction
+  if(MCTruth){
+    for(long unsigned int i=1; i<(G4.size()-1);++i){
+      double dx = G4[i]->get_x() - G4[i+1]->get_x();
+      double dy = G4[i]->get_y() - G4[i+1]->get_y();
+      double dz = G4[i]->get_z() - G4[i+1]->get_z();
+      L2NormSquared.push_back(dx*dx+dy*dy+dz*dz);  
+    }
+  }
+  else{
+    for(long unsigned int i=1; i<(Det.size()-1);++i){
+      double dx = Det[i]->get_x() - Det[i+1]->get_x();
+      double dy = Det[i]->get_y() - Det[i+1]->get_y();
+      double dz = Det[i]->get_z() - Det[i+1]->get_z();
+      L2NormSquared.push_back(dx*dx+dy*dy+dz*dz);
+    }
+  }
+  return L2NormSquared;
+}
+
+bool UniqueCellsOnePairMC(std::unique_ptr<GramsG4Entry>& first, std::unique_ptr<GramsG4Entry>& second,
+std::vector<double> Dimensions, std::vector<int> Binnings){
+  //Cone variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+  // create a histogram that aligns with the coordinate system of TPc (ie. x and y origin at center of detector. z=0 at top of detector)
+    // x dimension ranges from -x_dim/2 to x_dim/2
+    // y dimension from -y_dim/2 to y_dim/2
+    // z dimension from -z_dim to 0
+  TH3D *classifier = new TH3D("class", "doesn't matter",
+   Binnings[0], -Dimensions[0]/2.0, Dimensions[0]/2.0,
+   Binnings[1], -Dimensions[1]/2.0, Dimensions[1]/2.0,
+   Binnings[2], -Dimensions[2], Dimensions[2]);
+  // Bin the first and second scatters and get the associated bin numbers
+  // (there might be a bug if you exceed the histogram limits, but that shouldn't happen... I hope)
+  int first_bin = classifier->Fill(first->get_x(),first->get_y(),first->get_z());
+  int second_bin = classifier->Fill(second->get_x(),second->get_y(),second->get_z());
+  // clean up pointer
+  delete classifier;
+  return first_bin==second_bin;
+}
+
+bool UniqueCellsOnePairDet(std::unique_ptr<GramsDetSimEntry>& first, std::unique_ptr<GramsDetSimEntry>& second,
+std::vector<double> Dimensions, std::vector<int> Binnings){
+  //Cone variables: int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+  // create a histogram that aligns with the coordinate system of TPc (ie. x and y origin at center of detector. z=0 at top of detector)
+    // x dimension ranges from -x_dim/2 to x_dim/2
+    // y dimension from -y_dim/2 to y_dim/2
+    // z dimension from -z_dim to 0
+  TH3D *classifier = new TH3D("class", "doesn't matter",
+   Binnings[0], -Dimensions[0]/2.0, Dimensions[0]/2.0,
+   Binnings[1], -Dimensions[1]/2.0, Dimensions[1]/2.0,
+   Binnings[2], -Dimensions[2], Dimensions[2]);
+  // Bin the first and second scatters and get the associated bin numbers
+  // (there might be a bug if you exceed the histogram limits, but that shouldn't happen... I hope)
+  int first_bin = classifier->Fill(first->get_x(),first->get_y(),first->get_z());
+  int second_bin = classifier->Fill(second->get_x(),second->get_y(),second->get_z());
+  // clean up pointer
+  delete classifier;
+  return first_bin==second_bin;
+}
+
+
+bool filter(std::vector<std::unique_ptr<GramsG4Entry>>& G4Series, std::vector<std::unique_ptr<GramsDetSimEntry>>& DetSimSeries, std::string SeriesType,
+ std::string FilterType,  std::vector<double> Dimensions ,  std::vector<int> Binnings,  double seperation , bool MCTruth, bool verbose){
+  // variables in series corresponds to the following:
+    //int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+  // Function that sorts through events and selects Compton series to be analyzed
+  // This means at  all non-gamma ray events are inside detector, all events inside TPC are comptons and photoabsorbitons, and all events came from primary (ie. no showers)
+  // Assume that events are sorted in order of increasing time
+  // Checks for at least 3 events (Primary, first event, second event). Need at least 2 events to perform reconstruction
+  // FilterType can add on additional filtering.
+    // Standard adds no additional filtering criterion
+    // UniqueCells stipulates that each scatter must occur in a unique cell (ie. each scatter happens in an optically isolated region)
+    // Sphere denotes that the distance between each scatter must be at least seperation cm apart
+    std::unique_ptr<GramsG4Entry> event;
+    if(verbose){
+      for(long unsigned  int i =0; i<G4Series.size(); ++i){
+        event = std::move(G4Series[i]);
+        std::string PName = event->get_ProcessName();
+        std::cout << PName << std::endl;
+      }
+    }
+    for(long unsigned int i =0; i<G4Series.size(); ++i){
+        event = std::move(G4Series[i]);
+        std::string ProcessName = event->get_ProcessName();
+  // If the event is not a primary gamma, a compton scatter, or a photoabsorbtion, reject series
+        bool ProcessCheck = (ProcessName=="Primary") || (ProcessName == "compt") || (ProcessName == "phot");
+        if (!ProcessCheck){
+          return false;
+        }
+  // If the event is not a primary photon, check if it is inside the LAr. If it is not, the reject event
+        if (ProcessName != "Primary"){
+          // we divide by 1000000 since interactions in LAr have an identifier starting with 1
+          if ( static_cast<int>( static_cast<float>( event->get_ID() ) /1000000.0)  !=1){
+              return false;
+          }
+        }
+  // Check if all events originated from primary gamma
+      int ParentIdentity = event->get_ParentID();
+      bool PaternityTest = (ParentIdentity ==1 || ParentIdentity ==0); 
+      if(!PaternityTest){
+        return false;
+      }
+    }
+    
+  if(SeriesType=="Escape"){
+    // Need 3 non-gamma events
+    if(G4Series.size()<4){
+      return false;
+    }
+  }
+  else if(SeriesType=="AllIn"){
+    // Need 2 non gamma events
+    if(G4Series.size()<3){
+      return false;
+    }
+  }
+  else{
+    // SHouldn't happen, but just in case
+    std::cerr << "Invalid Series Type" << std::endl;
+    return false;
+  }
+
+  if(FilterType=="Standard"){
+    // No additional filters
+    return true;
+  }
+
+  else if(FilterType=="Sphere"){
+    std::vector<double> L2NormSquaredDistances = L2NormSquaredAdjacentScatters(G4Series, DetSimSeries, MCTruth);
+    for(long unsigned int index=0; index <L2NormSquaredDistances.size(); ++index){
+    // check if distance b/w scatters is at least seperation
+    // Actually calculate distance squared so that we don't need to take square roots
+      if(L2NormSquaredDistances[index]<(seperation*seperation)){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  else if(FilterType=="UniqueCells"){
+    // check for unique, optically isolated cells
+    // Ignore the first hit since it is a gamma ray.
+    if(MCTruth){
+      for(long unsigned int index=1; index <G4Series.size()-1; ++index){
+        std::unique_ptr<GramsG4Entry> first = std::move(G4Series[index]);
+        std::unique_ptr<GramsG4Entry> second = std::move(G4Series[index+1]);
+        // If two adjacent scatters are not in unique cells, return false
+        if(!UniqueCellsOnePairMC(first,second,Dimensions,Binnings)){
+          return false;
+        }
+      }
+    }
+    else{
+      for(long unsigned int index=1; index <G4Series.size()-1; ++index){
+        std::unique_ptr<GramsDetSimEntry> first = std::move(DetSimSeries[index]);
+        std::unique_ptr<GramsDetSimEntry> second = std::move(DetSimSeries[index+1]);
+        // If two adjacent scatters are not in unique cells, return false
+        if(!UniqueCellsOnePairDet(first,second,Dimensions,Binnings)){
+          return false;
+        }
+      }
+    }
+    // All the scatters are in unique cells
+    return true;
+  }
+
+  else{
+  // Defaults to "Standard" if somehow, you get an invalid filter value
+    return true;
+  }
+}
+
+void escape(std::vector<std::unique_ptr<GramsG4Entry>>& series, std::string &outParam){
+  // int trackID,int ParentID,int PDGCode,string processName, double t, float x,float y,float z, double Etot, int identifier)
+  // Assuming the events are time sorted, we see if last event was a photoabsorbtion
+  // Each series is gaurenteed to be at least 1 (since the gamma ray is part of the series)
+    if (series[series.size()-1]->get_ProcessName()  == "phot"){
+        outParam =  std::string("AllIn");
+    }
+    else{
+        outParam = std::string("Escape");
+    }
+}
+
+void FilterWrite(std::map<EntryKey, std::vector<std::unique_ptr<GramsG4Entry>>>& GramsG4Map,
+  std::map<EntryKey, std::vector<std::unique_ptr<GramsDetSimEntry>>>& GramsDetSimMap,
+  std::string outputRootFile, std::string FilterType,
+  std::vector<double> Dimensions,  std::vector<int> Binnings, double seperation,  bool MCTruth, bool verbose){
+  // Create output file
+  TFile* output = new TFile(outputRootFile.c_str(), "RECREATE");
+  TTree* ntuple = new TTree("FilteredSeries","Compton scatter series");
+
+  std::string series_type;
+
   // Check if a series is easy to analyze
   for (auto i= GramsG4Map.begin(); i != GramsG4Map.end(); ++i){
-    auto key = (*i).first;
-    auto value = (*i).second;
+    EntryKey key = i->first;
+    std::vector<std::unique_ptr<GramsG4Entry>> value = std::move(i->second);
   // Sort events by time
-    SortEvents(value);
+    std::sort(value.begin(),value.end(),[](
+    std::unique_ptr<GramsG4Entry>& a, 
+    std::unique_ptr<GramsG4Entry>& b){
+    return (a->get_t() < b->get_t());
+    });
+
   // Figures out wheather the series is escape or all in
-      escape(value,series_type);
-    bool keep = filter(value, series_type, FilterType, Dimensions, Binnings,seperation, verbose);
+    escape(value,series_type);
+    std::vector<std::unique_ptr<GramsDetSimEntry>> AssociatedEntry = std::move(GramsDetSimMap[key]);
+    bool keep = filter(value, AssociatedEntry, series_type, FilterType, Dimensions, Binnings,seperation, MCTruth, verbose);
   // Keep easy series
     if(keep){
   // Extract all the  variables and write out to ntuple
-      for (const auto& event : value){
-        Run = std::get<0>(key);
-        Event = std::get<1>(key);
-        TrackID = std::get<0>(event);
-        ParentID = std::get<1>(event);
-        PDGCode = std::get<2>(event);
-        t = std::get<4>(event);
-        x=  std::get<5>(event);
-        y=  std::get<6>(event);
-        z=  std::get<7>(event);
-        energy=  std::get<8>(event);
-        identifier =  std::get<9>(event);
-  // Find associated data in GramsDetSim file and extract x,y,z,t values 
-        std::tuple<int,int,int> eventIdentifier = std::make_tuple(Run,Event,TrackID);
-        if(GramsDetSimMap.count(eventIdentifier) != 0){
-            // Sort events by time to match. Take the first one since gamma rays not included in DetSim file
-            SortDetEvents(GramsDetSimMap[eventIdentifier]);
-            std::tuple<double,double,double,double,double> DetEvent = GramsDetSimMap[eventIdentifier][0];
-            DetEnergy = std::get<0>(DetEvent);
-            xDet = std::get<1>(DetEvent);
-            yDet = std::get<2>(DetEvent);
-            zDet = std::get<3>(DetEvent);
-            tDet = std::get<4>(DetEvent);
-        }
-        else{
-  // This should never happen, but if it does, then you write nonsensical values to indicate something went horribly wrong
-            DetEnergy = -1000;
-            xDet = -1000;
-            yDet = -1000;
-            zDet = -1000;
-            tDet = -1000;
-        }
-
-        if(verbose){
-          std::cout << "Run " << Run
-          << " Event " << Event
-          << " TrackID " << TrackID
-          << " ParentID " << ParentID
-          << " PDGCode " << PDGCode
-          << " t= " << t
-          << " x= " << x
-          << " y= " << y
-          << " z= " << z
-          << " Etot= " << energy
-          << " tDet= " << tDet
-          << " xDet= " << xDet
-          << " yDet= " << yDet
-          << " zDet= " << zDet
-          << " EDet= " << DetEnergy
-          << " identifier= " << identifier
-          << " event_type= " << series_type
-          << std::endl;
-        }
-        ntuple->Fill();
+        std::sort(AssociatedEntry.begin(),AssociatedEntry.end(),[](
+          std::unique_ptr<GramsDetSimEntry>& a,
+          std::unique_ptr<GramsDetSimEntry>& b){
+          return (a->get_t() < b->get_t());
+        });
+      for(long unsigned int j=0; j<value.size(); j++){
+        WriteEntry(value[j], AssociatedEntry[j], ntuple, verbose);
       }
     }
   }

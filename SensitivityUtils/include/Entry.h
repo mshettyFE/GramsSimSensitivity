@@ -1,6 +1,8 @@
 #ifndef ENTRY
 #define ENTRY
 
+#include "TTree.h"
+
 #include <string>
 #include <memory>
 #include <vector>

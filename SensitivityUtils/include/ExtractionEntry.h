@@ -4,6 +4,9 @@
 #include "Entry.h"
 #include <vector>
 
+#include "TTree.h"
+
+
 class GramsExtractEntry : public Entry{
   private:
     bool MCTruth_flag;

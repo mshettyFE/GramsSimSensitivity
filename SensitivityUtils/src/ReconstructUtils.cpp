@@ -114,7 +114,7 @@ bool ARM(double RecoAngle, std::vector<R3> Dist, R3 SourceLoc, double &ARM_val, 
 }
 
 void Reconstruction(std::map<std::tuple<int,int>, std::vector<ExtractEntry> > &ScatterSeries,
- TTree* tree,R3 truthLoc,std::string SourceType){
+ TTree* tree,R3 truthLoc,  bool MCTruth, bool verbose, std::string SourceType = "Point"){
 
   // Define variables to write to to fill TTree
   int RunNumber,EventNumber,escape;

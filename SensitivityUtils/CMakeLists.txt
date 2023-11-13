@@ -5,8 +5,9 @@ file(GLOB Entries
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/ExtractionEntry.cpp
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/RecoEntry.cpp
 )
-set(G4LibName ${CMAKE_PROJECT_NAME}Entries)
-add_library (${G4LibName} STATIC ${Entries})
+set(EntryLibName ${CMAKE_PROJECT_NAME}Entries)
+add_library (${EntryLibName} STATIC ${Entries})
+target_link_libraries(${EntryLibName} ${ROOT_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}Entries PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Options class

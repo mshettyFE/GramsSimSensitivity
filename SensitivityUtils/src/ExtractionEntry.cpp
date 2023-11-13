@@ -1,6 +1,10 @@
 #include <vector>
 #include <iostream>
 
+#include "ROOT/RDataFrame.hxx"
+#include "TFile.h"
+#include "TTree.h"
+
 #include "ExtractionEntry.h"
 
 GramsExtractEntry::GramsExtractEntry(bool MCTruth, int run, int event, double t, double x, double y, double z, double E,

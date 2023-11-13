@@ -30,8 +30,7 @@ double dot(R3 A, R3 B);
 bool ARM(double RecoAngle, std::vector<R3> Dist, R3 SourceLoc, double &ARM_val, std::string SourceType="Point");
 
 // 
-void Reconstruction(
-  std::map<std::tuple<int,int>, std::vector<ExtractEntry> > &ScatterSeries,
- TTree* tree,R3 truthLoc,std::string SourceType="Point");
+void Reconstruction(std::map<std::tuple<int,int>, std::vector<ExtractEntry> > &ScatterSeries,
+ TTree* tree,R3 truthLoc,  bool MCTruth, bool verbose, std::string SourceType = "Point");
 
 #endif
