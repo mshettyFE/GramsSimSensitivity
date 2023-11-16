@@ -68,17 +68,6 @@ target_link_libraries(${GenBackLib} ${ROOT_LIBRARIES} )
 target_link_libraries(${GenBackLib} ${Eigen_LIBRARIES} )
 target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Create CalcSenseUtils library
-file(GLOB CalcSenseSrc src/CalcSenseUtils.cpp
-                    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/CalcSenseUtils.cpp
-    )
-
-set(CalcSenseLib ${CMAKE_PROJECT_NAME}CalcSenseUtils)
-add_library (${CalcSenseLib} STATIC ${CalcSenseSrc})
-
-target_link_libraries(${CalcSenseLib} ${ROOT_LIBRARIES} )
-target_include_directories (${CMAKE_PROJECT_NAME}CalcSenseUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
 # Create Extract, Reconstruct and GenCountsHists helper executables
 add_subdirectory(Extraction)
 add_subdirectory(Reconstruction)
