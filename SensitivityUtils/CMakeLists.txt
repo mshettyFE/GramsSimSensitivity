@@ -4,6 +4,7 @@ file(GLOB Entries
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/DetSimEntry.cpp
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/ExtractionEntry.cpp
     ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/RecoEntry.cpp
+    ${PROJECT_SOURCE_DIR}/SensitivityUtils/src/Entry.cpp
 )
 set(EntryLibName ${CMAKE_PROJECT_NAME}Entries)
 add_library (${EntryLibName} STATIC ${Entries})
@@ -66,6 +67,7 @@ target_link_libraries(${GenBackLib} ${ROOT_LIBRARIES} )
 # We need to link Eigen as well because writing your own matrix library is always a terrible idea
 # And something I have done more than I care to admit...
 target_link_libraries(${GenBackLib} ${Eigen_LIBRARIES} )
+target_link_libraries(${ReadRootLib} ${CMAKE_PROJECT_NAME}Entries)
 target_include_directories (${CMAKE_PROJECT_NAME}GenSkyMapUtils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create Extract, Reconstruct and GenCountsHists helper executables

@@ -3,6 +3,7 @@
 
 #include "TH2D.h"
 
+#include "RecoEntry.h"
 #include <eigen3/Eigen/Dense>
 
 // Generate a vector that is perpendicular to the input
@@ -21,21 +22,23 @@ double reweight_energy(double energy, TH1D* Reference, TH1D* Background,double e
 double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time, long NEvents);
 
 //Given a compton cone, generate the associated sky map histogram
-TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double> &Cone, int RA_Bins, int ALT_Bins, int NPts, 
+TH2D ConeToSkyMap(GramsRecoEntry &Cone, int RA_Bins, int ALT_Bins, int NPts, 
 double weight=1,double sphere_rad=600,std::string title = "Reconstructed Sky Map");
 
+/*
 // Overloaded to read in variables individually
 TH2D ConeToSkyMap(double xDir, double yDir, double zDir, double xTip, double yTip, double zTip, double RecoAngle, 
 int RA_Bins, int ALT_Bins, int NPts, double weight=1,double sphere_rad=600,std::string title = "Reconstructed Sky Map");
+*/
 
 // Calculate the counts and sky map within a masked region with reweighting
-void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+void CountsHistsWeighted(std::map<std::vector<int>,GramsRecoEntry>  &ConeData,
  int NPts,
 TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask,double exposure_time, long NEvents, 
 TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad=600);
 
 // Calculate the counts and sky map within a masked region without reweighting
-void CountsHistsUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+void CountsHistsUnweighted(std::map<std::vector<int>, GramsRecoEntry> &ConeData,
  int NPts, TH2D*Mask, TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad=600);
 
 

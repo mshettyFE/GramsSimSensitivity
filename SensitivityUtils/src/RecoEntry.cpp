@@ -2,6 +2,14 @@
 #include <iostream>
 #include "RecoEntry.h"
 
+GramsRecoEntry::GramsRecoEntry(){
+  for(int i=0; i<2; ++i){
+    data.push_back(0);    
+  }
+  for(int i=0; i<8; ++i){
+    data.push_back(0.0);
+  }
+}
 
 GramsRecoEntry::GramsRecoEntry(int run, int event, double xDir, double yDir, double zDir,
 double xTip, double yTip, double zTip, double RecoAngle, double TruthEnergy){
@@ -17,12 +25,13 @@ double xTip, double yTip, double zTip, double RecoAngle, double TruthEnergy){
     data.push_back(TruthEnergy);
 }
 
-std::vector<int> GramsRecoEntry::extract_key(){
+std::vector<int> GramsRecoEntry::extract_key() const{
     return {this->get_run(), this->get_event() };
 }
 
-void GramsRecoEntry::print(){
-  std::cout << "run= " << this->get_run() ;
+void GramsRecoEntry::print() const{
+  std::cout << "Reco: ";
+  std::cout << " run= " << this->get_run() ;
   std::cout << " event = " << this->get_event() ;
   std::cout << " xDir = " << this->get_XDir();
   std::cout << " yDir = " << this->get_YDir();
@@ -35,49 +44,50 @@ void GramsRecoEntry::print(){
   std::cout << '\n' << std::endl;
 }
 
-int GramsRecoEntry::get_run(){
+int GramsRecoEntry::get_run() const{
   return this->get_value<int>(0);
 }
 
-int GramsRecoEntry::get_event(){
+int GramsRecoEntry::get_event() const{
   return this->get_value<int>(1);
 }
 
-double GramsRecoEntry::get_XDir(){
+double GramsRecoEntry::get_XDir() const{
   return this->get_value<double>(2);
 }
 
-double GramsRecoEntry::get_YDir(){
+double GramsRecoEntry::get_YDir() const{
   return this->get_value<double>(3);
 }
 
-double GramsRecoEntry::get_ZDir(){
+double GramsRecoEntry::get_ZDir() const{
   return this->get_value<double>(4);
 }
 
-R3 GramsRecoEntry::get_Axis(){
+R3 GramsRecoEntry::get_Axis() const{
     return {this->get_value<double>(2),  this->get_value<double>(3),  this->get_value<double>(4)};
 }
 
-double GramsRecoEntry::get_XTip(){
+double GramsRecoEntry::get_XTip() const{
   return this->get_value<double>(5);
 }
 
-double GramsRecoEntry::get_YTip(){
+double GramsRecoEntry::get_YTip() const{
   return this->get_value<double>(6);
 }
 
-double GramsRecoEntry::get_ZTip(){
+double GramsRecoEntry::get_ZTip() const{
   return this->get_value<double>(7);
 }
 
-R3 GramsRecoEntry::get_Tip(){
+R3 GramsRecoEntry::get_Tip() const{
     return {this->get_value<double>(5),  this->get_value<double>(6),  this->get_value<double>(7)};
 }
 
-double GramsRecoEntry::get_RecoAngle(){
+double GramsRecoEntry::get_RecoAngle() const{
   return this->get_value<double>(8);
 }
-double GramsRecoEntry::get_TruthEnergy(){
+ 
+double GramsRecoEntry::get_TruthEnergy() const{
   return this->get_value<double>(9);
 }

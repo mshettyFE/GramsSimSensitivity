@@ -76,6 +76,7 @@ if __name__=="__main__":
         binnings.append(item[0])
 # Needed to add an additional bin at the end for ROOT to stop screaming at me
     binnings.append(binnings[-1])
+#    binnings.sort(key=lambda tup: tup[0])
 # cast binnings to array of double so that ROOT doesn't scream at me
     EffAreaHist = ROOT.TH1D("EffArea", "Effective Area", len(mapping),  array.array('d',binnings))
 # for each energy, set the bin contents to be whatever is in the associated position in the python list

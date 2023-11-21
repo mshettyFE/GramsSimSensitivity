@@ -2,7 +2,7 @@
   Geometry= "cube" # Geometry of detector. Options are {"flat","cube"}  
   RABinnings= 500 #binnings on skymap fro source and background
   ALTBinnings= 500
-  output_directory = "/nevis/milne/files/ms6556/BleekerData/Test"
+  output_directory = "/nevis/milne/files/ms6556/BleekerData/test"
   MC_truth = true # flag to denote if Reconstruct ...
   scale = "linear" # What scale the binnings should be. Options are {"linear","log"}
 

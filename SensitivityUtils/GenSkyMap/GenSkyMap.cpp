@@ -182,7 +182,8 @@ int main(int argc, char** argv){
     Counts->Reset();
     Counts->SetNameTitle("Counts","Counts within Mask");
 
-    std::map<std::tuple<int,int>, std::tuple<double,double,double,double,double,double,double,double>> ConeData;
+    std::map<EntryKey, GramsRecoEntry> ConeData;
+
     ConeData = ReadReconstructFromSkyMap(RecoName,verbose);
     
     std::unique_ptr<TFile> OutputFile(TFile::Open(OutputFileName.c_str(), "RECREATE"));

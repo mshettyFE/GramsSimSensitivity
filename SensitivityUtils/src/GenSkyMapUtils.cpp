@@ -5,6 +5,8 @@
 #include<cmath>
 #include<iostream>
 
+#include "RecoEntry.h"
+
 // The Eigen Import
 #include <eigen3/Eigen/Dense>
 
@@ -95,31 +97,25 @@ double reweight_duration(TH1D* EffArea,TH1D* EnergyDepFlux, double exposure_time
     Multiplied = (*EffArea)*(*EnergyDepFlux);
   // integrated_flux now has units of 1/(s sr)
   double integrated_flux = Multiplied.Integral( "width");
-  double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
-  double weight = projected_photons/((double) NEvents);
+//  double projected_photons = (integrated_flux*exposure_time*4*acos(-1));
+//  double weight = projected_photons/((double) NEvents);
   //  std::cout << EnergyDepFlux->Integral("width") << '\t' << integrated_flux <<  std::endl;
   //  std::cout << integrated_flux << '\t' << exposure_time << '\t' << 4*acos(-1) << '\t' <<  projected_photons << '\t' << NEvents << std::endl;
   // We multiply by the exposure time and 4*pi steradians, and then divide by NEvents casted to a double. This give the weight
   return (integrated_flux*exposure_time*4*acos(-1))/((double) NEvents);
 }
 
-TH2D ConeToSkyMap(std::tuple<double,double,double,double,double,double,double,double> &Cone, 
+TH2D ConeToSkyMap(GramsRecoEntry &Cone, 
 int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string title){
   // Tip of cone where all surface vector eminate from
     double pi = acos(-1);
     TH2D SkyMap = TH2D("SkyMap",title.c_str(),RA_Bins, -pi, pi, ALT_Bins, -pi/2.0, pi/2.0);
-    double xDir = std::get<0>(Cone);
-    double yDir = std::get<1>(Cone);
-    double zDir = std::get<2>(Cone);
-    double xTip = std::get<3>(Cone);
-    double yTip = std::get<4>(Cone);
-    double zTip = std::get<5>(Cone);
-    double RecoAngle = std::get<6>(Cone);
+    double RecoAngle = Cone.get_RecoAngle();
 
   // Tip of Cone
-    Eigen::Vector3d Tip(xTip, yTip, zTip);
+    Eigen::Vector3d Tip(Cone.get_XTip(), Cone.get_YTip(), Cone.get_ZTip());
   // Axis of Cone
-    Eigen::Vector3d Axis(xDir, yDir, zDir);
+    Eigen::Vector3d Axis(Cone.get_XDir(), Cone.get_YDir(), Cone.get_ZDir());
     Axis.normalize();
     Eigen::Vector3d perp = CalcPerp(Axis);
 
@@ -132,7 +128,6 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
     Current = cos(RecoAngle)*Axis+sin(RecoAngle)*perp;
     Current.normalize();
 
-  double initial_dot = Current.dot(Axis);
   Eigen::Matrix3d Rot = CreateRotMat(Axis,NPts);
   for(int pt=0; pt<NPts; ++pt){
     Current = Rot*Current;
@@ -149,6 +144,7 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
   return SkyMap;
 }
 
+/*
 TH2D ConeToSkyMap(double xDir, double yDir, double zDir, double xTip, double yTip, double zTip, double RecoAngle, 
 int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string title){
   // Tip of cone where all surface vector eminate from
@@ -170,7 +166,6 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
     Current = cos(RecoAngle)*Axis+sin(RecoAngle)*perp;
     Current.normalize();
 
-  double initial_dot = Current.dot(Axis);
   Eigen::Matrix3d Rot = CreateRotMat(Axis,NPts);
   for(int pt=0; pt<NPts; ++pt){
     Current = Rot*Current;
@@ -186,13 +181,13 @@ int RA_Bins, int ALT_Bins, int NPts,double weight,double sphere_rad,std::string 
   }
   return SkyMap;
 }
+*/
 
-void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+void CountsHistsWeighted(std::map<std::vector<int>, GramsRecoEntry> &ConeData,
  int NPts,
  TH1D* EffArea, TH1D* EnergyDepFlux, TH1D* ReferenceFlux, TH2D*Mask,double exposure_time, long NEvents, 
  TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad){
   // Define pi
-  double pi = acos(-1);
   int RA_Bins = Mask->GetNbinsX();
   int ALT_Bins = Mask->GetNbinsY();
   // Calculate the exposure weight
@@ -205,7 +200,7 @@ void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,d
   // For each cone in Cone data, calculate the sky map for that cone
   std::string title =  "Tmp";
   for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
-    double TEnergy = std::get<7>(Cone->second);
+    double TEnergy = Cone->second.get_TruthEnergy();
     // Calculate the energy dependent weight
     double energy_weight = reweight_energy(TEnergy, ReferenceFlux,EnergyDepFlux); 
     weight = energy_weight*exposure_weight;
@@ -222,10 +217,9 @@ void CountsHistsWeighted(std::map<std::tuple<int,int>,std::tuple<double,double,d
   }
 }
 
-void CountsHistsUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double,double,double,double,double,double,double>> &ConeData,
+void CountsHistsUnweighted(std::map<std::vector<int>, GramsRecoEntry> &ConeData,
  int NPts, TH2D* Mask, TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad){
   // Define pi
-  double pi = acos(-1);
   int RA_Bins = Mask->GetNbinsX();
   int ALT_Bins = Mask->GetNbinsY();
   // Fix weight to be 1
@@ -233,7 +227,7 @@ void CountsHistsUnweighted(std::map<std::tuple<int,int>,std::tuple<double,double
   // For each cone in Cone data, calculate the sky map for that cone
   std::string title =  "Tmp";
   for(auto Cone=ConeData.begin(); Cone!= ConeData.end(); ++Cone){
-    double TEnergy = std::get<7>(Cone->second);
+    double TEnergy = Cone->second.get_TruthEnergy();
     TH2D AddOn = ConeToSkyMap(Cone->second,RA_Bins,ALT_Bins,NPts,weight, proj_sphere_rad, title);
     // Apply mask
     AddOn.Multiply(Mask);

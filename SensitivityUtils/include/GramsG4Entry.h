@@ -6,26 +6,28 @@
 
 class GramsG4Entry : public Entry{
   public:
+    GramsG4Entry();
     // Run, Event, TrackID,ParentID,PDGCode,ProcessName,t,x,y,z,Etot,identifier
-    GramsG4Entry(int, int, int,int,int,std::string,double,float,float,float,double,int);
+    GramsG4Entry(int run, int event, int TrackID, int ParentID, int PDGCode, std::string ProcessName,
+     double t, float x, float y, float z, double Etot, int id);
     // get key
-    std::vector<int> extract_key() override;
+    std::vector<int> extract_key() const override;
 
     // print
-    void print() override;
+    void print() const override;
 
-    int get_run();
-    int get_event();
-    int get_TrackID();
-    int  get_ParentID();
-    int get_PDGCode();
-    std::string get_ProcessName();
-    double get_t();
-    float get_x();
-    float get_y();
-    float get_z();
-    double get_Energy();
-    int get_ID();
+     int get_run() const;
+     int get_event() const;
+     int get_TrackID() const;
+     int  get_ParentID() const;
+     int get_PDGCode() const;
+     std::string get_ProcessName() const;
+     double get_t() const;
+     float get_x() const;
+     float get_y() const;
+     float get_z() const;
+     double get_Energy() const;
+     int get_ID() const;
 };
 
 #endif

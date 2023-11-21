@@ -7,21 +7,23 @@
 class GramsDetSimEntry : public Entry{
   public:
     // run, event, TrackID, Energy,x_det,y_det,z_det,t_det
-    GramsDetSimEntry(int, int, int,double,double, double,double,double);
+    GramsDetSimEntry();
+    GramsDetSimEntry(int run , int event, int TrackID, double Energy,
+    float x, float y,float z, double t);
     // get key
-    std::vector<int> extract_key() override;
+    std::vector<int> extract_key() const override;
 
     // print
-    void print() override;
+    void print() const override;
 
-    int get_run();
-    int get_event();
-    int get_TrackID();
-    double get_t();
-    float get_x();
-    float get_y();
-    float get_z();
-    double get_Energy();
+     int get_run() const;
+     int get_event() const;
+     int get_TrackID() const;
+     double get_t() const;
+     float get_x() const;
+     float get_y() const;
+     float get_z() const;
+     double get_Energy() const;
 };
 
 #endif

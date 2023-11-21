@@ -1,17 +1,19 @@
 #include "TTree.h"
 #include "TFile.h"
 
-#include "ReadRootFiles.h"
-#include "Options.h"
-#include "ReconstructUtils.h"
-#include "UsefulTypeDefs.h"
-
 #include<vector>
 #include<map>
 #include<tuple>
 #include<string>
 #include<iostream>
 #include<filesystem>
+#include<memory>
+
+#include "ExtractionEntry.h"
+#include "ReadRootFiles.h"
+#include "Options.h"
+#include "ReconstructUtils.h"
+#include "UsefulTypeDefs.h"
 
 int main(int argc, char** argv){
   // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
@@ -40,7 +42,7 @@ int main(int argc, char** argv){
   options->GetOption("verbose",verbose);
 
   bool MCTruth;
-  options->GetOption("verbose",MCTruth);
+  options->GetOption("MCTruth",MCTruth);
 
   std::string inputFileName;
   std::string outputFileName;
@@ -82,17 +84,18 @@ int main(int argc, char** argv){
     std::cerr << "Couldn't parse source location" << std::endl;
     return -1;
   }
+
   SkyMapLoc Spherical = std::make_tuple(TempVector[0],TempVector[1]);
   R3 truthLoc = SphereToCart(Spherical);
 
-  std::map<std::tuple<int,int>, std::vector<ExtractEntry> > Series;
+  std::map<EntryKey, std::vector<GramsExtractEntry> > Series;
   Series = ReadExtract(inputFileName,verbose);
 
   TFile* OFile = new TFile(outputFileName.c_str(), "RECREATE");
   TTree* tree;
   tree = new TTree("Cones","Compton Cones");
   // Fill tree with Reconstructed Cone Data
-  Reconstruction(Series,tree,truthLoc,SourceType, MCTruth);
+  Reconstruction(Series,tree,truthLoc, MCTruth, verbose, SourceType);
   // Write TTree to File
   tree->Write();
   // Clean Up

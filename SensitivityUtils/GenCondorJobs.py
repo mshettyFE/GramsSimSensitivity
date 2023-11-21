@@ -828,9 +828,10 @@ def EffectiveAreaGeneration(configuration, batch_mode):
         f.write(command)
     # ## Extract
     values = ["./Extract", "--options", "SensitivityOptions.xml", "--GramsG4Name", "EffArea_${process}.root"]
-    values += ["--GramsDetSimName" ,"EffAreaDet_${process}.root", "-o", "EffAreaExtract_${process}.root"]
+    values += ["--GramsDetSimName" ,"EffAreaDet_${process}.root"]
+    values += ["-o", "EffAreaExtract_${process}.root"]
     if(configuration["General"]["MC_truth"]):
-        values += ["-M"]
+        values += ["-mc"]
     values += ['\n']
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
@@ -840,7 +841,7 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i", "EffAreaExtract_${process}.root"]
     values += ["-o",output_root_file_base+"_${process}.root"]
     if(configuration["General"]["MC_truth"]):
-        values += ["-M"]
+        values += ["-mc"]
     values += ['\n']
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
@@ -935,17 +936,18 @@ def SourceGeneration(configuration, JobType, batch_mode):
         values += ["./Extract", "--options", "SensitivityOptions.xml", "--GramsG4Name","Source_${process}.root","--GramsDetSimName","Source_Det_${process}.root"]
         values += ["-o",output_extract_name]
         if(configuration["General"]["MC_truth"]):
-            values += ["-M"]
+            values += ["-mc"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
     # Generate cones
         values = []
-        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name, "-o", output_cone_name]
+        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name]
+        values += [ "-o", output_cone_name]
         values += ["--SourceType", "Point", "--SourceLoc", PointLocSpherical]
         if(configuration["General"]["MC_truth"]):
-            values += ["-M"]
+            values += ["-mc"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
@@ -1070,17 +1072,18 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         values += ["./Extract","--options", "SensitivityOptions.xml", "--GramsG4Name","Background_${process}.root","--GramsDetSimName","Background_Det_${process}.root"]
         values += ["-o",output_extract_name]
         if(configuration["General"]["MC_truth"]):
-            values += ["-M"]
+            values += ["-mc"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
             f.write(command)
     # Generate cones
         values = []
-        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name, "-o", output_cone_name]
+        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name]
+        values += [ "-o", output_cone_name]
         values += ["--SourceType", "Iso"]
         if(configuration["General"]["MC_truth"]):
-            values += ["-M"]
+            values += ["-mc"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
         with open(output_shell_file,'a') as f:
