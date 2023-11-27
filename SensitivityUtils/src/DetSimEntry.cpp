@@ -3,17 +3,6 @@
 
 #include "DetSimEntry.h"
 
-GramsDetSimEntry::GramsDetSimEntry(){
-  for(int i=0; i<3; ++i){
-    data.push_back(0);    
-  }
-  data.push_back((double) 0.0);
-  for(int i=0; i<3; ++i){
-    data.push_back((float) 0.0);
-  }
-  data.push_back((double) 0.0);
-}
-
 GramsDetSimEntry::GramsDetSimEntry(int run, int event, int TrackID, double energy,
 float x_det, float y_det, float z_det, double t_det){
     data.push_back(run);

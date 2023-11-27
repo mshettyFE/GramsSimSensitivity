@@ -7,7 +7,6 @@
 class GramsDetSimEntry : public Entry{
   public:
     // run, event, TrackID, Energy,x_det,y_det,z_det,t_det
-    GramsDetSimEntry();
     GramsDetSimEntry(int run , int event, int TrackID, double Energy,
     float x, float y,float z, double t);
     // get key

@@ -3,25 +3,6 @@
 
 #include "GramsG4Entry.h"
 
-GramsG4Entry::GramsG4Entry(){
-  // run,event, TrackID, ParentID, PDGCode
-  for(int i=0; i<5; ++i){
-    data.push_back(0);    
-  }
-  // ProcessName
-  data.push_back("");
-  //t
-  data.push_back((double)0.0);
-  // x,y,z
-  for(int i=0; i< 3; ++i){
-    data.push_back((float)0.0);
-  }
-  //Etot
-  data.push_back((double)0.0);
-  // identifier
-  data.push_back(0);
-}
-
 GramsG4Entry::GramsG4Entry(int run,int event, int TrackID, int ParentID,  int PDGCode, 
  std::string ProcessName, double t, float x, float y, float z,double Etot,int identifier){
     data.push_back(run);

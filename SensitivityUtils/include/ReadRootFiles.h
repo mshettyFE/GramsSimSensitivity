@@ -23,7 +23,7 @@ std::map<EntryKey, std::vector<GramsG4Entry > > ReadGramsG4(const std::string Gr
 std::map<EntryKey, std::vector<GramsDetSimEntry> > ReadGramsDetSim(const std::string GramsDetSimFileName,bool verbose=false);
 
 // Read in output from Extract.cpp
-std::map<EntryKey, std::vector<GramsExtractEntry> > ReadExtract(const std::string ExtractFileName, bool verbose=false);
+std::map<EntryKey, std::vector<GramsExtractEntry> > ReadExtract(const std::string ExtractFileName, bool MCTruth, bool verbose=false);
 
 // Read in output from Reconstruct.cpp for 2D sky map generation
 std::map<EntryKey, GramsRecoEntry> ReadReconstructFromSkyMap(const std::string ReconstructName, bool verbose=false);

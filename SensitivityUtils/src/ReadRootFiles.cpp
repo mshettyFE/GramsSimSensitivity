@@ -94,7 +94,7 @@ std::map<EntryKey, std::vector<GramsDetSimEntry> > ReadGramsDetSim(const std::st
   return DetMapping;
 }
 
-std::map<EntryKey, std::vector<GramsExtractEntry> > ReadExtract(const std::string ExtractFileName,bool verbose){
+std::map<EntryKey, std::vector<GramsExtractEntry> > ReadExtract(const std::string ExtractFileName, bool MCTruth, bool verbose){
   // Read in output of Extract executable
   ROOT::RDataFrame Series( "FilteredSeries", ExtractFileName, {"Run", "Event", "energy","t",
     "x","y","z","tDet","xDet","yDet","zDet", "DetEnergy","SeriesType"} );
@@ -103,14 +103,14 @@ std::map<EntryKey, std::vector<GramsExtractEntry> > ReadExtract(const std::strin
 
   Series.Foreach(
   // Shove data into map depending on series type
-  [&Output,verbose](int run, int event, double energy, double t, float x, float y, float z,
+  [&Output,MCTruth, verbose](int run, int event, double energy, double t, double x, double y, double z,
   double tDet, double xDet, double yDet, double zDet, double DetEnergy, std::string SeriesType)
   {
     std::string EventType;
     for ( auto i = SeriesType.begin(); i != SeriesType.end() && (*i) != 0; ++i ){
       EventType.push_back(*i);
     }
-    GramsExtractEntry observables = GramsExtractEntry(true, run, event,  t,x,y,z,energy,  tDet, xDet, yDet, zDet, DetEnergy, EventType);
+    GramsExtractEntry observables = GramsExtractEntry(MCTruth, run, event,  t,x,y,z,energy,  tDet, xDet, yDet, zDet, DetEnergy, EventType);
     EntryKey key = observables.extract_key();
     push_to_map(key,observables,Output);
       if(verbose){
@@ -137,7 +137,7 @@ std::map<EntryKey, GramsRecoEntry> ReadReconstructFromSkyMap(const std::string R
   [&Output,verbose](int run, int event, int eventType, double xDir, double yDir, double zDir,
   double xTip, double yTip, double zTip, double RecoAngle, double ARM, double RecoEnergy, double TruthEnergy)
   {
-    const GramsRecoEntry observables  = GramsRecoEntry(run, event, xDir, yDir, zDir, xTip, yTip, zTip, RecoAngle, TruthEnergy);
+    const GramsRecoEntry observables  = GramsRecoEntry(run, event, eventType, xDir, yDir, zDir, xTip, yTip, zTip, RecoAngle,ARM, RecoEnergy, TruthEnergy);
     EntryKey key = observables.extract_key();
     Output[key] = observables;
     if(verbose){

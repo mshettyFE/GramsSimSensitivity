@@ -219,7 +219,7 @@ void CountsHistsWeighted(std::map<std::vector<int>, GramsRecoEntry> &ConeData,
 
 void CountsHistsUnweighted(std::map<std::vector<int>, GramsRecoEntry> &ConeData,
  int NPts, TH2D* Mask, TH1D* OutputHist, TH2D* OutputSkyMap, double proj_sphere_rad){
-  // Define pi
+  // Define pi 
   int RA_Bins = Mask->GetNbinsX();
   int ALT_Bins = Mask->GetNbinsY();
   // Fix weight to be 1

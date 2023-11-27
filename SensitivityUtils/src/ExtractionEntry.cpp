@@ -9,17 +9,32 @@
 #include "GramsG4Entry.h"
 #include "ExtractionEntry.h"
 
-GramsExtractEntry::GramsExtractEntry(){
-  MCTruth_flag = false;
-  for(int i=0; i<2; ++i){
-    data.push_back(0);    
+void GramsExtractEntry::Fill(TTree* ntuple, int& Run, int& Event, 
+      double& t, double& x,double& y,double& z,double& energy,
+  double& tDet,double& xDet, double& yDet,double&  zDet, double& DetEnergy,
+  std::string& SeriesType, bool verbose){
+    if(verbose){
+      this->print();
+    }
+    bool cur_f = this->get_MCTruth();
+    Run = this->get_run();
+    Event = this->get_event();
+    this->set_MCTruth(true);
+    t = this->get_time();
+    x = this->get_xpos();
+    y = this->get_ypos();
+    z = this->get_zpos();
+    energy = this->get_Energy();
+    this->set_MCTruth(false);
+    tDet = this->get_time();
+    xDet = this->get_xpos();
+    yDet = this->get_ypos();
+    zDet = this->get_zpos();
+    DetEnergy = this->get_Energy();
+    this->set_MCTruth(cur_f);
+    SeriesType = this->get_SeriesType();
+    ntuple->Fill();
   }
-  for(int i=0; i<10; ++i){
-    data.push_back(0.0);
-  }
-  data.push_back("");
-}
-
 
 GramsExtractEntry::GramsExtractEntry(bool MCTruth, int run, int event, double t, double x, double y, double z, double E,
  double tDet, double xDet, double yDet, double zDet, double EDet, std::string SeriesType){
@@ -40,65 +55,21 @@ GramsExtractEntry::GramsExtractEntry(bool MCTruth, int run, int event, double t,
 }
 
 GramsExtractEntry::GramsExtractEntry(GramsG4Entry& G4, GramsDetSimEntry& DetSim, std::string SeriesType, bool MCflag){
-    this->set_MCTruth(MCflag);
+    MCTruth_flag = MCflag;
     data.push_back(G4.get_run());
     data.push_back(G4.get_event());
     data.push_back(G4.get_t());
-    data.push_back(G4.get_x());
-    data.push_back(G4.get_y());
-    data.push_back(G4.get_z());
+    data.push_back((double) G4.get_x());
+    data.push_back((double) G4.get_y());
+    data.push_back((double) G4.get_z());
     data.push_back(G4.get_Energy());
     data.push_back(DetSim.get_t());
-    data.push_back(DetSim.get_x());
-    data.push_back(DetSim.get_y());
-    data.push_back(DetSim.get_z());
+    data.push_back((double) DetSim.get_x());
+    data.push_back((double) DetSim.get_y());
+    data.push_back((double) DetSim.get_z());
     data.push_back(DetSim.get_Energy());
     data.push_back(SeriesType);
 }
-
-/*
-GramsExtractEntry& GramsExtractEntry::operator=(GramsExtractEntry& other){
-  bool cur_flag = other.get_MCTruth();
-  data[0] = other.get_run();
-  data[1] = other.get_event();
-  other.set_MCTruth(true);
-  data[2] = other.get_time();
-  data[0] = other.get_xpos();
-  data[0] = other.get_ypos();
-  data[0] = other.get_zpos();
-  data[0] = other.get_Energy();
-  other.set_MCTruth(false);
-  data[2] = other.get_time();
-  data[0] = other.get_xpos();
-  data[0] = other.get_ypos();
-  data[0] = other.get_zpos();
-  data[0] = other.get_Energy();
-  data[0] = other.get_SeriesType();
-  this->set_MCTruth(cur_flag);
-  other.set_MCTruth(cur_flag);
-  return *this;
-}
-GramsExtractEntry::GramsExtractEntry(GramsExtractEntry& other){
-  bool cur_flag = other.get_MCTruth();
-  data[0] = other.get_run();
-  data[1] = other.get_event();
-  other.set_MCTruth(true);
-  data[2] = other.get_time();
-  data[0] = other.get_xpos();
-  data[0] = other.get_ypos();
-  data[0] = other.get_zpos();
-  data[0] = other.get_Energy();
-  other.set_MCTruth(false);
-  data[2] = other.get_time();
-  data[0] = other.get_xpos();
-  data[0] = other.get_ypos();
-  data[0] = other.get_zpos();
-  data[0] = other.get_Energy();
-  data[0] = other.get_SeriesType();
-  this->set_MCTruth(cur_flag);
-  other.set_MCTruth(cur_flag);
-}
-*/
 
 std::vector<int> GramsExtractEntry::extract_key() const{
     return {this->get_run(), this->get_event() };

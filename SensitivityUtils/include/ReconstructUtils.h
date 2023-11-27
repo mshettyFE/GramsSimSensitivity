@@ -21,7 +21,7 @@ double dot(const R3& A, const R3& B);
 std::vector<R3> Distances(const std::vector<GramsExtractEntry> &Series);
 
 // Extract Kinetic Energies from Series
-std::vector<double> KineticEnergies(const std::vector<GramsExtractEntry> &Series, double e_mass = .51099895);
+std::vector<double> KineticEnergies(const std::vector<GramsExtractEntry> &Series, bool verbose=false, double e_mass = .51099895);
 
 // Calculate Reconstructed angle for a given scatter series
 bool RecoAngle(const std::vector<R3>& Dist, const  std::vector<double>& KEs,
@@ -31,6 +31,6 @@ double &ReconAngle, bool escape = false, double e_mass = .51099895);
 bool ARM(double RecoAngle, const std::vector<R3>& Dist, R3 SourceLoc, double &ARM_val, std::string SourceType="Point");
 
 void Reconstruction(std::map<EntryKey, std::vector<GramsExtractEntry> > &ScatterSeries,
- TTree* tree,R3 truthLoc,  bool MCTruth, bool verbose, std::string SourceType = "Point");
+ std::string FileName, R3 truthLoc, bool verbose, std::string SourceType = "Point");
 
 #endif

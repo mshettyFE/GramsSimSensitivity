@@ -41,6 +41,10 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
+  if(verbose){
+    options->PrintOptions();
+  }
+
   bool MCTruth;
   options->GetOption("MCTruth",MCTruth);
 
@@ -89,17 +93,11 @@ int main(int argc, char** argv){
   R3 truthLoc = SphereToCart(Spherical);
 
   std::map<EntryKey, std::vector<GramsExtractEntry> > Series;
-  Series = ReadExtract(inputFileName,verbose);
+  Series = ReadExtract(inputFileName, MCTruth, verbose);
 
-  TFile* OFile = new TFile(outputFileName.c_str(), "RECREATE");
-  TTree* tree;
-  tree = new TTree("Cones","Compton Cones");
   // Fill tree with Reconstructed Cone Data
-  Reconstruction(Series,tree,truthLoc, MCTruth, verbose, SourceType);
-  // Write TTree to File
-  tree->Write();
-  // Clean Up
-  delete tree;
-  OFile->Close();
+  Reconstruction(Series,outputFileName,truthLoc, verbose, SourceType);
+
+  options->PrintOptions();
   return 0;
 }

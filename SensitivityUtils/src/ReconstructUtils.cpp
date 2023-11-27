@@ -1,4 +1,5 @@
 #include "TTree.h"
+#include "TFile.h"
 
 #include <vector>
 #include <map>
@@ -8,6 +9,7 @@
 
 #include "ReconstructUtils.h"
 #include "ExtractionEntry.h"
+#include "RecoEntry.h"
 #include "UsefulTypeDefs.h"
 
 R3 SphereToCart(const SkyMapLoc& Spherical){
@@ -34,8 +36,8 @@ std::vector<R3> Distances(const std::vector<GramsExtractEntry> &Series){
   for(unsigned long int i =1; i<(Series.size()-1); ++i){ 
   // Calculate the vector between the interaction points
     dx = Series[i].get_xpos()-Series[i+1].get_xpos();
-    dx = Series[i].get_ypos()-Series[i+1].get_ypos();
-    dx = Series[i].get_zpos()-Series[i+1].get_zpos();
+    dy = Series[i].get_ypos()-Series[i+1].get_ypos();
+    dz = Series[i].get_zpos()-Series[i+1].get_zpos();
     norm = sqrt(dx*dx+dy*dy+dz*dz);
   // Return normalized distances b/c calcs become easier and for some, we need to normalize this anyways
     Dist.push_back(std::make_tuple(dx/norm,dy/norm,dz/norm));
@@ -43,13 +45,19 @@ std::vector<R3> Distances(const std::vector<GramsExtractEntry> &Series){
   return Dist;
 }
 
-std::vector<double> KineticEnergies(const std::vector<GramsExtractEntry> &Series, double e_mass){
+std::vector<double> KineticEnergies(const std::vector<GramsExtractEntry> &Series, bool verbose, double e_mass){
   // Extract Kinetic Energies of scatters from Series. Extract MC energy or DetSim energy depending on MC_Truth flag in each Entry
   std::vector<double> KEs;
+  double KE;
   // We ignore the Primary gamma ray
+  // TODO: Problem here
   for(unsigned long int i =1; i<(Series.size()); ++i){ 
     // We remove the rest mass of the electron from the energy
-    KEs.push_back(Series[i].get_Energy()-e_mass);
+    KE = Series[i].get_Energy()-e_mass;
+    if(verbose){
+      std::cout << i << " " << KE << std::endl;
+    }
+    KEs.push_back(KE);
   }
   return KEs;
 }
@@ -113,13 +121,40 @@ bool ARM(double RecoAngle, const std::vector<R3>& Dist, R3 SourceLoc, double &AR
 }
 
 void Reconstruction(std::map<EntryKey, std::vector<GramsExtractEntry> > &ScatterSeries,
- TTree* tree,R3 truthLoc,  bool MCTruth, bool verbose, std::string SourceType){
-  bool escape;
-  double ARM_val, Re_Angle, RecoEnergy;
+ std::string FileName, R3 truthLoc, bool verbose, std::string SourceType){
+  TFile* OFile = new TFile(FileName.c_str(), "RECREATE");
+  TTree* tree;
+  tree = new TTree("Cones","Compton Cones");
+
+  int Run, Event;
+  int escape;
+  double xDir, yDir, zDir, xTip, yTip, zTip;
+  double ReconstructionAngle, arm;
+  double RecoEnergy = 0.0;
+  double TruthEnergy;
+    // Unique Identifiers of Compton Series
+  tree->Branch("Run", &Run, "Run/I");
+  tree->Branch("Event", &Event, "Event/I");
+    // We need to convert the string of Escape type to an integer. 0 for AllIn. 1 for Escape
+  tree->Branch("EventType", &escape, "EventType/I");
+    // Define the Axis of the cone
+  tree->Branch("xDir",&xDir,"xDir/D");
+  tree->Branch("yDir",&yDir,"yDir/D");
+  tree->Branch("zDir",&zDir,"zDir/D");
+    // Define the tip of the cone
+  tree->Branch("xTip",&xTip,"xTip/D");
+  tree->Branch("yTip",&yTip,"yTip/D");
+  tree->Branch("zTip",&zTip,"zTip/D");
+    // Define the reconstruction Angle of the cone
+  tree->Branch("RecoAngle",&ReconstructionAngle,"RecoAngle/D");
+  tree->Branch("ARM",&arm,"ARM/D");
+    // Define the reconstructed energies and true original energy of gamma ray
+  tree->Branch("RecoEnergy",&RecoEnergy,"RecoEnergy/D");
+  tree->Branch("TruthEnergy",&TruthEnergy,"TruthEnergy/D");
+  GramsRecoEntry Output;
   for ( auto Series = ScatterSeries.begin(); Series != ScatterSeries.end(); ++Series ){
     // Sort Series by time. MC_Truth toggles which time we want
-    sort((*Series).second.begin(), (*Series).second.end(),[](GramsExtractEntry& a,
-    GramsExtractEntry& b){
+    sort((*Series).second.begin(), (*Series).second.end(),[](GramsExtractEntry& a, GramsExtractEntry& b){
     return (a.get_time() < b.get_time());});
     std::vector<GramsExtractEntry> Events = Series->second;
     std::string EscapeType = Events[0].get_SeriesType();
@@ -140,22 +175,33 @@ void Reconstruction(std::map<EntryKey, std::vector<GramsExtractEntry> > &Scatter
     if(AdjacentDist.size() < 2){
       continue;
     }
-    KEs = KineticEnergies(Events);
+    KEs = KineticEnergies(Events,verbose);
   // Calculate Reconstruction Angle (if possible)
   // Check if Reconstruction Angle could be calculated
-    if (!RecoAngle(AdjacentDist,KEs,Re_Angle,escape)){
+    if (!RecoAngle(AdjacentDist,KEs,ReconstructionAngle,escape)){
         continue;
     }
   // Calculate ARM
-    if (!ARM(Re_Angle, AdjacentDist, truthLoc,ARM_val, SourceType)){
+    if (!ARM(ReconstructionAngle, AdjacentDist, truthLoc,arm, SourceType)){
         continue;
     }
   // Calculate Reconstructed Energy
-    RecoEnergy = 0;
-    for(auto KE: KEs){RecoEnergy += KE;}
-  // Add NTuple to TTree
-// modify this to use DumpData to std::vector<std::variant> somehow...
-//    WriteRecoEntry(tree, Events, AdjacentDist, escape, Re_Angle, ARM_val,  RecoEnergy, verbose);
-  }
+    RecoEnergy = 0.0;
 
+    for(auto KE: KEs){
+      if(verbose){
+        std::cout << "Reco: " << KE << std::endl;
+      }
+      RecoEnergy += KE;
+    }
+    // Problems here
+    GramsRecoEntry Output = GramsRecoEntry(Events, AdjacentDist, escape, ReconstructionAngle, arm, RecoEnergy);
+    Output.Fill(tree,  Run,  Event,  escape,
+      xDir, yDir, zDir, xTip, yTip,zTip, 
+      ReconstructionAngle,  arm, RecoEnergy, TruthEnergy, verbose);
+  }
+  tree->Write();
+  // Clean Up
+  delete tree;
+  OFile->Close();
 }

@@ -136,7 +136,7 @@ def WriteFile(data,OutputName):
 ## Extract
     args = ["./Extract","--options","SensitivityOptions.xml"]
     if(mc):
-        args += ["-mc"]
+        args += ["-M"]
     args += [ "--GramsG4Name", "gramsg4.root","--GramsDetSimName", "gramsdetsim.root", "-o", "Extracted.root"]
     command = ' '.join(args)
     args = shlex.split(command)
@@ -146,7 +146,7 @@ def WriteFile(data,OutputName):
 ## Reconstruct
     args = ["./Reconstruct","--options","SensitivityOptions.xml"]
     if(mc):
-        args += ["-mc"]
+        args += ["-M"]
     args += ["-i", "Extracted.root", "-o", "Reco.root", "--SourceType", "Point", " --SourceLoc"]
     args += ["\"("+str(RA_loc) +","+str(ALT_loc)+")\""]    
     command = ' '.join(args)

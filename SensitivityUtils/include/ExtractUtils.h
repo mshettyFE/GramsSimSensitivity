@@ -17,15 +17,14 @@
 #include "DetSimEntry.h"
 
 // calculate L2 Norm squared between adjacent scatter points
-std::vector<double> L2NormSquaredAdjacentScatters(const std::vector<GramsG4Entry>& G4, const std::vector<GramsDetSimEntry>& Det, bool MCTruth);
+std::vector<double> L2NormSquaredAdjacentScatters(const std::vector<GramsG4Entry>& G4);
 
 // check if two adjacent series are in a unique cell
 bool UniqueCellsOnePairMC(const GramsG4Entry& first, const GramsG4Entry& second, const std::vector<double> Dimensions, const  std::vector<int> Binnings);
-bool UniqueCellsOnePairDet(const GramsDetSimEntry& first, const GramsDetSimEntry& second, const std::vector<double> Dimensions, const std::vector<int> Binnings);
 
 // Filter GramsG4 Series to see if it passes criterion. Return true if it does pass
 // Filter types are Standard, Sphere and Unique
-bool filter(const std::vector<GramsG4Entry>& G4Series, const std::vector<GramsG4Entry>& DetSimSeries, const std::string SeriesType,const std::string FilterType, 
+bool filter(const std::vector<GramsG4Entry>& G4Series, const std::string SeriesType,const std::string FilterType, 
 const std::vector<double> Dimensions = {70.0,70.0,80.0} ,  const std::vector<int> Binnings = {7,7,8}, 
 const double seperation = 10 , const bool MCTruth=true, const bool verbose = false);
 

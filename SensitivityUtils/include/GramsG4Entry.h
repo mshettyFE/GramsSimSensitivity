@@ -6,7 +6,6 @@
 
 class GramsG4Entry : public Entry{
   public:
-    GramsG4Entry();
     // Run, Event, TrackID,ParentID,PDGCode,ProcessName,t,x,y,z,Etot,identifier
     GramsG4Entry(int run, int event, int TrackID, int ParentID, int PDGCode, std::string ProcessName,
      double t, float x, float y, float z, double Etot, int id);

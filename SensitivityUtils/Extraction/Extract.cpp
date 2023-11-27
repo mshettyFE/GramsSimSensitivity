@@ -32,6 +32,10 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
+  if(verbose){
+    options->PrintOptions();
+  }
+
   bool MCTruth;
   options->GetOption("MCTruth",MCTruth);
 

@@ -15,9 +15,14 @@ class GramsExtractEntry : public Entry{
     bool MCTruth_flag;
   public:
     // MC_Truth_flag, run, event, energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet, EventType
-    GramsExtractEntry();
     GramsExtractEntry(bool, int, int, double,double,double,double,double,double,double,double,double,double,std::string);
     GramsExtractEntry( GramsG4Entry& G4,  GramsDetSimEntry& DetSim, std::string SType, bool MCflag=true);
+
+    void Fill(TTree* ntuple, int& Run, int& Event, 
+      double& t, double& x,double& y,double& z,double& energy,
+  double& tDet,double& xDet, double& yDet,double&  zDet, double& DetEnergy,
+  std::string& SeriesType,
+  bool verbose = false);
 
     // get key
     std::vector<int> extract_key() const override;
