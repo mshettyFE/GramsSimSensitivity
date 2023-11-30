@@ -651,7 +651,7 @@ def shell_script_preamble(shell_name, tar_file_name):
     with open(shell_name, 'w') as f:
         f.write("#!/bin/bash -l\n")
     #        f.write("source /usr/nevis/adm/nevis-init.sh\n")
-        f.write("conda activate /nevis/amsterdam/share/seligman/conda/grams\n")
+        f.write("conda activate /nevis/riverside/share/ms6556/conda/envs/GramsDev\n")
         f.write("process=$1\n")
     ## Extract folder and cd to directory to run GramsSim code
         f.write("tar -xzf "+tar_file_name+"\n")
@@ -1099,7 +1099,7 @@ def SourceGeneration(configuration, JobType, batch_mode):
             f.write("#!/bin/bash -l\n")
             f.write("process=$1\n")
             f.write("source /usr/nevis/adm/nevis-init.sh\n")
-            f.write("conda activate /nevis/amsterdam/share/seligman/conda/grams\n")
+            f.write("conda activate /nevis/riverside/share/ms6556/conda/envs/GramsDev\n")
             # unzip folder
             f.write("tar -xzf "+tar_file+"\n")
             # move input file to newly unzipped folder and cd to folder
@@ -1258,7 +1258,7 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
             f.write("#!/bin/bash -l\n")
             f.write("process=$1\n")
             f.write("source /usr/nevis/adm/nevis-init.sh\n")
-            f.write("conda activate /nevis/amsterdam/share/seligman/conda/grams\n")
+            f.write("conda activate /nevis/riverside/share/ms6556/conda/envs/GramsDev\n")
             # unzip folder
             f.write("tar -xzf "+tar_file+"\n")
             # move input file to newly unzipped folder and cd to folder
