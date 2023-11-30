@@ -80,7 +80,19 @@ std::map<EntryKey, std::vector<GramsDetSimEntry> > ReadGramsDetSim(const std::st
     ROOT::VecOps::RVec<double> energy, ROOT::VecOps::RVec<double> x,ROOT::VecOps::RVec<double> y,
     ROOT::VecOps::RVec<double> z,ROOT::VecOps::RVec<double> t)
     {
-      GramsDetSimEntry hit = GramsDetSimEntry(run,event, trackID, energy[0], x[0], y[0], z[0], t[0]);
+      // Aggregate energy
+      double agg_e = 0.0;
+      for(auto cur_e: energy){agg_e+= cur_e;}
+      double agg_x = 0.0;
+      for(auto cur_x: x){agg_x += cur_x;}
+      double agg_y = 0.0;
+      for(auto cur_y: y){agg_y += cur_y;}
+      double agg_z = 0.0;
+      for(auto cur_z: z){agg_z += cur_z;}
+      double agg_t = 0.0;
+      for(auto cur_t: t){agg_t += cur_t;}
+
+      GramsDetSimEntry hit = GramsDetSimEntry(run,event, trackID, agg_e, agg_x, agg_y, agg_z, agg_t);
 
       // Create key and value pair
       EntryKey key = hit.extract_key();
