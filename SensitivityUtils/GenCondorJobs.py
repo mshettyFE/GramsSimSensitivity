@@ -1,4 +1,4 @@
-import tomllib
+import toml
 import os, sys, glob, math
 import argparse
 import datetime
@@ -1153,8 +1153,7 @@ if __name__ =="__main__":
     args = parser.parse_args()
 
     try:
-        with open(args.config,'rb') as f:
-            config = tomllib.load(f)
+        config = toml.load(args.config)
     except:
         print("Couldn't read"+ args.config)
         sys.exit()
