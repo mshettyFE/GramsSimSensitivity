@@ -100,6 +100,13 @@ def ParameterValidityCheck(configuration):
     if (cur_attr != "linear") and (cur_attr != "log"):
         return (False, "Invalid scale (must be 'linear' or 'log')")
     
+    ## local_run
+    if not remove_key(possible_keys,"local_run"):
+        return (False, "'local_run' attribute not found")
+    cur_attr = configuration["General"]["local_run"]
+    if not isinstance(cur_attr, bool):
+        return (False, "local_run must be a boolean")
+
     # Effective Area
     if not remove_key(possible_keys,"EffectiveArea"):
         return (False, "'EffectiveArea' header not found")
@@ -355,6 +362,14 @@ def ParameterValidityCheck(configuration):
         return (False, "'gramssky' header not found")
     cur_attr = configuration["Background"]["gramssky"]
 
+    ### Spectrum
+    if not remove_key(possible_keys,"Spectrum"):
+        return (False, "'Spectrum' attribute not found")
+    configuration["Background"]["gramssky"]["Spectrum"] = configuration["Background"]["gramssky"]["Spectrum"].lower()
+    cur_attr = configuration["Background"]["gramssky"]["Spectrum"]
+    if (cur_attr != "powerlaw") and (cur_attr != "uniform"):
+        return (False, "Invalid Spectrum (must be 'PowerLaw' or 'Uniform')")
+
     ### minE
     if not remove_key(possible_keys,"minE"):
         return (False, "'minE' attribute not found")
@@ -514,8 +529,6 @@ def ParameterValidityCheck(configuration):
 
     return (True,"Parameters are sane...")
 
-
-
 def SanityCheck(output_directory):
     # Function to make sure that you aren't overwriting old files by accident
     if not (os.path.isdir(output_directory)):
@@ -531,7 +544,6 @@ def SanityCheck(output_directory):
                 print("Ok. Terminating program...")
                 sys.exit()
     return True
-
 
 def BrokenPowerLaw(E,**kwargs):
     ## Flux function must have the form func(E,**kwargs)
@@ -693,6 +705,51 @@ def cmd_script_generation_cones(output_directory_base_path, Job, cmd_name, shell
         f.write("notification   = Never\n")
         f.write("queue "+str(nbatches)+"\n")
 
+def local_run_generation_cones(output_directory_base_path, Job, wrapper_shell_name, shell_name,tar_name, nbatches, batch_mode):
+    # Create absolute paths to location of shell script, tar file and name temporary files
+    home = os.getcwd()
+    shell_path = os.path.join(home,shell_name)
+    tar_path = os.path.join(home,tar_name)
+    condor_output = "temp-${Process}.out"
+    condor_err = "temp-${Process}.err"
+    ## Make sure that output folder exists.
+    if not (os.path.exists(output_directory_base_path)):
+        print(output_directory_base_path + " doesn't exist")
+        sys.exit()
+    output_dir = os.path.join(output_directory_base_path,Job)
+    try:
+        os.makedirs(output_dir)
+    ## If the directory already exists, then keep going
+    except FileExistsError as err:
+        pass
+    except  Exception as err:
+        print("couldn't create "+output_dir)
+        sys.exit()
+    output_dir = os.path.join(output_directory_base_path,Job,"Cones")
+    try:
+        os.makedirs(output_dir)
+    ## If the directory already exists, then keep going
+    except FileExistsError as err:
+        pass
+    except  Exception as err:
+        print("couldn't create "+output_dir)
+        sys.exit()
+    if not batch_mode:
+        SanityCheck(output_dir)
+    ## Write wrapper script
+    with open(wrapper_shell_name, 'w') as f:
+        f.write("#!/bin/bash\n")
+        f.write("cwd=$(pwd)\n")
+        f.write("cp "+shell_path+" "+output_dir+"\n")
+        f.write("cp "+tar_path+" "+output_dir+"\n")
+        f.write("cd "+output_dir+"\n")
+        f.write("for Process in {0.."+str(nbatches-1)+"}\n")
+        f.write("do\n")
+        f.write("\techo ${Process}\n")
+        f.write("\tsource "+ shell_name+ " ${Process} " +  "2> "+ condor_err +  " 1> "+ condor_output + "\n")
+        f.write("done\n")
+        f.write("cd $(pwd)\n")
+
 def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Job, cmd_name, shell_name,tar_name, nbatches, batch_mode):
     # Create absolute paths to location of shell script, tar file and name temporary files
     home = os.getcwd()
@@ -743,6 +800,54 @@ def cmd_script_generation_skymap(output_directory_base_path, base_input_name, Jo
         f.write("notification   = Never\n")
         f.write("queue "+str(nbatches)+"\n")
 
+def local_run_generation_skymap(output_directory_base_path, base_input_name, Job, wrapper_shell_name, shell_name,tar_name, nbatches, batch_mode):
+    # Create absolute paths to location of shell script, tar file and name temporary files
+    home = os.getcwd()
+    shell_path = os.path.join(home,shell_name)
+    tar_path = os.path.join(home,tar_name)
+    condor_output = "temp-${Process}.out"
+    condor_err = "temp-${Process}.err"
+    ## Make sure that output folder exists.
+    if not (os.path.exists(output_directory_base_path)):
+        print(output_directory_base_path + " doesn't exist")
+        sys.exit()
+    output_dir = os.path.join(output_directory_base_path,Job,"SkyMap")
+    try:
+        os.makedirs(output_dir)
+    ## If the directory already exists, then keep going
+    except FileExistsError as err:
+        pass
+    except  Exception as err:
+        print("couldn't create "+output_dir)
+        sys.exit()
+    if not batch_mode:
+        SanityCheck(output_dir)
+    ## Check that the input cone files are present in the correct directory
+    input_file_pattern = base_input_name+"*.root"
+    data_dir = os.path.join(output_directory_base_path,Job,"Cones")
+    if not (os.path.exists(data_dir)):
+        print(data_dir + " doesn't exist")
+        sys.exit()
+    ## glob magic checks if any files have the correct naming scheme
+    if len(glob.glob(os.path.join(data_dir,input_file_pattern))) == 0:
+        print(data_dir + " doesn't contain cone files")
+        sys.exit()
+    input_data_file = os.path.join(data_dir, base_input_name+"_$(Process).root")
+    ## Write sh file for sky map generation
+    with open(wrapper_shell_name, 'w') as f:
+        f.write("#!/bin/bash\n")
+        f.write("cwd=$(pwd)")
+        f.write("cp "+shell_path+" "+output_dir+"\n")
+        f.write("cp "+tar_path+" "+output_dir+"\n")
+        f.write("cd "+output_dir+"\n")
+        f.write("for Process in {0.."+str(nbatches-1)+"}\n")
+        f.write("do\n")
+        f.write("\techo ${Process}\n")
+        f.write("\tsource "+ shell_name+ " ${Process} " +  "2> "+ condor_err +  " 1> "+ condor_output + "\n")
+        f.write("done\n")
+        f.write("cd $(pwd)\n")
+
+    
 def EffectiveAreaGeneration(configuration, batch_mode):
     current_time = datetime.datetime.now().isoformat()
     base_name = "EffArea_"+str(current_time)
@@ -750,6 +855,7 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     output_root_file_base = configuration["EffectiveArea"]["Reconstruct"]["ReconstructOutput"]
     output_shell_file = base_name+".sh"
     output_cmd_file = base_name+".cmd"
+    output_wrapper_sh_file = base_name+"_wrapper.sh"
     tar_file = base_name+".tar.gz"
     generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
     Geo = configuration["General"]["Geometry"]
@@ -765,8 +871,12 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     minE = float(configuration["EffectiveArea"]["gramssky"]["minE"])
     maxE = float(configuration["EffectiveArea"]["gramssky"]["maxE"])
     energy_bins = int(configuration["EffectiveArea"]["gramssky"]["energy_bins"])
-    ## cmd generation
-    cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
+    ## wrapper generation
+    if(configuration["General"]["local_run"]):
+        local_run_generation_cones(output_directory_base_path, "EffectiveArea", output_wrapper_sh_file,
+        output_shell_file,tar_file, energy_bins, batch_mode)
+    else:
+        cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
     output_shell_file,tar_file, energy_bins, batch_mode)
     ## Generate energies for each job. Uses "scale" to decide what scaliing the x axis should be (linear or log)
     if(configuration["General"]["scale"].lower() == "linear"):
@@ -869,6 +979,7 @@ def SourceGeneration(configuration, JobType, batch_mode):
         output_cone_name = configuration["Source"]["Reconstruct"]["ReconstructOutput"]+"_${process}.root"
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
+        output_wrapper_sh_file = base_name+"_wrapper.sh"
         tar_file = base_name+".tar.gz"
         generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
         shell_script_preamble(output_shell_file,tar_file)
@@ -884,7 +995,11 @@ def SourceGeneration(configuration, JobType, batch_mode):
         PointLocSpherical = "\"("+str(RASourceLoc)+","+str(ALTSourceLoc)+")\""
         RadiusSphere = 300
         RadiusDisc = 200
-        cmd_script_generation_cones(output_directory_base_path, "Source", output_cmd_file, output_shell_file,tar_file, SourceBatchs, batch_mode)
+        if(configuration["General"]["local_run"]):
+            local_run_generation_cones(output_directory_base_path, "Source", output_wrapper_sh_file,
+        output_shell_file,tar_file, SourceBatchs, batch_mode)
+        else:
+            cmd_script_generation_cones(output_directory_base_path, "Source", output_cmd_file, output_shell_file,tar_file, SourceBatchs, batch_mode)
     # Create .mac file to process gramssky
         nparticles = configuration["Source"]["SourceEventsPerJob"]
         with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
@@ -972,7 +1087,11 @@ def SourceGeneration(configuration, JobType, batch_mode):
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
     ## Cmd generation
-        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Source", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
+        if(configuration["General"]["local_run"]):
+            local_run_generation_skymap(output_directory_base_path,base_input_name,  "Source", output_wrapper_sh_file,
+        output_shell_file,tar_file, SourceBatchs, batch_mode)
+        else:
+            cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Source", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
         input_file_name = base_input_name+"_${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
         with open(output_shell_file,'w') as f:
@@ -1012,6 +1131,7 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         output_cone_name = configuration["Background"]["Reconstruct"]["ReconstructOutput"]+"_${process}.root"
         output_shell_file = base_name+".sh"
         output_cmd_file = base_name+".cmd"
+        output_wrapper_sh_file = base_name + "_wrapper.sh"
         tar_file = base_name+".tar.gz"
         generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
         shell_script_preamble(output_shell_file,tar_file)
@@ -1023,7 +1143,11 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         maxE = configuration["Background"]["gramssky"]["maxE"]
         RadiusSphere = 300
         RadiusDisc = 200
-        cmd_script_generation_cones(output_directory_base_path, "Background", output_cmd_file,  output_shell_file,tar_file, BackgroundBatches, batch_mode)
+        if(configuration["General"]["local_run"]):
+            local_run_generation_cones(output_directory_base_path, "Background", output_wrapper_sh_file,
+        output_shell_file,tar_file, BackgroundBatches, batch_mode)
+        else:
+            cmd_script_generation_cones(output_directory_base_path, "Background", output_cmd_file,  output_shell_file,tar_file, BackgroundBatches, batch_mode)
     # Create .mac file to process gramssky
         with open("./GramsWork/mac/"+generic_gramssky_hepmc3_macro,'w') as f:
             f.write("/run/initialize\n")
@@ -1041,7 +1165,13 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
             print("Unknown geometry")
             sys.exit()
         values += ["--OriginSphere", OriginSphere]
-        values += ["--EnergyGeneration" ,"PowerLaw", "--PhotonIndex", "1"]
+        if(configuration["Background"]["gramssky"]["Spectrum"]=="powerlaw"):
+            values += ["--EnergyGeneration" ,"PowerLaw", "--PhotonIndex", "1"]
+        elif(configuration["Background"]["gramssky"]["Spectrum"]=="uniform"):
+            values += ["--EnergyGeneration" ,"Flat"]
+        else:
+            print("Spectrum parameter invalid")
+            sys.exit()
         values += ["--EnergyMin", minE, "--EnergyMax", maxE]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
@@ -1088,6 +1218,7 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         if(configuration["General"]["MC_truth"]):
             values += ["--MCTruth"]
         [  "-i",output_extract_name]
+        values += [  "-i",output_extract_name]
         values += [ "-o", output_cone_name]
         values += ["--SourceType", "Iso"]
         values += ["\n"]
@@ -1109,7 +1240,11 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         output_cmd_file = base_name+".cmd"
         tar_file = base_name+".tar.gz"
     ## Cmd generation
-        cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
+        if(configuration["General"]["local_run"]):
+            local_run_generation_skymap(output_directory_base_path,base_input_name, "Background", output_wrapper_sh_file,
+        output_shell_file,tar_file, BackgroundBatches, batch_mode)
+        else:
+            cmd_script_generation_skymap(output_directory_base_path, base_input_name, "Background", output_cmd_file, output_shell_file,tar_file, nbatches, batch_mode)
         input_file_name = base_input_name+"_${process}.root"
         output_skymap_name = configuration["Background"]["SkyMap"]["SkyMapOutput"]+"_${process}.root"
         EffectiveAreaFile = configuration["CalcEffArea"]["OutputFileName"]
@@ -1155,7 +1290,7 @@ if __name__ =="__main__":
     try:
         config = toml.load(args.config)
     except:
-        print("Couldn't read"+ args.config)
+        print("Couldn't read "+ args.config)
         sys.exit()
     opt = ParameterValidityCheck(config)
     print(opt[1])

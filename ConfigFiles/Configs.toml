@@ -5,6 +5,7 @@
   output_directory = "/nevis/milne/files/ms6556/BleekerData/test"
   MC_truth = true # flag to denote if Reconstruct ...
   scale = "linear" # What scale the binnings should be. Options are {"linear","log"}
+  local_run = false # Run code locally instead of on condor
 
 [EffectiveArea.gramssky]
 # Read in by Effective Area condor job and CalcEffArea
@@ -101,7 +102,7 @@
 # PositionGeneration Iso
 #--PhiMinMax "(-3.14159,3.14159)" --ThetaMinMax "(0,3.14159265)"
 # OriginSphere from Geometry
-#  --EnergyGeneration PowerLaw --PhotonIndex 1
+  Spectrum = "PowerLaw" # Energy generation type. {"PowerLaw","Uniform"}
 
 # Energy in MeV
     minE  = 0.1

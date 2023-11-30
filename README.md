@@ -11,7 +11,7 @@ git clone https://github.com/mshettyFE/GramsSimSensitivity.git
 cd into GramsSimSensitivity
 * If you are at Nevis:
     * You can set up your enviornment by running:
-        *  ```conda activate /nevis/amsterdam/share/seligman/conda/grams```
+        *  ```conda activate /nevis/riverside/share/ms6556/conda/envs/GramsDev```
 * If you are not at Nevis:
     * You first need to install conda (see [here](https://conda.io/projects/conda/en/latest/user-guide/install/index.html))
     * Run the following commands to download the requisite packages for GramsSim and GramsSimSensitivity
