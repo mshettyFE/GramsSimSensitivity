@@ -67,6 +67,7 @@ def WriteFile(data,OutputName):
         draw=True
     else:
         draw = False
+    mc = data["General"]["MC_truth"]
 # Read in relavent parameters
     RA_binning = data["General"]["RABinnings"]
     ALT_binning = data["General"]["ALTBinnings"]
@@ -105,6 +106,7 @@ def WriteFile(data,OutputName):
     command = ' '.join(args)
     args = shlex.split(command)
     temp.append(args)
+    print(command)
     proc = subprocess.run(args)
 # Debugging of subprocess output
     with open("gramssky_mac.mac",'w') as f:
@@ -121,6 +123,7 @@ def WriteFile(data,OutputName):
     command = ' '.join(args)
     args = shlex.split(command)
     temp.append(args)
+    print(command)
     proc = subprocess.run(args)
 ## gramsdetsim
     args = ["./gramsdetsim" ,"--options","SensitivityOptions.xml" ]
@@ -128,21 +131,28 @@ def WriteFile(data,OutputName):
     command = ' '.join(args)
     args = shlex.split(command)
     temp.append(args)
+    print(command)
     proc = subprocess.run(args)
 ## Extract
     args = ["./Extract","--options","SensitivityOptions.xml"]
+    if(mc):
+        args += ["-M"]
     args += [ "--GramsG4Name", "gramsg4.root","--GramsDetSimName", "gramsdetsim.root", "-o", "Extracted.root"]
     command = ' '.join(args)
     args = shlex.split(command)
     temp.append(args)
+    print(command)
     proc = subprocess.run(args)
 ## Reconstruct
     args = ["./Reconstruct","--options","SensitivityOptions.xml"]
+    if(mc):
+        args += ["-M"]
     args += ["-i", "Extracted.root", "-o", "Reco.root", "--SourceType", "Point", " --SourceLoc"]
     args += ["\"("+str(RA_loc) +","+str(ALT_loc)+")\""]    
     command = ' '.join(args)
     args = shlex.split(command)
     temp.append(args)
+    print(command)
     proc = subprocess.run(args)
 
 ##############
@@ -189,10 +199,10 @@ def WriteFile(data,OutputName):
         c2.SaveAs(pic_name)
     Output.WriteObject(mask,"Mask")
     # clean up
-    args = ["rm", "-f", "gramssky.hepmc3", "gramssky_mac.mac", "gramsg4.root", "gramsdetsim.root", "Extracted.root", "Reco.root"]
-    command = ' '.join(args)
-    args = shlex.split(command)
-    proc = subprocess.run(args)
+#    args = ["rm", "-f", "gramssky.hepmc3", "gramssky_mac.mac", "gramsg4.root", "gramsdetsim.root", "Extracted.root", "Reco.root"]
+#    command = ' '.join(args)
+#    args = shlex.split(command)
+#    proc = subprocess.run(args)
     Output.Close()
 if __name__=="__main__":
     ## Parse command line

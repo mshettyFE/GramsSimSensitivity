@@ -1,19 +1,24 @@
 #ifndef GRAMS_SENSE_TYPEDEFS
 #define GRAMS_SENSE_TYPEDEFS 1
+#include <variant>
 
 // Typedefs so I don't have to type out all of these.
 // Also so that I have one place where I can refer to to remember which variable is which
-// I don't think I have to do anything fancy with CMAKE other than including the include directory (already doing)
 
-// Convinient typedefs
+// contains data associated with a hit event
+typedef std::variant<int, double, float, std::string> EntryData;
+// groups EntryData into 1 event hit
+typedef std::vector<EntryData>  EntryRow;
+// key for inherited Entry class
+typedef std::vector<int> EntryKey;
 // <TrackID,ParentID,PDGCode,ProcessName,t,x,y,z,Etot,identifier>
-typedef std::tuple<int,int,int,std::string,double,float,float,float,double,int> G4Entry;
+//typedef std::tuple<int,int,int,std::string,double,float,float,float,double,int> G4Entry;
 // <Energy,x_det,y_det,z_det,t_det>
-typedef std::tuple<double,double, double,double,double> DetSimEntry;
+//typedef std::tuple<double,double, double,double,double> DetSimEntry;
 //<energy,t,x,y,z,DetEnergy,tDet,xDet,yDet,zDet>
-typedef std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> ExtractEntry;
+//typedef std::tuple<double,double,double,double,double,double,double,double,double,double,std::string> ExtractEntry;
 //<xDir,yDir,zDir,xTip,yTip,zTip,RecoAngle, TruthEnergy>
-typedef std::tuple<double,double,double,double,double,double,double,double> ReconstructEntry;
+//typedef std::tuple<double,double,double,double,double,double,double,double> ReconstructEntry;
 // cartesian coordinates <x,y,z>
 typedef std::tuple<double,double,double> R3;
 // RA,ALT coordinates <RA,ALT>

@@ -1,13 +1,523 @@
 import tomllib
-import os, sys, math, glob
+import os, sys, glob, math
 import argparse
 import datetime
 import numpy as np
 import subprocess
 from  ROOT import TFile
 
+def get_keys(config):
+    # Recursively gather all the keys in a dictionary of nested dictionaries
+    output = []
+    for k,v in config.items():
+    # Recurse: The items are dictionaries, so they can possible contain more keys themselves. Recurse on each dictionary v
+        if isinstance(v,dict):
+            output += [k]
+            output += get_keys(v)
+        else:
+    # base case: There are no additional dictionaries in the items. Put key into output
+            output += [k]
+    return output
+
+def remove_key(lok, key):
+    # try to remove key from list of keys (lok)
+    # If key is not found, then return False. Otherwise, return True
+    if key in lok:
+        lok.remove(key)
+        return True
+    return False
+
+def ParameterValidityCheck(configuration):
+    # Function that makes sure that all the parameters in configuration are valid values
+    # This is needed becuase tomllib only checks if the .toml Config file is a valid .toml file
+
+    # Returns Tuple where first element is boolean on wheather all parameters are valid in the context of the simulation
+    # Second element is some string: either an error message or sucess message 
+
+    # Get all keys in configurations. Remove from this list for each header/attribute we check
+    # Duplicate keys are allowed (so if you have a subheader named "fizz",
+    # a under two different main headers, you will have two "fizz" in the list. This is OK)
+    possible_keys = get_keys(configuration)
+
+    # General section
+    if not remove_key(possible_keys,"General"):
+        return (False, "'General' header not found")
+    cur_attr = configuration["General"]
+
+    ## Geometry
+    if not remove_key(possible_keys,"Geometry"):
+        return (False, "'Geometry' attribute not found")
+    configuration["General"]["Geometry"] = configuration["General"]["Geometry"].lower()
+    cur_attr = configuration["General"]["Geometry"]
+    if (cur_attr != "cube") and (cur_attr != "flat"):
+        return (False, "Invalid Geometry (must be 'cube' or 'flat')")
+
+    ## RA and ALT binnings
+    if not remove_key(possible_keys,"RABinnings"):
+        return (False, "'RABinnings' attribute not found")
+    cur_attr = configuration["General"]["RABinnings"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret RABinnings as an integer")
+    if(temp <=0):
+        return (False, "RABinnings must be strictly greater than 0")
+
+    if not remove_key(possible_keys,"ALTBinnings"):
+        return (False, "'ALTBinnings' attribute not found")
+    cur_attr = configuration["General"]["ALTBinnings"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret ALTBinnings as an integer")
+    if(temp <=0):
+        return (False, "ALTBinnings must be strictly greater than 0")
+
+    ## base output directory
+    if not remove_key(possible_keys,"output_directory"):
+        return (False, "'output_directory' attribute not found")
+    cur_attr = configuration["General"]["output_directory"]
+    if not (os.path.exists(cur_attr)):
+        print("Base output dirctory currently does not exist. Attempting to create...")
+        try:
+            os.mkdir(cur_attr)
+        except:
+            return (False, "Could not create base directory"+cur_attr)
+        print("directory created")
+
+    ## MC_truth
+    if not remove_key(possible_keys,"MC_truth"):
+        return (False, "'MC_truth' attribute not found")
+    cur_attr = configuration["General"]["MC_truth"]
+    if not isinstance(cur_attr, bool):
+        return (False, "MC_truth must be a boolean")
+
+    ## scale
+    if not remove_key(possible_keys,"scale"):
+        return (False, "'scale' attribute not found")
+    configuration["General"]["scale"] = configuration["General"]["scale"].lower()
+    cur_attr = configuration["General"]["scale"]
+    if (cur_attr != "linear") and (cur_attr != "log"):
+        return (False, "Invalid scale (must be 'linear' or 'log')")
+    
+    # Effective Area
+    if not remove_key(possible_keys,"EffectiveArea"):
+        return (False, "'EffectiveArea' header not found")
+    cur_attr = configuration["EffectiveArea"]
+
+    ## gramssky
+    if not remove_key(possible_keys,"gramssky"):
+        return (False, "'gramssky' header not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]
+
+    ### Radius Sphere
+    if not remove_key(possible_keys,"RadiusSphere"):
+        return (False, "'RadiusSphere' attribute not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]["RadiusSphere"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret RadiusSphere as an integer")
+    if(temp <=0):
+        return (False, "RadiusSphere must be strictly greater than 0")
+
+    ### Radius Disk
+    if not remove_key(possible_keys,"RadiusDisc"):
+        return (False, "'RadiusDisc' attribute not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]["RadiusDisc"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret RadiusDisc as an integer")
+    if(temp <=0):
+        return (False, "RadiusDisc must be strictly greater than 0")
+
+    ### minE
+    if not remove_key(possible_keys,"minE"):
+        return (False, "'minE' attribute not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]["minE"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret minE as a float")
+    minE = temp
+    if(temp <=0):
+        return (False, "minE must be strictly greater than 0")
+
+    ### maxE
+    if not remove_key(possible_keys,"maxE"):
+        return (False, "'maxE' attribute not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]["maxE"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret maxE as a float")
+    if(temp <=0):
+        return (False, "maxE must be strictly greater than 0")
+    if (temp <= minE):
+        return (False, "'maxE' must be strictly larger than 'minE'")
+    ### energy_bins
+    if not remove_key(possible_keys,"energy_bins"):
+        return (False, "'energy_bins' attribute not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]["energy_bins"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret energy_bins as an integer")
+    if(temp <=0):
+        return (False, "energy_bins must be strictly greater than 0")
+
+    ### nparticles
+    if not remove_key(possible_keys,"nparticles"):
+        return (False, "'nparticles' attribute not found")
+    cur_attr = configuration["EffectiveArea"]["gramssky"]["nparticles"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret nparticles as an integer")
+    if(temp <=0):
+        return (False, "nparticles must be strictly greater than 0")
+
+    ## gramsg4
+    if not remove_key(possible_keys,"gramsg4"):
+        return (False, "'gramsg4' header not found")
+    cur_attr = configuration["EffectiveArea"]["gramsg4"]
+
+    ## gramsdetsim
+    if not remove_key(possible_keys,"gramsdetsim"):
+        return (False, "'gramsdetsim' header not found")
+    cur_attr = configuration["EffectiveArea"]["gramsdetsim"]
+
+    ## Extract
+    if not remove_key(possible_keys,"Extract"):
+        return (False, "'Extract' header not found")
+    cur_attr = configuration["EffectiveArea"]["Extract"]
+
+    ### ExtractOutput
+    if not remove_key(possible_keys,"ExtractOutput"):
+        return (False, "'Extract' header not found")
+    cur_attr = configuration["EffectiveArea"]["Extract"]["ExtractOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'ExtractOutput' must have a non-zero length")
+
+    ## Reconstruct
+    if not remove_key(possible_keys,"Reconstruct"):
+        return (False, "'Reconstruct' header not found")
+    cur_attr = configuration["EffectiveArea"]["Reconstruct"]
+
+    ### ReconstructOutput
+    if not remove_key(possible_keys,"ReconstructOutput"):
+        return (False, "'ReconstructOutput' header not found")
+    cur_attr = configuration["EffectiveArea"]["Reconstruct"]["ReconstructOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'ReconstructOutput' must have a non-zero length")
+
+    # Source
+    if not remove_key(possible_keys,"Source"):
+        return (False, "'Source' header not found")
+    cur_attr = configuration["Source"]
+
+    # Source Energy
+    if not remove_key(possible_keys,"SourceEnergy"):
+        return (False, "'SourceEnergy' header not found")
+    cur_attr = configuration["Source"]["SourceEnergy"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret SourceEnergy as a float")
+    if(temp <=0):
+        return (False, "SourceEnergy must be strictly greater than 0")
+
+    # SourceEventsPerJob
+    if not remove_key(possible_keys,"SourceEventsPerJob"):
+        return (False, "'SourceEventsPerJob' header not found")
+    cur_attr = configuration["Source"]["SourceEventsPerJob"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret SourceEventsPerJob as a float")
+    if(temp <=0):
+        return (False, "SourceEventsPerJob must be strictly greater than 0")
+
+    # SourceEventsPerJob
+    if not remove_key(possible_keys,"SourceBatches"):
+        return (False, "'SourceBatches' header not found")
+    cur_attr = configuration["Source"]["SourceBatches"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret SourceBatches as a float")
+    if(temp <=0):
+        return (False, "SourceBatches must be strictly greater than 0")
+
+    # RASourceLoc
+    if not remove_key(possible_keys,"RASourceLoc"):
+        return (False, "'RASourceLoc' header not found")
+    cur_attr = configuration["Source"]["RASourceLoc"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret RASourceLoc as a float")
+    if(temp <0) or (temp > 180):
+        return (False, "RASourceLoc must be between 0 and 180 degrees (inclusive)")
+
+    # ALTSourceLoc
+    if not remove_key(possible_keys,"ALTSourceLoc"):
+        return (False, "'ALTSourceLoc' header not found")
+    cur_attr = configuration["Source"]["ALTSourceLoc"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret ALTSourceLoc as a float")
+    if(temp <0) or (temp > 90):
+        return (False, "ALTSourceLoc must be between 0 and 90 degrees (inclusive)")
+
+    ## gramssky
+    if not remove_key(possible_keys,"gramssky"):
+        return (False, "'gramssky' header not found")
+    cur_attr = configuration["Source"]["gramssky"]
+
+    ## gramsg4
+    if not remove_key(possible_keys,"gramsg4"):
+        return (False, "'gramsg4' header not found")
+    cur_attr = configuration["Source"]["gramsg4"]
+
+    ## gramsdetsim
+    if not remove_key(possible_keys,"gramsdetsim"):
+        return (False, "'gramsdetsim' header not found")
+    cur_attr = configuration["Source"]["gramsdetsim"]
+
+    ## Extract
+    if not remove_key(possible_keys,"Extract"):
+        return (False, "'Extract' header not found")
+    cur_attr = configuration["Source"]["Extract"]
+
+    ### ExtractOutput
+    if not remove_key(possible_keys,"ExtractOutput"):
+        return (False, "'ExtractOutput' header not found")
+    cur_attr = configuration["Source"]["Extract"]["ExtractOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'ExtractOutput' must have a non-zero length")
+
+    ## Reconstruct
+    if not remove_key(possible_keys,"Reconstruct"):
+        return (False, "'Reconstruct' header not found")
+    cur_attr = configuration["Source"]["Reconstruct"]
+
+    ### ReconstructOutput
+    if not remove_key(possible_keys,"ReconstructOutput"):
+        return (False, "'ReconstructOutput' header not found")
+    cur_attr = configuration["Source"]["Reconstruct"]["ReconstructOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'ReconstructOutput' must have a non-zero length")
+
+    ## SkyMap
+    if not remove_key(possible_keys,"SkyMap"):
+        return (False, "'SkyMap' header not found")
+    cur_attr = configuration["Source"]["SkyMap"]
+
+    ### SkyMapOutput
+    if not remove_key(possible_keys,"SkyMapOutput"):
+        return (False, "'SkyMapOutput' header not found")
+    cur_attr = configuration["Source"]["SkyMap"]["SkyMapOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'SkyMapOutput' must have a non-zero length")
+    
+    # Background
+    if not remove_key(possible_keys,"Background"):
+        return (False, "'Background' header not found")
+    cur_attr = configuration["Background"]
+
+    # BackgroundEventsPerJob
+    if not remove_key(possible_keys,"BackgroundEventsPerJob"):
+        return (False, "'BackgroundEventsPerJob' header not found")
+    cur_attr = configuration["Background"]["BackgroundEventsPerJob"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret BackgroundEventsPerJob as a float")
+    if(temp <=0):
+        return (False, "BackgroundEventsPerJob must be strictly greater than 0")
+
+    # BackgroundBatches
+    if not remove_key(possible_keys,"BackgroundBatches"):
+        return (False, "'BackgroundBatches' header not found")
+    cur_attr = configuration["Background"]["BackgroundBatches"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret BackgroundBatches as a float")
+    if(temp <=0):
+        return (False, "BackgroundBatches must be strictly greater than 0")
+
+    # gramssky
+    if not remove_key(possible_keys,"gramssky"):
+        return (False, "'gramssky' header not found")
+    cur_attr = configuration["Background"]["gramssky"]
+
+    ### minE
+    if not remove_key(possible_keys,"minE"):
+        return (False, "'minE' attribute not found")
+    cur_attr = configuration["Background"]["gramssky"]["minE"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret minE as a float")
+    minE = temp
+    if(temp <=0):
+        return (False, "minE must be strictly greater than 0")
+
+    ### maxE
+    if not remove_key(possible_keys,"maxE"):
+        return (False, "'maxE' attribute not found")
+    cur_attr = configuration["Background"]["gramssky"]["maxE"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret maxE as a float")
+    if(temp <=0):
+        return (False, "maxE must be strictly greater than 0")
+    if (temp <= minE):
+        return (False, "'maxE' must be strictly larger than 'minE'")
+
+    ## gramsg4
+    if not remove_key(possible_keys,"gramsg4"):
+        return (False, "'gramsg4' header not found")
+    cur_attr = configuration["Background"]["gramsg4"]
+
+    ## gramsdetsim
+    if not remove_key(possible_keys,"gramsdetsim"):
+        return (False, "'gramsdetsim' header not found")
+    cur_attr = configuration["Background"]["gramsdetsim"]
+
+    ## Extract
+    if not remove_key(possible_keys,"Extract"):
+        return (False, "'Extract' header not found")
+    cur_attr = configuration["Background"]["Extract"]
+
+    ### ExtractOutput
+    if not remove_key(possible_keys,"ExtractOutput"):
+        return (False, "'ExtractOutput' header not found")
+    cur_attr = configuration["Background"]["Extract"]["ExtractOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'ExtractOutput' must have a non-zero length")
+
+    ## Reconstruct
+    if not remove_key(possible_keys,"Reconstruct"):
+        return (False, "'Reconstruct' header not found")
+    cur_attr = configuration["Background"]["Reconstruct"]
+
+    ### ReconstructOutput
+    if not remove_key(possible_keys,"ReconstructOutput"):
+        return (False, "'ReconstructOutput' header not found")
+    cur_attr = configuration["Background"]["Reconstruct"]["ReconstructOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'ReconstructOutput' must have a non-zero length")
+
+    ## SkyMap
+    if not remove_key(possible_keys,"SkyMap"):
+        return (False, "'SkyMap' header not found")
+    cur_attr = configuration["Background"]["SkyMap"]
+
+    ### SkyMapOutput
+    if not remove_key(possible_keys,"SkyMapOutput"):
+        return (False, "'SkyMapOutput' header not found")
+    cur_attr = configuration["Background"]["SkyMap"]["SkyMapOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'SkyMapOutput' must have a non-zero length")
+
+    ## ExposureTime
+    if not remove_key(possible_keys,"ExposureTime"):
+        return (False, "'ExposureTime' attribute not found")
+    cur_attr = configuration["Background"]["SkyMap"]["ExposureTime"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret ExposureTime as a float")
+    if(temp <=0):
+        return (False, "ExposureTime must be strictly greater than 0")
+
+    ## Mask
+    if not remove_key(possible_keys,"Mask"):
+        return (False, "'Mask' header not found")
+    cur_attr = configuration["Mask"]
+
+    # nevents
+    if not remove_key(possible_keys,"nevents"):
+        return (False, "'nevents' header not found")
+    cur_attr = configuration["Mask"]["nevents"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret nevents as a float")
+    if(temp <=0):
+        return (False, "nevents must be strictly greater than 0")
+
+    # nbins
+    if not remove_key(possible_keys,"nbins"):
+        return (False, "'nbins' header not found")
+    cur_attr = configuration["Mask"]["nbins"]
+    try:
+        temp = int(cur_attr)
+    except:
+        return (False,"Couldn't interpret nbins as a float")
+    if(temp <=0):
+        return (False, "nbins must be strictly greater than 0")
+
+    ### MaskOutput
+    if not remove_key(possible_keys,"MaskOutput"):
+        return (False, "'MaskOutput' header not found")
+    cur_attr = configuration["Mask"]["MaskOutput"]
+    if(len(cur_attr) ==0):
+        return (False, "'MaskOutput' must have a non-zero length")
+
+    ## draw
+    if not remove_key(possible_keys,"draw"):
+        return (False, "'draw' attribute not found")
+    cur_attr = configuration["Mask"]["draw"]
+    if not isinstance(cur_attr, bool):
+        return (False, "draw must be a boolean")
+
+    ## CalcEffArea
+    if not remove_key(possible_keys,"CalcEffArea"):
+        return (False, "'CalcEffArea' header not found")
+    cur_attr = configuration["CalcEffArea"]
+
+    ### OutputFileName
+    if not remove_key(possible_keys,"OutputFileName"):
+        return (False, "'OutputFileName' header not found")
+    cur_attr = configuration["CalcEffArea"]["OutputFileName"]
+    if(len(cur_attr) ==0):
+        return (False, "'OutputFileName' must have a non-zero length")
+
+    ## Sensitivity
+    if not remove_key(possible_keys,"Sensitivity"):
+        return (False, "'Sensitivity' header not found")
+    cur_attr = configuration["Sensitivity"]
+
+    ### minE
+    if not remove_key(possible_keys,"TimeScaling"):
+        return (False, "'TimeScaling' attribute not found")
+    cur_attr = configuration["Sensitivity"]["TimeScaling"]
+    try:
+        temp = float(cur_attr)
+    except:
+        return (False,"Couldn't interpret TimeScaling as a float")
+    if(temp <=0):
+        return (False, "TimeScaling must be strictly greater than 0")
+
+    if(len(possible_keys) > 0):
+        print("\n\n\n")
+        for key in possible_keys:
+            print("Parameter: " +str(key)+" not found")
+        return (False, "Missing headers/attributes")
+
+    return (True,"Parameters are sane...")
+
+
+
 def SanityCheck(output_directory):
-# Function to make sure that you aren't overwriting old files by accident
+    # Function to make sure that you aren't overwriting old files by accident
     if not (os.path.isdir(output_directory)):
         print(output_directory+" doesn't exist")
         sys.exit()
@@ -78,7 +588,7 @@ def LogUniform(E,**kwargs):
     return np.power(E,-1)/scaling
 
 def GenFluxes(EffectiveAreaFile  ,PhysicalFluxName , ReferenceFluxName ):
-## Generate reference and physical background flux for background cone generation
+    ## Generate reference and physical background flux for background cone generation
     home = os.getcwd()
     os.chdir(os.path.join(home,"GramsWork"))
     args = parser.parse_args()
@@ -242,7 +752,7 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     output_cmd_file = base_name+".cmd"
     tar_file = base_name+".tar.gz"
     generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
-    Geo = configuration["General"]["Geometry"].lower()
+    Geo = configuration["General"]["Geometry"]
     output_directory_base_path = config["General"]["output_directory"]
     ## Constants
     PositionGeneration  = "Iso"
@@ -258,8 +768,15 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     ## cmd generation
     cmd_script_generation_cones(output_directory_base_path, "EffectiveArea", output_cmd_file,
     output_shell_file,tar_file, energy_bins, batch_mode)
-    ## Generate energies for each job. Linear scale
-    energies = np.linspace(minE,maxE,num=energy_bins)
+    ## Generate energies for each job. Uses "scale" to decide what scaliing the x axis should be (linear or log)
+    if(configuration["General"]["scale"].lower() == "linear"):
+        energies = np.linspace(minE,maxE,num=energy_bins)
+    elif (configuration["General"]["scale"].lower() == "log"):
+        energies = np.logspace(math.log10(minE),math.log10(maxE),num=energy_bins)
+    ## This shouldn't happen, but you never know!
+    else:
+        print("Invalid scale for x axis of Effective Area")
+        sys.exit()
     energy_str = "energies=( "
     for e in energies:
         energy_str = energy_str + ' \"'+str(e)+'\" '
@@ -310,15 +827,22 @@ def EffectiveAreaGeneration(configuration, batch_mode):
     with open(output_shell_file,'a') as f:
         f.write(command)
     # ## Extract
-    values = ["./Extract", "--options", "SensitivityOptions.xml", "--GramsG4Name", "EffArea_${process}.root"]
-    values += ["--GramsDetSimName" ,"EffAreaDet_${process}.root", "-o", "EffAreaExtract_${process}.root"]
+    values = ["./Extract","--options", "SensitivityOptions.xml"]
+    if(configuration["General"]["MC_truth"]):
+        values += ["--MCTruth"]
+    values += [ "--GramsG4Name", "EffArea_${process}.root"]
+    values += ["--GramsDetSimName" ,"EffAreaDet_${process}.root"]
+    values += ["-o", "EffAreaExtract_${process}.root"]
     values += ['\n']
     command = " ".join([str(v) for v in values])
     with open(output_shell_file,'a') as f:
         f.write(command)
     # ## Reconstruct 
     values = []
-    values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i", "EffAreaExtract_${process}.root"]
+    values += ["./Reconstruct","--options", "SensitivityOptions.xml"]
+    if(configuration["General"]["MC_truth"]):
+        values += ["--MCTruth"]
+    values += ["-i", "EffAreaExtract_${process}.root"]
     values += ["-o",output_root_file_base+"_${process}.root"]
     values += ['\n']
     command = " ".join([str(v) for v in values])
@@ -348,7 +872,7 @@ def SourceGeneration(configuration, JobType, batch_mode):
         tar_file = base_name+".tar.gz"
         generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
         shell_script_preamble(output_shell_file,tar_file)
-        Geo = configuration["General"]["Geometry"].lower()
+        Geo = configuration["General"]["Geometry"]
         SourceEnergy = configuration["Source"]["SourceEnergy"]
         SourceEventsPerJob = configuration["Source"]["SourceEventsPerJob"]
         SourceBatchs = configuration["Source"]["SourceBatches"]
@@ -411,7 +935,10 @@ def SourceGeneration(configuration, JobType, batch_mode):
             f.write(command)
     ## Extract
         values = []
-        values += ["./Extract", "--options", "SensitivityOptions.xml", "--GramsG4Name","Source_${process}.root","--GramsDetSimName","Source_Det_${process}.root"]
+        values += ["./Extract",  "--options", "SensitivityOptions.xml"]
+        if(configuration["General"]["MC_truth"]):
+            values += ["--MCTruth"]
+        values += [ "--GramsG4Name","Source_${process}.root","--GramsDetSimName","Source_Det_${process}.root"]
         values += ["-o",output_extract_name]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
@@ -419,7 +946,11 @@ def SourceGeneration(configuration, JobType, batch_mode):
             f.write(command)
     # Generate cones
         values = []
-        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name, "-o", output_cone_name]
+        values += ["./Reconstruct", "--options", "SensitivityOptions.xml"]
+        if(configuration["General"]["MC_truth"]):
+            values += ["--MCTruth"]
+        values += [  "-i",output_extract_name]
+        values += [ "-o", output_cone_name]
         values += ["--SourceType", "Point", "--SourceLoc", PointLocSpherical]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
@@ -484,7 +1015,7 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
         tar_file = base_name+".tar.gz"
         generic_gramssky_hepmc3_macro = "GenericHepmc3.mac"
         shell_script_preamble(output_shell_file,tar_file)
-        Geo = configuration["General"]["Geometry"].lower()
+        Geo = configuration["General"]["Geometry"]
         output_directory_base_path = config["General"]["output_directory"]
         BackgroundEventsPerJob = configuration["Background"]["BackgroundEventsPerJob"]
         BackgroundBatches = configuration["Background"]["BackgroundBatches"]
@@ -542,7 +1073,10 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
             f.write(command)
     ## Extract
         values = []
-        values += ["./Extract","--options", "SensitivityOptions.xml", "--GramsG4Name","Background_${process}.root","--GramsDetSimName","Background_Det_${process}.root"]
+        values += ["./Extract","--options", "SensitivityOptions.xml"]
+        if(configuration["General"]["MC_truth"]):
+            values += ["--MCTruth"]
+        values += [ "--GramsG4Name","Background_${process}.root","--GramsDetSimName","Background_Det_${process}.root"]
         values += ["-o",output_extract_name]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
@@ -550,7 +1084,11 @@ def BackgroundGeneration(configuration, JobType, batch_mode):
             f.write(command)
     # Generate cones
         values = []
-        values += ["./Reconstruct", "--options", "SensitivityOptions.xml", "-i",output_extract_name, "-o", output_cone_name]
+        values += ["./Reconstruct","--options", "SensitivityOptions.xml"]
+        if(configuration["General"]["MC_truth"]):
+            values += ["--MCTruth"]
+        [  "-i",output_extract_name]
+        values += [ "-o", output_cone_name]
         values += ["--SourceType", "Iso"]
         values += ["\n"]
         command = " ".join([str(v) for v in values])
@@ -620,7 +1158,12 @@ if __name__ =="__main__":
     except:
         print("Couldn't read"+ args.config)
         sys.exit()
-
+    opt = ParameterValidityCheck(config)
+    print(opt[1])
+    if not opt[0]:
+        sys.exit()
+## Using config dictionary to also pass down filename into config generation functions
+    config["DummyPlaceholder"] = os.path.split(args.config)[1]
     if(args.Job=="EffectiveArea"):
         EffectiveAreaGeneration(config,args.batch)
     elif (args.Job=="Source"):
@@ -629,3 +1172,4 @@ if __name__ =="__main__":
         BackgroundGeneration(config,args.JobType, args.batch)
     else:
         print("Invalid Job")
+    print("Finished ;)")

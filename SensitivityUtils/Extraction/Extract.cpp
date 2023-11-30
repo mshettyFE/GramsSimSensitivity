@@ -32,6 +32,13 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
+  if(verbose){
+    options->PrintOptions();
+  }
+
+  bool MCTruth;
+  options->GetOption("MCTruth",MCTruth);
+
 // Reads in GramsG4, GramsDetSim and output file names
     std::string G4Name;
     std::string DetSimName;
@@ -46,11 +53,11 @@ int main(int argc, char** argv){
     }
     else{
       if(!std::filesystem::exists(G4Name)){
-        std::cerr << G4Name << "doesn't exists" << std::endl;
+        std::cerr << G4Name << " doesn't exists" << std::endl;
         return -1;
       }
       if(!std::filesystem::exists(DetSimName)){
-        std::cerr << DetSimName << "doesn't exists" << std::endl;
+        std::cerr << DetSimName << " doesn't exists" << std::endl;
         return -1;
       }
     }
@@ -148,13 +155,13 @@ int main(int argc, char** argv){
   }
 
 // Extracts data from GramsG4 into a map. See ExtractUtils.cpp for details
-  std::map<std::tuple<int,int>, std::vector<std::tuple<int,int,int,std::string,double,float,float,float,double,int>> > mapping;
+  std::map<std::vector<int>, std::vector<GramsG4Entry> > mapping;
   mapping = ReadGramsG4(G4Name,verbose);
 // Extracts data from GramsDetSim into a map. See ExtractUtils.cpp for details
-  std::map<std::tuple<int,int,int>, std::vector<std::tuple<double,double, double,double,double>> > DetMapping;
+  std::map<std::vector<int>, std::vector<GramsDetSimEntry> > DetMapping;
   DetMapping = ReadGramsDetSim(DetSimName,verbose);
 // Select scatter series that match the criterion and write these series to an output root file
 // Note that the output always write the first interaction as a Primary gamma ray, and not a Compton scatter
-  FilterWrite(mapping,DetMapping,outputFile, filterValue, Dimensions, Binnings, Seperation, verbose);
+  FilterWrite(mapping,DetMapping, outputFile, filterValue, Dimensions, Binnings, Seperation,MCTruth, verbose);
   return 0;
 }

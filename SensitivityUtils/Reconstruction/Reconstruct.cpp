@@ -1,17 +1,19 @@
 #include "TTree.h"
 #include "TFile.h"
 
-#include "ReadRootFiles.h"
-#include "Options.h"
-#include "ReconstructUtils.h"
-#include "UsefulTypeDefs.h"
-
 #include<vector>
 #include<map>
 #include<tuple>
 #include<string>
 #include<iostream>
 #include<filesystem>
+#include<memory>
+
+#include "ExtractionEntry.h"
+#include "ReadRootFiles.h"
+#include "Options.h"
+#include "ReconstructUtils.h"
+#include "UsefulTypeDefs.h"
 
 int main(int argc, char** argv){
   // Parser logic adapted from https://github.com/wgseligman/GramsSim/tree/master/util
@@ -39,6 +41,13 @@ int main(int argc, char** argv){
   bool verbose;
   options->GetOption("verbose",verbose);
 
+  if(verbose){
+    options->PrintOptions();
+  }
+
+  bool MCTruth;
+  options->GetOption("MCTruth",MCTruth);
+
   std::string inputFileName;
   std::string outputFileName;
   bool checkInput = options->GetOption("Input",inputFileName);
@@ -58,7 +67,7 @@ int main(int argc, char** argv){
     return -1;
   }
 
-  // Read in Source Type
+  // Read in Source Types
   std::string SourceType;
   bool CheckSourceType = options->GetOption("SourceType",SourceType);
   if(!CheckSourceType){
@@ -79,21 +88,16 @@ int main(int argc, char** argv){
     std::cerr << "Couldn't parse source location" << std::endl;
     return -1;
   }
+
   SkyMapLoc Spherical = std::make_tuple(TempVector[0],TempVector[1]);
   R3 truthLoc = SphereToCart(Spherical);
 
-  std::map<std::tuple<int,int>, std::vector<ExtractEntry> > Series;
-  Series = ReadExtract(inputFileName,verbose);
+  std::map<EntryKey, std::vector<GramsExtractEntry> > Series;
+  Series = ReadExtract(inputFileName, MCTruth, verbose);
 
-  TFile* OFile = new TFile(outputFileName.c_str(), "RECREATE");
-  TTree* tree;
-  tree = new TTree("Cones","Compton Cones");
   // Fill tree with Reconstructed Cone Data
-  Reconstruction(Series,tree,truthLoc,SourceType);
-  // Write TTree to File
-  tree->Write();
-  // Clean Up
-  delete tree;
-  OFile->Close();
+  Reconstruction(Series,outputFileName,truthLoc, verbose, SourceType);
+
+  options->PrintOptions();
   return 0;
 }

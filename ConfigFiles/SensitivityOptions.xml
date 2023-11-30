@@ -89,6 +89,7 @@
             Stipulated the minimum seperation between Compton scatters to be a valid series. Needs Filter to be set to Sphere
             (since this seperation creates a sphere of exclusion around an interaction point).
         </option>
+        <option name="MCTruth"  short='M' type="flag" desc= "Toggle between selecting between MCTruth and DetSim variables" ></option>
     </Extract>
 
     <Reconstruct>
@@ -103,7 +104,9 @@
         <option name="Output" value="ReconstructedSource.root" short='o' type="string" desc="Output Root file containing cone data and ARM. Defaults to 2*pi for isotropic"></option>
         <!-- NOTE: ARM is only meaningful if you have a point source. Therefore, I chose to set  ARM to 2*pi when you have an isotropic background.
         This allows the output to have a consistent format. 2*pi is a non-sensical value for ARM, so seeing said value indicates that the generated events were isotropic-->
+        <option name="MCTruth" short='M' type="flag" desc= "Toggle between selecting between MCTruth and DetSim variables" ></option>
     </Reconstruct>
+    
     <GenSkyMap>
         <option name="Input" value="ReconstructedSource.root" short='i' type="string" desc="Input root file from Reconstruct.cpp program"></option>
         <option name="Output" value="CountsHists.root" short='o' type="string" desc="Output root file containing Counts TH1D histogram and TH2D Sky Map"></option>
