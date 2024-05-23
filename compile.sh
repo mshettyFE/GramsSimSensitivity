@@ -13,17 +13,20 @@ mkdir EffArea
 cp -r ../$ProjectName/GramsWork EffArea/
 cp ../$ProjectName/ConfigFiles/* EffArea/
 cp ../$ProjectName/GenCondorJobs.py EffArea/
+cp ../$ProjectName/TomlSanityCheck.py EffArea/
 cp ../$ProjectName/CalcEffArea.py EffArea/
 
 mkdir Sensitivity
 cp ../$ProjectName/ConfigFiles/* Sensitivity/
 cp ../$ProjectName/GenCondorJobs.py Sensitivity/
+cp ../$ProjectName/TomlSanityCheck.py Sensitivity/
 cp ../$ProjectName/CalculateSensitivity.py Sensitivity/
 
 mkdir Source
 cp -r ../$ProjectName/GramsWork Source/
 cp ../$ProjectName/ConfigFiles/* Source/
 cp ../$ProjectName/GenCondorJobs.py Source/
+cp ../$ProjectName/TomlSanityCheck.py Source/
 cp ../$ProjectName/GramsWork/options.xml Source/
 cp ../$ProjectName/GenMask.py Source/
 
@@ -31,6 +34,7 @@ mkdir Background
 cp -r ../$ProjectName/GramsWork Background/
 cp ../$ProjectName/ConfigFiles/* Background/
 cp ../$ProjectName/GenCondorJobs.py Background/
+cp ../$ProjectName/TomlSanityCheck.py Background/
 cp ../$ProjectName/GramsWork/options.xml Background/
 
 # Move condor stray file cleaner to build dir

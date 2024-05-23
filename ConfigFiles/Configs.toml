@@ -1,58 +1,134 @@
-[General]
-  Geometry= "cube" # Geometry of detector. Options are {"flat","cube"}  
-  RABinnings= 500 #binnings on skymap fro source and background
-  ALTBinnings= 500
-  output_directory = "/nevis/milne/files/ms6556/BleekerData/test"
-  MC_truth = true # flag to denote if Reconstruct ...
-  scale = "linear" # What scale the binnings should be. Options are {"linear","log"}
-  local_run = false # Run code locally instead of on condor
+# Config File formatted as follows:
 
-[EffectiveArea.gramssky]
-# Read in by Effective Area condor job and CalcEffArea
+# Each parameter is formatted like: [XXX.YYY] where XXX refers to the group of the parameter and YYY refers to the name of the parameter
+# Each parameter has exactly two key:value pairs.
+#   The first is the actual value of the parameter (a path, a number, a string etc.)
+#   The second is the sanity check/constraint on the parameter. See TomlSanityCheck.py for a current list of supported constraints
 
-# Defaults. These shouldn't be changed by user.
+### Parameters Used across all calculations
+
+[General.Geometry]
+  # Geometry of detector. Options are {"flat","cube"}  
+  value= "cube"
+  constraint ="DetectorGeometry"
+[General.RABinnings]
+#binnings on skymap fro source and background in Right Ascension
+  value = 500.0
+  constraint = "SPosFloat"
+[General.ALTBinnings]
+#binnings on skymap from source and background in Declination
+  value = 500.0
+  constraint = "SPosFloat"
+[General.output_directory]
+  value = "/nevis/milne/files/ms6556/BleekerData/test"
+  constraint = "ValidFolder"
+[General.MC_truth]
+# flag to denote if using MC_truth/Reconstruct executable
+  value = true
+  constraint = "Boolean"
+[General.scale]
+# What scale the binnings should be. Options are {"linear","log"}
+  value = "linear"
+  constraint  = "ScaleCheck"
+[General.local_run]
+# Run code locally instead of on condor
+  value = false
+  constraint  = "Boolean"
+
+### Effective Area: Read in by Effective Area condor job and CalcEffArea
+
+## GramsSky portion. Some fixed parameters of the simulation
 # -o gramssky.hepmc3
 # PositionGeneration Iso
 # --PhiMinMax \"(-3.14159,3.14159)\" --ThetaMinMax \"(-1.57079,1.57079)\"
 # --OriginSphere depends on Geometry. Cube is \"(0,0,-40.0 )\". Flat is  --OriginSphere \"(0,0,-10.0 )\"
-    RadiusSphere = 300
-    RadiusDisc = 200
-    minE = 0.1 # Minimum energy to test
-    maxE = 10 # Maximum energy to test
-    energy_bins = 100 # Number of energy bins
-    nparticles = 20000 # Number of particles to generate at each energy
 
-[EffectiveArea.gramsg4]
+
+[EffectiveArea.gramssky.RadiusSphere]
+# Generating sphere where photons start at
+  value = 300.0
+  constraint = "SPosFloat"
+
+[EffectiveArea.gramssky.RadiusDisc]
+# Disk along which photons get translated
+  value = 200.0
+  constraint = "SPosFloat"
+
+[EffectiveArea.gramssky.minE]
+# Minimum energy to test
+  value = 0.1
+  constraint = "SPosFloat"
+
+[EffectiveArea.gramssky.maxE]
+# Maximum energy to test
+  value = 10.0
+  constraint = "SPosFloat"
+
+[EffectiveArea.gramssky.energy_bins]
+# Number of energy bins
+  value = 100
+  constraint = "SPosInt"
+
+[EffectiveArea.gramssky.nparticles]
+# Number of particles to generate at each energy
+  value = 20000 
+  constraint = "SPosInt"
+
+## Gramsg4 section of effective area
 # Defaults.  These shouldn't be changed by user.
 # -i gramssky.hepmc3
 # -o gramsg4.root
 # -g {GDML} where GDML is dependent on Geometry. ThinGrams.gdml for 'cube', ThinFlatGrams.gdml for 'flat'
 # -m {MAC} where {MAC} is ./mac/EffAreaHepmc3.mac, which is a file created by GenCondorJobs
 
-[EffectiveArea.gramsdetsim]
-# Defaults
+[EffectiveArea.gramsg4]
+# No user defined parameters here... yet
+
+
+## GramsDetSim section
+# Defaults.  These shouldn't be changed by user.
 # -i gramssky.root
 # -o gramsdetsim.root
 
-[EffectiveArea.Extract]
+[EffectiveArea.gramsdetsim]
+# No user defined parameters here... yet
+
+## Extract section
 # Defaults
 # --GramsG4Name gramsg4.root
 # --GramsDetSimName gramsdetsim.root
-    ExtractOutput = "EffectiveAreaExtract"
 
-[EffectiveArea.Reconstruct]
+[EffectiveArea.Extract.ExtractOutput]
+    value = "EffectiveAreaExtract"
+    constraint = "NonEmptyString"
+
+## EffectiveArea
 # Defaults
 # -i ExtractOutput key in Extract
-    ReconstructOutput = "EffectiveAreaReconstruction" # _${process}.root gets appended to this string
+[EffectiveArea.Reconstruct.ReconstructOutput]
+    value = "EffectiveAreaReconstruction" # _${process}.root gets appended to this string
+    constraint = "NonEmptyString"
 
-[Source]
-  SourceEnergy = 1.0 # Energy of Source
-  SourceEventsPerJob = 10000 # Number of Source events per job
-  SourceBatches = 10 # Number of jobs to generate with source
-  RASourceLoc = 0.0 # Location of source in Right Ascension in degrees (xy plane)
-  ALTSourceLoc = 0.0 # Loocation of source in Altitude in degrees (moving up from xy plane)
+### Point Source Generation Section
 
-[Source.gramssky]
+## Input parameters
+[Source.Input.SourceEnergy]
+  value = 1.0  # Energy of Source (MeV)
+  constraint = "SPosFloat"
+[Source.Input.SourceEventsPerJob]
+  value = 10000  # Number of Source events per job
+  constraint = "SPosInt"
+[Source.Input.SourceBatches]
+  value = 10  # Number of jobs to generate with source
+  constraint = "SPosInt"
+[Source.Input.RASourceLoc]
+  value = 0.0  # Location of source in Right Ascension in degrees (in xy plane)
+  constraint = "Floating"
+[Source.Input.ALTSourceLoc]
+  value = 0.0  # Loocation of source in Altitude in degrees (moving up from xy plane)
+  constraint = "Floating"
+
+## GramsSky section of Point Source
 # Defaults
 # --PositionGeneration Point
 # --PointSource calculated from RA and ALT locations
@@ -62,91 +138,169 @@
 # OriginSphere from Geometry
 # --EnergyGeneration Fixed
 
-[Source.gramsg4]
+[Source.gramssky]
+# Nothing user define... for now
+
+## GramsG4 section of Source
 # Defaults
 # -o is default
 # -g dependent on geometry
 # -i is gramssky.hepmc3
-# -m dependent on number of particle generated
+# -m dependent on number of particle generated. Generated by GenCondorJobs.py
 
-[Source.gramsdetsim]
+[Source.gramsg4]
+# Nothing user define... for now
+
+## GramsDetSim section of Source
 # -i is default gramsg4
 # -o is default gramsdetsim
+[Source.gramsdetsim]
+# Nothing user define... for now
 
-[Source.Extract]
+## Extract section of Source
 # GramsG4Name is default
 # GramsDetSimName is default
-  ExtractOutput = "SourceExtract"
+[Source.Extract.ExtractOutput]
+  value = "SourceExtract"
+  constraint = "NonEmptyString"
 
-[Source.Reconstruct]
+## Reconstruct section of Source
 # Defaults
 #input is output of Extract
 # SourceType is Point
 # SourceLoc is from RA and ALT
-  ReconstructOutput = "SourceReconstruct" # _${process}.root gets appended to this string
+[Source.Reconstruct]
+  value = "SourceReconstruct" # _${process}.root gets appended to this string
+  constraint = "NonEmptyString"
 
-[Source.SkyMap]
+## Skymap section of source
 #  Input is output of Reconstruct
 # EffAreaFile from CalcEffArea.py
 # Mask from mask
-    SkyMapOutput = "SourceSkyMap" # _${process}.root gets appended to this string
+[Source.SkyMap]
+# _${process}.root gets appended to this string
+  value = "SourceSkyMap"
+  constraint = "NonEmptyString" 
 
-[Background]
-  BackgroundEventsPerJob = 10000 # Number of Background events per job
-  BackgroundBatches = 10 # Number of jobs to generate with source
+### Background Section
 
-[Background.gramssky]
+## General user input section
+
+[Background.Input.BackgroundEventsPerJob]
+# Number of Background events per job
+  value= 10000
+  constraint = "SPosInt"
+
+[Background.Input.BackgroundBatches]
+# Number of jobs to generate
+  value= 10
+  constraint = "SPosInt"
+
+## GramsSky section of background
+
 # Defaults
 # default output GramsG4Name
 # RadiusSphere 300
 # PositionGeneration Iso
 #--PhiMinMax "(-3.14159,3.14159)" --ThetaMinMax "(0,3.14159265)"
 # OriginSphere from Geometry
-  Spectrum = "PowerLaw" # Energy generation type. {"PowerLaw","Uniform"}
+[Background.gramssky.Spectrum]
+# Energy generation type. {"PowerLaw","Uniform"}
+  value = "PowerLaw"
+  constraint = "EnergyDist"
 
+[Background.gramssky.minE]
 # Energy in MeV
-    minE  = 0.1
-    maxE  = 10 
+  value = 0.1
+  constraint=  "SPosFloat"
 
-[Background.gramsg4]
+[Background.gramssky.maxE]
+  value = 10.0
+  constraint=  "SPosFloat"
+
+## GramsG4 section of background
+
 # output is default
 # input is gramssky.hepmc3
-# m is hepmc3 macro
+# m is hepmc3 macro generated by GenCondorJobs
 
-[Background.gramsdetsim]
+[Background.gramsg4]
+# No user-defined parameters... for now
+
+## GramsDetSim section of background
+
 # output default
 # input default gramsg4
 
-[Background.Extract]
+[Background.gramsdetsim]
+# No user-defined parameters... for now
+
+## Extract section of background
 # GramsG4Name is default
 # GramsDetSimName is default
-  ExtractOutput = "BackgroundExtract"
 
-[Background.Reconstruct]
+[Background.Extract.ExtractOutput]
+  value = "BackgroundExtract"
+  constraint = "NonEmptyString"
+
+## Reconstruct section of background
 # Defaults
 #input is output of Extract
 # SourceType is Iso
-  ReconstructOutput = "BackgroundReconstruction" # _${process}.root gets appended to this string
 
-[Background.SkyMap]
+[Background.Reconstruct.ReconstructOutput]
+# _${process}.root gets appended to this string
+  value = "BackgroundReconstruction"
+  constraint = "NonEmptyString"
+
+## SkyMap section of background
 # EffAreaFile from CalcEffArea.py
 # Flux files created with GenEnergySpectrum
-    SkyMapOutput = "BackgroundSkyMap" # _${process}.root gets appended to this string
-    ExposureTime = 86400 # In seconds
-[Mask]
+
+[Background.SkyMap.SkyMapOutput]
+# _${process}.root gets appended to this string
+    value = "BackgroundSkyMap"
+    constraint = "NonEmptyString"
+
+[Background.SkyMap.ExposureTime]
+    value = 86400.0 # In seconds
+    constraint = "SPosFloat"
+
+### Binary Mask generation,to limit skymaps to certain portions of the sky
+
+# Inputs
+
 # Defaults
 # RA and ALT locations from Source
 # Same binnings as in General
-# Calcuates BinaryMask and applies to all skymaps. 
-#Generate pipeline with monoenergetic data pipeline of own
-  nevents = 10000 # Number of Source events per job
-  nbins =  1000 # Number of binnings in ARM distribution
-  MaskOutput = "BinaryMask.root"
-  draw = true
+# Calcuates BinaryMask which can be applied to a skymap 
 
-[CalcEffArea]
-# Get parameters from EffArea
-  OutputFileName = "EffectiveArea.root"
-  
-[Sensitivity]
-  TimeScaling = 1.0 # How much to scale up/down the exposure time
+[Mask.Input.nevents]
+# Number of Source events per job
+  value = 10000
+  constraint = "SPosInt"
+[Mask.Input.nbins]
+# Number of binnings in ARM distribution
+  value = 1000
+  constraint = "SPosInt"
+[Mask.Input.MaskOutput]
+# Output File name
+  value = "BinaryMask.root"
+  constraint = "NonEmptyString"
+[Mask.Input.draw]
+# Write out png of what mask looks like
+  value = true
+  constraint = "Boolean"
+
+### Effective Area
+
+[CalcEffArea.Input.OutputFileName]
+  value = "EffectiveArea.root"
+  constraint = "NonEmptyString"
+
+### Sensitivity Calc
+
+[Sensitivity.Input.TimeScaling]
+# How much to scale up/down the exposure time
+  value = 1.0
+  constraint = "SPosFloat"
