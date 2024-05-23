@@ -4,6 +4,7 @@ import datetime
 import numpy as np
 import subprocess
 import TomlSanityCheck
+import toml
 from  ROOT import TFile
 
 def SanityCheck(output_directory):
@@ -778,4 +779,6 @@ if __name__ =="__main__":
         BackgroundGeneration(config,args.JobType, args.batch)
     else:
         print("Invalid Job")
+    with open(config["General"]["output_directory"]["value"]+"RunVars.toml",'w') as f:
+        toml.dump(config,f)
     print("Finished ;)")
