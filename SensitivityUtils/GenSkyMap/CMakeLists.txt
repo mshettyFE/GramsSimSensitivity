@@ -12,16 +12,8 @@ target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}GenSkyMapUtils
 target_link_libraries(${GEN_COUNT_HIST_PROG} ${CMAKE_PROJECT_NAME}ReadRoot )
 
 
-# Copy over executable to Source, Background, EffArea
+# Copy over executable to GramsWork
 
 add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/Source/GramsWork)
-
-add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
-                   POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/Background/GramsWork)
-
-add_custom_command(TARGET ${GEN_COUNT_HIST_PROG} 
-                   POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_BINARY_DIR}/EffArea/GramsWork)
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${GEN_COUNT_HIST_PROG}> ${CMAKE_SOURCE_DIR}/GramsWork)
